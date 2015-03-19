@@ -3,8 +3,8 @@
 	
 	"FriendlyName" : "OSVR Plugin",
 	"Version" : 1,
-	"VersionName" : "1.0",
-	"CreatedBy" : "Epic Games, Inc.",
+	"VersionName" : "0.1",
+	"CreatedBy" : "Razer, Inc.",
 	"CreatedByURL" : "http://epicgames.com",
 	"EngineVersion" : "4.2.0",
 	"Description" : "Open Source Virtual Reality (OSVR) plugin.",
