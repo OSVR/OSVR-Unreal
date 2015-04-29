@@ -3,9 +3,9 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class OSVRsampleTarget : TargetRules
+public class OSVRUnrealTarget : TargetRules
 {
-	public OSVRsampleTarget(TargetInfo Target)
+	public OSVRUnrealTarget(TargetInfo Target)
 	{
 		Type = TargetType.Game;
 	}
@@ -20,6 +20,6 @@ public class OSVRsampleTarget : TargetRules
 		ref List<string> OutExtraModuleNames
 		)
 	{
-		OutExtraModuleNames.AddRange( new string[] { "OSVRsample" } );
+		OutExtraModuleNames.AddRange( new string[] { "OSVRUnreal" } );
 	}
 }

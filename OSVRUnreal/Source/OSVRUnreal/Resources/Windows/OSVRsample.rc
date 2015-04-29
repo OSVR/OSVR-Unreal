@@ -47,9 +47,9 @@ BEGIN
             VALUE "LegalCopyright", EPIC_COPYRIGHT_STRING
             VALUE "ProductName", EPIC_PRODUCT_NAME
 			VALUE "ProductVersion", ENGINE_VERSION_STRING
-			VALUE "FileDescription", "OSVRsample"
-            VALUE "InternalName", "OSVRsample"
-            VALUE "OriginalFilename", "OSVRsample.exe"
+			VALUE "FileDescription", "OSVRUnreal"
+            VALUE "InternalName", "OSVRUnreal"
+            VALUE "OriginalFilename", "OSVRUnreal.exe"
         END
     END
     BLOCK "VarFileInfo"
