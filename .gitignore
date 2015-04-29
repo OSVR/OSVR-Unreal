@@ -1,6 +1,11 @@
 Binaries/
 Intermediate/
 Saved/
+/OSVRUnreal/Build/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/include
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/lib
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/*.txt
+*.opensdf
+*.sdf
+*.sln
+*.suo
