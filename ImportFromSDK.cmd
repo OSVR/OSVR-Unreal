@@ -1,24 +1,24 @@
 @echo off
 
 set PRJ_ROOT=%~dp0
-set DEST_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\ThirdParty\OSVR
+set DEST_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\ThirdParty\OSVRClientKit
 
 IF NOT EXIST "%DEST_ROOT%" goto ERROR_WRONG_PROJ_DIR
 
 IF %1.==. (
-	set /p osvr32bit=Type OSVR 32bit SDK root dir: 
+	set /p osvr32bit=Type OSVR 32bit SDK root dir:
 ) ELSE (
 	set osvr32bit=%~1
 )
 IF %2.==. (
-	set /p osvr64bit=Type OSVR 64bit SDK root dir: 
+	set /p osvr64bit=Type OSVR 64bit SDK root dir:
 ) ELSE (
 	set osvr64bit=%~2
 )
 
 rem Get rid of the old
+RMDIR /S /Q "%DEST_ROOT%\Binaries"
 RMDIR /S /Q "%DEST_ROOT%\include"
-RMDIR /S /Q "%DEST_ROOT%\bin"
 RMDIR /S /Q "%DEST_ROOT%\lib"
 del "%DEST_ROOT%/*.txt"
 
@@ -44,14 +44,14 @@ rem Architecture-dependent files
 setlocal
 set SRC=%1
 set DEST_ROOT=%2
-set BITS=%3 
+set BITS=%3
 
 copy "%SRC%\osvr-ver.txt" "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /y
 
 rem dlls
 rem mkdir "%DEST_ROOT%\bin\Win%BITS%\"
 for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
-  xcopy %%F "%DEST_ROOT%\bin\Win%BITS%\" /Y
+  xcopy %%F "%DEST_ROOT%\Binaries\Win%BITS%\" /Y
 )
 
 rem libs
