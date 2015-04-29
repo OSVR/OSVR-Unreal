@@ -6,7 +6,13 @@
 > For support, see <http://support.osvr.com>
 
 ## Unreal Engine Plugin for OSVR
-Currently in a functional but preliminary state. Contributions and cleanups gladly accepted. The `OSVR` directory contains the plugin, while the `OSVRsample` directory contains a sample app to use the plugin.
+Currently in a functional but preliminary state. Contributions and cleanups gladly accepted.
+
+The `OSVRUnreal` folder contains a sample application using the plugin from source, for ease of development.
+
+The plugin itself is inside `OSVRUnreal/Plugins/OSVR`.
+
+Currently works with Unreal Engine 4.6.x.
 
 ## License
 
