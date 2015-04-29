@@ -1,22 +1,23 @@
 # OSVR - Unreal Engine 4 plugin
 
-## Installation
+## Installation from Source
 
-Follow this steps to integrate OSVR into your UE4 project:
+Follow this steps to integrate OSVR into your UE4 project. It assumes that you have already run `ImportFromSDK` to copy the OSVR ClientKit SDK binaries into the source tree.
 
-- install OSVR on your system
-- be sure that your project have at least one C++ file
+- be sure that your project has at least one C++ file
 - close UE4Editor
-- copy the `OSVR/` plugin directory into `<YourProject>/Plugins/`
-- copy all content of `<YourProject>\Plugins\OSVR\ThirdParty\OSVR\bin\` into `<YourProject>\Binaries\`
+- copy the `OSVRUnreal/Plugins/OSVR/` plugin directory into `<YourProject>/Plugins/`
 - open your project and let UBT recompile the OSVR plugin
 - under "Window -> Plugins" ensure that OSVR is the only plugin of type "Head Mounted Display" enabled (e.g., be sure to have "Oculus Rift Plugin" and "SteamVR Plugin" both disabled)
 
-## Packaging
+Optional, might make things easier:
+- copy all contents of `<YourProject>\Plugins\OSVR\Source\OSVRClientKit\bin\` into `<YourProject>\Binaries\`
+
+### Packaging
 
 After having packaged your project:
 
-- copy all content of `<YourProject>\Plugins\OSVR\ThirdParty\OSVR\bin\` into `<OutputDir>\WindowsNoEditor\<YourProject>\Binaries\`
+- copy all contents of `<YourProject>\Plugins\OSVR\Source\OSVRClientKit\bin\` into `<OutputDir>\WindowsNoEditor\<YourProject>\Binaries\`
 
 ## Blueprint API
 
