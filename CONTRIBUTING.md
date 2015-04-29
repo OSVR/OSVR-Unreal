@@ -34,8 +34,9 @@ Try to develop code that is portable (not particularly tied to a single operatin
 If you're adding something reasonably testable, please also add a test.
 If you're touching code that already has tests, make sure they didn't break.
 
-There are not formal code style guidelines for this repository yet, though you could use other Unreal-related code and the OSVR-Core guidelines as a model
-The main points are to match code surrounding what you're edited, and to be sure to use a tool like `clang-format`.
+This repository tries to follow an approximation of the Unreal Engine code style guidelines.
+There is a configuration file for `clang-format` - you can run the formatter on all the code by running the `format-project.sh` script in the root of the repository (yes, even works on Windows, if you have git bash installed and an installed snapshot of LLVM/Clang).
+The main points are to match code surrounding what you're edited, and to be sure to use `clang-format`.
 These help ensure that your changes are not artificially large because of whitespace, etc, that it's easy to review your changes, and that your code will be maintainable in the future.
 
 ## License
