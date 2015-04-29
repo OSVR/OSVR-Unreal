@@ -1,16 +1,16 @@
 {
 	"FileVersion" : 3,
-	
+
 	"FriendlyName" : "OSVR Plugin",
 	"Version" : 1,
 	"VersionName" : "0.1",
-	"CreatedBy" : "Razer, Inc.",
-	"CreatedByURL" : "http://epicgames.com",
+	"CreatedBy" : "Razer, Inc. and OSVR Community",
+	"CreatedByURL" : "http://osvr.github.io",
 	"EngineVersion" : "4.2.0",
 	"Description" : "Open Source Virtual Reality (OSVR) plugin.",
 	"Category" : "Head Mounted Displays.Devices",
 	"EnabledByDefault" : true,
-	
+
 	"Modules" :
 	[
 		{
