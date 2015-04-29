@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRBPFunctionLibrary.h"
 #include "OSVRInterfaceCollection.h"
@@ -23,14 +22,13 @@
 #include "IOSVR.h"
 #include "OSVRHMD.h"
 
-
 float GetWorldToMetersScale()
 {
 	float w2m = 100.f;
-	UWorld * w = GEngine->GetWorld();
+	UWorld* w = GEngine->GetWorld();
 	if (w != nullptr)
 	{
-		AWorldSettings * ws = w->GetWorldSettings();
+		AWorldSettings* ws = w->GetWorldSettings();
 		if (ws != nullptr)
 		{
 			w2m = ws->WorldToMeters;
@@ -38,8 +36,6 @@ float GetWorldToMetersScale()
 	}
 	return w2m;
 }
-
-
 
 FTransform UOSVRBPFunctionLibrary::GetInterfacePose(FName Name)
 {
@@ -115,7 +111,7 @@ void UOSVRBPFunctionLibrary::SetCurrentHmdOrientationAndPositionAsBase()
 {
 	if (GEngine->HMDDevice.IsValid() && GEngine->IsStereoscopic3D())
 	{
-		auto HMDDevice = StaticCastSharedPtr<FOSVRHMD>(GEngine->HMDDevice);
+		auto HMDDevice = StaticCastSharedPtr< FOSVRHMD >(GEngine->HMDDevice);
 		if (HMDDevice.IsValid())
 			HMDDevice->SetCurrentHmdOrientationAndPositionAsBase();
 	}

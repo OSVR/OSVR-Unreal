@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #pragma once
 
 #include "GameFramework/Actor.h"
@@ -44,7 +43,7 @@ public:
 	class UOSVRInputComponent* osvrInput;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "OSVR")
-	void OnPoseChanged(FName Interface, const FTransform & Pose);
+	void OnPoseChanged(FName Interface, const FTransform& Pose);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "OSVR")
 	void OnPositionChanged(FName Interface, FVector Position);

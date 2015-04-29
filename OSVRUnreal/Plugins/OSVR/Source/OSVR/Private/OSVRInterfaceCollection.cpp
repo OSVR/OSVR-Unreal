@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRInterfaceCollection.h"
 
@@ -36,26 +35,25 @@ void OSVRInterfaceCollection::AddDefaultInterfaces()
 	//	/me/head			- orientation from YEI 3Space (HMD)tracker
 
 	FName ValidPaths[] =
-	{
-		"/me/hands/left",
-		"/me/hands/right",
-		"/me/hands",
-		"/me/head",
-		"/controller/left/1",
-		"/controller/left/2",
-		"/controller/left/3",
-		"/controller/left/4",
-		"/controller/left/bumper",
-		"/controller/left/joystick/button",
-		"/controller/left/middle",
-		"/controller/right/1",
-		"/controller/right/2",
-		"/controller/right/3",
-		"/controller/right/4",
-		"/controller/right/bumper",
-		"/controller/right/joystick/button",
-		"/controller/right/middle"
-	};
+		{
+			"/me/hands/left",
+			"/me/hands/right",
+			"/me/hands",
+			"/me/head",
+			"/controller/left/1",
+			"/controller/left/2",
+			"/controller/left/3",
+			"/controller/left/4",
+			"/controller/left/bumper",
+			"/controller/left/joystick/button",
+			"/controller/left/middle",
+			"/controller/right/1",
+			"/controller/right/2",
+			"/controller/right/3",
+			"/controller/right/4",
+			"/controller/right/bumper",
+			"/controller/right/joystick/button",
+			"/controller/right/middle"};
 
 	for (int i = 0; i < sizeof(ValidPaths) / sizeof(FName); ++i)
 	{

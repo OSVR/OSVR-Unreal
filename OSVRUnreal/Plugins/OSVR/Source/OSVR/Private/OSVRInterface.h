@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #pragma once
 
 #include <functional>
@@ -22,16 +21,15 @@
 class OSVRInterface
 {
 public:
-
-	typedef std::function<void(OSVRInterface*, uint32)> StateChangedCallback;
+	typedef std::function< void(OSVRInterface*, uint32) > StateChangedCallback;
 
 	enum EInterfaceCapabilities
 	{
-		POSITION_STATE_AVAILABLE	= 1 << 1,
+		POSITION_STATE_AVAILABLE = 1 << 1,
 		ORIENTATION_STATE_AVAILABLE = 1 << 2,
-		POSE_STATE_AVAILABLE		= (POSITION_STATE_AVAILABLE | ORIENTATION_STATE_AVAILABLE),
-		BUTTON_STATE_AVAILABLE		= 1 << 3,
-		ANALOG_STATE_AVAILABLE		= 1 << 4,
+		POSE_STATE_AVAILABLE = (POSITION_STATE_AVAILABLE | ORIENTATION_STATE_AVAILABLE),
+		BUTTON_STATE_AVAILABLE = 1 << 3,
+		ANALOG_STATE_AVAILABLE = 1 << 4,
 	};
 
 	const FName& GetName() const;
@@ -58,7 +56,6 @@ public:
 	virtual void Shutdown();
 
 private:
-
 	OSVR_ClientInterface GetRawInterface();
 
 	void RefreshCapabilities();
@@ -66,27 +63,26 @@ private:
 	void DeregisterCallbacks();
 
 private:
-
 #if OSVR_ENABLED
-	friend static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PoseReport* Report);
-	friend static void OSVRPositionCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PositionReport* Report);
-	friend static void OSVROrientationCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_OrientationReport* Report);
-	friend static void OSVRButtonCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_ButtonReport* Report);
-	friend static void OSVRAnalogCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_AnalogReport* Report);
+	friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PoseReport* Report);
+	friend static void OSVRPositionCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PositionReport* Report);
+	friend static void OSVROrientationCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_OrientationReport* Report);
+	friend static void OSVRButtonCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_ButtonReport* Report);
+	friend static void OSVRAnalogCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_AnalogReport* Report);
 #endif // OSVR_ENABLED
 
 	OSVRInterface(const OSVRInterface&);
 	OSVRInterface& operator=(const OSVRInterface&);
 
-	OSVR_ClientInterface	OSVRClientInterface;
-	OSVR_ClientContext		OSVRClientContext;
+	OSVR_ClientInterface OSVRClientInterface;
+	OSVR_ClientContext OSVRClientContext;
 
-	FName					Name;
-	uint32					Capabilities;
+	FName Name;
+	uint32 Capabilities;
 
-	StateChangedCallback	Callback;
+	StateChangedCallback Callback;
 
-	FTransform				PoseState;
-	float					AnalogState;
-	uint8					ButtonState;
+	FTransform PoseState;
+	float AnalogState;
+	uint8 ButtonState;
 };

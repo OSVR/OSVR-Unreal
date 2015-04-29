@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMDDescription.h"
 
@@ -22,18 +21,21 @@
 
 struct DescriptionData
 {
-	FVector2D 	DisplaySize[2];
-	FVector2D 	DisplayOrigin[2];
-	FVector2D 	Fov[2];
-	FVector 	Location[2];
-	FString 	PositionalTrackerInterface[2];
+	FVector2D DisplaySize[2];
+	FVector2D DisplayOrigin[2];
+	FVector2D Fov[2];
+	FVector Location[2];
+	FString PositionalTrackerInterface[2];
 
 	DescriptionData();
 
-	bool		InitFromJSON(const char* JSON);
+	bool InitFromJSON(const char* JSON);
 };
 
-static DescriptionData& GetData(void* This) { return *reinterpret_cast<DescriptionData*>(This); }
+static DescriptionData& GetData(void* This)
+{
+	return *reinterpret_cast< DescriptionData* >(This);
+}
 
 DescriptionData::DescriptionData()
 {
@@ -50,15 +52,15 @@ DescriptionData::DescriptionData()
 
 bool DescriptionData::InitFromJSON(const char* JSON)
 {
-	TSharedPtr<FJsonObject> JsonObject;
-	auto JsonReader = TJsonReaderFactory<CHAR>::Create(JSON);
+	TSharedPtr< FJsonObject > JsonObject;
+	auto JsonReader = TJsonReaderFactory< CHAR >::Create(JSON);
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) &&
 		JsonObject.IsValid())
 	{
 		auto Viewports = JsonObject->GetObjectField(TEXT("viewports"));
 
-		TSharedPtr<FJsonObject> Eyes[2];
+		TSharedPtr< FJsonObject > Eyes[2];
 		Eyes[0] = Viewports->GetObjectField("left-eye");
 		Eyes[1] = Viewports->GetObjectField("right-eye");
 
@@ -110,9 +112,8 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 
 OSVRHMDDescription::OSVRHMDDescription()
 	: Valid(false),
-	Data(new DescriptionData())
+	  Data(new DescriptionData())
 {
-
 }
 
 OSVRHMDDescription::~OSVRHMDDescription()
@@ -133,7 +134,7 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext)
 
 	FMemMark MemStackMark(FMemStack::Get());
 
-	char* Buffer = new(FMemStack::Get()) char[Length];
+	char* Buffer = new (FMemStack::Get()) char[Length];
 
 	if (osvrClientGetStringParameter(OSVRClientContext, Path, Buffer, Length) == OSVR_RETURN_FAILURE)
 		return false;
@@ -192,22 +193,23 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye) const
 
 	const float InNearZ = GNearClippingPlane;
 	return FMatrix(
-		FPlane(XS, 0.0f, 0.0f, 0.0f),
-		FPlane(0.0f, YS, 0.0f, 0.0f),
-		FPlane(0.0f, 0.0f, 0.0f, 1.0f),
-		FPlane(0.0f, 0.0f, InNearZ, 0.0f))
+			   FPlane(XS, 0.0f, 0.0f, 0.0f),
+			   FPlane(0.0f, YS, 0.0f, 0.0f),
+			   FPlane(0.0f, 0.0f, 0.0f, 1.0f),
+			   FPlane(0.0f, 0.0f, InNearZ, 0.0f))
 
-		* FTranslationMatrix(FVector(PassProjectionOffset, 0, 0));
+		   *
+		   FTranslationMatrix(FVector(PassProjectionOffset, 0, 0));
 }
 
 void OSVRHMDDescription::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const
 {
-	MonitorDesc.MonitorName  = "OSVR-Display";	//@TODO
-	MonitorDesc.MonitorId	 = 0;				//@TODO
-	MonitorDesc.DesktopX	 = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).X;
-	MonitorDesc.DesktopY	 = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).Y;
-	MonitorDesc.ResolutionX	 = GetResolution().X;
-	MonitorDesc.ResolutionY	 = GetResolution().Y;
+	MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
+	MonitorDesc.MonitorId = 0;				  //@TODO
+	MonitorDesc.DesktopX = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).X;
+	MonitorDesc.DesktopY = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).Y;
+	MonitorDesc.ResolutionX = GetResolution().X;
+	MonitorDesc.ResolutionY = GetResolution().Y;
 }
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const

@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
 
@@ -94,7 +93,7 @@ bool FOSVRHMD::HasValidTrackingPosition() const
 }
 
 void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FRotator& OutOrientation,
-	float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
+													 float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
 {
 	// @TODO
 }
@@ -176,7 +175,7 @@ ISceneViewExtension* FOSVRHMD::GetViewExtension()
 	return this;
 }
 
-bool FOSVRHMD::Exec( UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar )
+bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
 	if (FParse::Command(&Cmd, TEXT("STEREO")))
 	{
@@ -402,9 +401,9 @@ void FOSVRHMD::SetCurrentHmdOrientationAndPositionAsBase()
 
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
-	return HMDDescription.GetProjectionMatrix(StereoPassType == eSSP_LEFT_EYE 
-												? OSVRHMDDescription::LEFT_EYE
-												: OSVRHMDDescription::RIGHT_EYE);
+	return HMDDescription.GetProjectionMatrix(StereoPassType == eSSP_LEFT_EYE
+												  ? OSVRHMDDescription::LEFT_EYE
+												  : OSVRHMDDescription::RIGHT_EYE);
 }
 
 void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
@@ -412,20 +411,19 @@ void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 	// @TODO
 }
 
-void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas *InCanvas, UCanvas *InCanvasObject, FViewport *InViewport) const
+void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
 	FMatrix m;
 	m.SetIdentity();
 	InCanvas->PushAbsoluteTransform(m);
 }
 
-void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas *InCanvas, UCanvas *InCanvasObject, FSceneView *InView) const
+void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FSceneView* InView) const
 {
 	FMatrix m;
 	m.SetIdentity();
 	InCanvas->PushAbsoluteTransform(m);
 }
-
 
 //---------------------------------------------------
 // ISceneViewExtension Implementation
@@ -454,9 +452,9 @@ bool FOSVRHMD::IsHeadTrackingAllowed() const
 
 #if OSVR_ENABLED
 
-static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report)
+static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report)
 {
-	auto This = reinterpret_cast<FOSVRHMD*>(Userdata);
+	auto This = reinterpret_cast< FOSVRHMD* >(Userdata);
 	if (This && Report)
 	{
 		This->CurHmdPosition = This->BaseOrientation.Inverse().RotateVector((OSVR2FVector(Report->pose.translation) * This->WorldToMetersScale) - This->BasePosition);
@@ -469,21 +467,20 @@ static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* /*Timestamp*
 #endif // OSVR_ENABLED
 
 FOSVRHMD::FOSVRHMD()
-	: 
-	LastHmdOrientation(FQuat::Identity),
-	CurHmdOrientation(FQuat::Identity),
-	DeltaControlRotation(FRotator::ZeroRotator),
-	DeltaControlOrientation(FQuat::Identity),
-	CurHmdPosition(FVector::ZeroVector),
-	BaseOrientation(FQuat::Identity),
-	BasePosition(FVector::ZeroVector),
-	WorldToMetersScale(100.0f),
-	bHmdPosTracking(false),
-	bHaveVisionTracking(false),
-	bStereoEnabled(true),
-	bHmdEnabled(true),
-	OSVRClientInterface(nullptr),
-	OSVRInterfaceName("/me/head")
+	: LastHmdOrientation(FQuat::Identity),
+	  CurHmdOrientation(FQuat::Identity),
+	  DeltaControlRotation(FRotator::ZeroRotator),
+	  DeltaControlOrientation(FQuat::Identity),
+	  CurHmdPosition(FVector::ZeroVector),
+	  BaseOrientation(FQuat::Identity),
+	  BasePosition(FVector::ZeroVector),
+	  WorldToMetersScale(100.0f),
+	  bHmdPosTracking(false),
+	  bHaveVisionTracking(false),
+	  bStereoEnabled(true),
+	  bHmdEnabled(true),
+	  OSVRClientInterface(nullptr),
+	  OSVRInterfaceName("/me/head")
 {
 	HMDDescription.Init(osvrClientContext);
 	OSVRInterfaceName = HMDDescription.GetPositionalTrackerInterface(OSVRHMDDescription::LEFT_EYE);
@@ -511,7 +508,7 @@ bool FOSVRHMD::IsInitialized() const
 }
 
 bool FOSVRHMD::HandleInputKey(UPlayerInput* pPlayerInput,
-	const FKey& Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
+							  const FKey& Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
 {
 	return false;
 }

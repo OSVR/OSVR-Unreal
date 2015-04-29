@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 
 #include "OSVRInterfaceCollection.h"
@@ -36,7 +35,7 @@ OSVREntryPoint::OSVREntryPoint()
 #else
 		nullptr
 #endif // OSVR_ENABLED
-	));
+		));
 }
 
 OSVREntryPoint::~OSVREntryPoint()

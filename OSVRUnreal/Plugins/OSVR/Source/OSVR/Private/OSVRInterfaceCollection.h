@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #pragma once
 
 #include "OSVRInterface.h"
@@ -23,18 +22,29 @@
 class OSVRInterfaceCollection
 {
 public:
-
 	OSVRInterfaceCollection(OSVR_ClientContext osvrClientContext);
 
-	OSVRInterface* GetInterface(const FName& Name){ return GetInterfaceImpl(Name, false); }
-	OSVRInterface* GetOrCreateInterface(const FName& Name){ return GetInterfaceImpl(Name, true); }
+	OSVRInterface* GetInterface(const FName& Name)
+	{
+		return GetInterfaceImpl(Name, false);
+	}
+	OSVRInterface* GetOrCreateInterface(const FName& Name)
+	{
+		return GetInterfaceImpl(Name, true);
+	}
 
 	struct RegistrationToken
 	{
 		static const int32 INVALID_TOKEN = -1;
 
-		RegistrationToken() : Token(INVALID_TOKEN){}
-		explicit RegistrationToken(int32 InToken) : Token(InToken) {}
+		RegistrationToken()
+			: Token(INVALID_TOKEN)
+		{
+		}
+		explicit RegistrationToken(int32 InToken)
+			: Token(InToken)
+		{
+		}
 
 		int32 Token;
 	};
@@ -43,7 +53,6 @@ public:
 	void DeregisterOnStateChangedCallback(RegistrationToken Token);
 
 private:
-
 	void AddDefaultInterfaces();
 	void ClearAllInterfaces();
 
@@ -51,7 +60,7 @@ private:
 
 	void PropagateCallbacks(OSVRInterface* Interface, uint32 Caps);
 
-	TArray<OSVRInterface::StateChangedCallback>		Callbacks;
-	TArray<TSharedPtr<OSVRInterface> >				Interfaces;
-	OSVR_ClientContext								osvrClientContext;
+	TArray< OSVRInterface::StateChangedCallback > Callbacks;
+	TArray< TSharedPtr< OSVRInterface > > Interfaces;
+	OSVR_ClientContext osvrClientContext;
 };

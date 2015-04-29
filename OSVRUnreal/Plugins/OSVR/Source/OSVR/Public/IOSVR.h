@@ -16,7 +16,6 @@ class IOSVR : public IInputDeviceModule
 {
 
 public:
-
 	/**
 	 * Singleton-like access to this module's interface.  This is just for convenience!
 	 * Beware of calling this during the shutdown phase, though.  Your module might have been unloaded already.
@@ -25,7 +24,7 @@ public:
 	 */
 	static inline IOSVR& Get()
 	{
-		return FModuleManager::LoadModuleChecked< IOSVR >( "OSVR" );
+		return FModuleManager::LoadModuleChecked< IOSVR >("OSVR");
 	}
 
 	/**
@@ -35,10 +34,8 @@ public:
 	 */
 	static inline bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "OSVR" );
+		return FModuleManager::Get().IsModuleLoaded("OSVR");
 	}
-
-
 };
 #endif // OSVR_INPUTDEVICE_ENABLED
 
@@ -52,7 +49,6 @@ class IOSVR : public IHeadMountedDisplayModule
 {
 
 public:
-
 	/** Returns the key into the HMDPluginPriority section of the config file for this module */
 	virtual FString GetModulePriorityKeyName() const
 	{
@@ -82,4 +78,3 @@ public:
 
 	virtual OSVREntryPoint* GetEntryPoint() = 0;
 };
-

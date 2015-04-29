@@ -14,7 +14,7 @@ class UOSVRInputComponent : public UActorComponent
 {
 	GENERATED_UCLASS_BODY()
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPoseChangedDelegate, FName, Name, const FTransform &, Pose);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPoseChangedDelegate, FName, Name, const FTransform&, Pose);
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPositionChangedDelegate, FName, Name, FVector, Position);
 
@@ -40,12 +40,10 @@ class UOSVRInputComponent : public UActorComponent
 	FAnalogValueChangedDelegate OnAnalogValueChanged;
 
 public:
-
 	void InitializeComponent() override;
 	void UninitializeComponent() override;
 
 private:
-
 	// @TODO: OSVRInterfaceCollection::RegistrationToken should be used instead
 	uint32 RegistrationToken;
 

@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRInterface.h"
 #include "OSVRTypes.h"
@@ -35,9 +34,9 @@ static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* Timestamp, c
 }
 */
 
-static void OSVRPositionCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PositionReport* Report)
+static void OSVRPositionCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PositionReport* Report)
 {
-	auto This = reinterpret_cast<OSVRInterface*>(Userdata);
+	auto This = reinterpret_cast< OSVRInterface* >(Userdata);
 	if (This && Report)
 	{
 		This->PoseState.SetTranslation(OSVR2FVector(Report->xyz));
@@ -46,9 +45,9 @@ static void OSVRPositionCallback(void * Userdata, const OSVR_TimeValue* Timestam
 	}
 }
 
-static void OSVROrientationCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_OrientationReport* Report)
+static void OSVROrientationCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_OrientationReport* Report)
 {
-	auto This = reinterpret_cast<OSVRInterface*>(Userdata);
+	auto This = reinterpret_cast< OSVRInterface* >(Userdata);
 	if (This && Report)
 	{
 		This->PoseState.SetRotation(OSVR2FQuat(Report->rotation));
@@ -57,9 +56,9 @@ static void OSVROrientationCallback(void * Userdata, const OSVR_TimeValue* Times
 	}
 }
 
-static void OSVRButtonCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_ButtonReport* Report)
+static void OSVRButtonCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_ButtonReport* Report)
 {
-	auto This = reinterpret_cast<OSVRInterface*>(Userdata);
+	auto This = reinterpret_cast< OSVRInterface* >(Userdata);
 	if (This && Report)
 	{
 		This->ButtonState = Report->state;
@@ -68,9 +67,9 @@ static void OSVRButtonCallback(void * Userdata, const OSVR_TimeValue* Timestamp,
 	}
 }
 
-static void OSVRAnalogCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_AnalogReport* Report)
+static void OSVRAnalogCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_AnalogReport* Report)
 {
-	auto This = reinterpret_cast<OSVRInterface*>(Userdata);
+	auto This = reinterpret_cast< OSVRInterface* >(Userdata);
 	if (This && Report)
 	{
 		This->AnalogState = Report->state;
@@ -82,14 +81,13 @@ static void OSVRAnalogCallback(void * Userdata, const OSVR_TimeValue* Timestamp,
 #endif // OSVR_ENABLED
 
 OSVRInterface::OSVRInterface()
-	: 
-	OSVRClientInterface(nullptr),
-	OSVRClientContext(nullptr),
-	Capabilities(0),
-	Callback(nullptr),
-	PoseState(FTransform::Identity),
-	AnalogState(0.0f),
-	ButtonState(0)
+	: OSVRClientInterface(nullptr),
+	  OSVRClientContext(nullptr),
+	  Capabilities(0),
+	  Callback(nullptr),
+	  PoseState(FTransform::Identity),
+	  AnalogState(0.0f),
+	  ButtonState(0)
 {
 }
 
@@ -334,7 +332,7 @@ void OSVRInterface::RegisterCallbacks()
 	{
 		//osvrRegisterPoseCallback(GetRawInterface(), &OSVRPoseCallback, this);
 	}
-	/*else*/if (HasPositionState())
+	/*else*/ if (HasPositionState())
 	{
 		osvrRegisterPositionCallback(GetRawInterface(), &OSVRPositionCallback, this);
 	}

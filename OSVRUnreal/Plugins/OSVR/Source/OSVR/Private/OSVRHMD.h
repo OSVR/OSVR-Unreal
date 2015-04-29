@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #pragma once
 
 #include "IOSVR.h"
@@ -29,7 +28,6 @@
 class FOSVRHMD : public IHeadMountedDisplay, public ISceneViewExtension
 {
 public:
-
 	/** IHeadMountedDisplay interface */
 	virtual bool IsHMDConnected() override;
 	virtual bool IsHMDEnabled() const override;
@@ -43,7 +41,7 @@ public:
 
 	virtual void SetInterpupillaryDistance(float NewInterpupillaryDistance) override;
 	virtual float GetInterpupillaryDistance() const override;
-    //virtual float GetFieldOfViewInRadians() const override;
+	//virtual float GetFieldOfViewInRadians() const override;
 	virtual void GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const override;
 
 	virtual void GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition) override;
@@ -53,7 +51,7 @@ public:
 	virtual bool IsChromaAbCorrectionEnabled() const override;
 
 	virtual class ISceneViewExtension* GetViewExtension() override;
-	virtual bool Exec( UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar ) override;
+	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
 	virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 
 	virtual bool IsFullscreenAllowed() override;
@@ -62,13 +60,13 @@ public:
 	/** IStereoRendering interface */
 	virtual bool IsStereoEnabled() const override;
 	virtual bool EnableStereo(bool stereo = true) override;
-    virtual void AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const override;
-	virtual void CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation, 
+	virtual void AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const override;
+	virtual void CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation,
 										   const float MetersToWorld, FVector& ViewLocation) override;
 	virtual FMatrix GetStereoProjectionMatrix(const EStereoscopicPass StereoPassType, const float FOV) const override;
 	virtual void InitCanvasFromView(FSceneView* InView, UCanvas* Canvas) override;
-	virtual void PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas *InCanvas, UCanvas *InCanvasObject, FViewport *InViewport) const override;
-	virtual void PushViewCanvas(EStereoscopicPass StereoPass, FCanvas *InCanvas, UCanvas *InCanvasObject, FSceneView *InView) const override;
+	virtual void PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const override;
+	virtual void PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FSceneView* InView) const override;
 	virtual void GetEyeRenderParams_RenderThread(EStereoscopicPass StereoPass, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const override;
 	virtual void GetTimewarpMatrices_RenderThread(EStereoscopicPass StereoPass, FMatrix& EyeRotationStart, FMatrix& EyeRotationEnd) const override;
 
@@ -79,10 +77,10 @@ public:
 		return false;
 	}
 
-    /** ISceneViewExtension interface */
-    virtual void ModifyShowFlags(FEngineShowFlags& ShowFlags) override;
-    virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
-    virtual void PreRenderView_RenderThread(FSceneView& InView) override;
+	/** ISceneViewExtension interface */
+	virtual void ModifyShowFlags(FEngineShowFlags& ShowFlags) override;
+	virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
+	virtual void PreRenderView_RenderThread(FSceneView& InView) override;
 	virtual void PreRenderViewFamily_RenderThread(FSceneViewFamily& InViewFamily, uint32 InFrameNumber) override;
 
 	/** Positional tracking control methods */
@@ -121,38 +119,37 @@ public:
 	bool IsInitialized() const;
 
 private:
-
 	/** Player's orientation tracking */
-	mutable FQuat			CurHmdOrientation;
+	mutable FQuat CurHmdOrientation;
 
-	FRotator				DeltaControlRotation;    // same as DeltaControlOrientation but as rotator
-	FQuat					DeltaControlOrientation; // same as DeltaControlRotation but as quat
+	FRotator DeltaControlRotation; // same as DeltaControlOrientation but as rotator
+	FQuat DeltaControlOrientation; // same as DeltaControlRotation but as quat
 
-	mutable FVector			CurHmdPosition;
+	mutable FVector CurHmdPosition;
 
-	mutable FQuat			LastHmdOrientation; // contains last APPLIED ON GT HMD orientation
-	FVector					LastHmdPosition;	// contains last APPLIED ON GT HMD position
+	mutable FQuat LastHmdOrientation; // contains last APPLIED ON GT HMD orientation
+	FVector LastHmdPosition;		  // contains last APPLIED ON GT HMD position
 
 	/** HMD base values, specify forward orientation and zero pos offset */
-	FQuat					BaseOrientation;	// base orientation
-	FVector					BasePosition;
+	FQuat BaseOrientation; // base orientation
+	FVector BasePosition;
 
 	/** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
-	float					WorldToMetersScale;
+	float WorldToMetersScale;
 
-	bool					bHmdPosTracking;
-	bool					bHaveVisionTracking;
+	bool bHmdPosTracking;
+	bool bHaveVisionTracking;
 
-	bool					bStereoEnabled;
-	bool					bHmdEnabled;
+	bool bStereoEnabled;
+	bool bHmdEnabled;
 
 #if OSVR_ENABLED
-	friend static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report);
+	friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report);
 #endif // OSVR_ENABLED
 
-	OSVRHMDDescription		HMDDescription;
+	OSVRHMDDescription HMDDescription;
 
-	OSVR_ClientInterface	OSVRClientInterface;
+	OSVR_ClientInterface OSVRClientInterface;
 
-	FString					OSVRInterfaceName;
+	FString OSVRInterfaceName;
 };

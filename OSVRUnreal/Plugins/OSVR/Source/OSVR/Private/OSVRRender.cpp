@@ -14,16 +14,14 @@
 // limitations under the License.
 //
 
-
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
 //#include "RendererPrivate.h"
 //#include "ScenePrivate.h"
 //#include "PostProcess/PostProcessHMD.h"
 
-
 void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FSceneView& View, const FIntPoint& TextureSize)
-{	
+{
 	// @TODO
 }
 

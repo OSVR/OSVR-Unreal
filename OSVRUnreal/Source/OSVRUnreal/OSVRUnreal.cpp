@@ -2,4 +2,4 @@
 
 #include "OSVRUnreal.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, OSVRUnreal, "OSVRUnreal" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, OSVRUnreal, "OSVRUnreal");
