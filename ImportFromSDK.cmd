@@ -51,14 +51,27 @@ set BITS=%4
 
 copy "%SRC%\osvr-ver.txt" "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /y
 
-rem dlls
-for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
-  xcopy %%F "%PLUGIN_ROOT%\Binaries\Win%BITS%\" /Y
-)
+rem One copy to the bin directory, for use in deployment.
+call :copy_dll %SRC% %DEST_ROOT%\bin %BITS%
+
+rem One copy to the plugin Binaries directory, for editor support.
+call :copy_dll %SRC% %PLUGIN_ROOT%\Binaries %BITS%
 
 rem libs
 for %%F in (%SRC%\lib\osvrClientKit.lib) do (
   xcopy %%F "%DEST_ROOT%\lib\Win%BITS%\" /Y
+)
+endlocal
+goto :eof
+
+:copy_dll
+rem Copy DLL files
+setlocal
+set SRC=%1
+set DEST=%2
+set BITS=%3
+for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
+  xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
 endlocal
 goto :eof
