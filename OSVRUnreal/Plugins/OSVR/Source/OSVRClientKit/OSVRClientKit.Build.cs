@@ -13,13 +13,13 @@ public class OSVRClientKit : ModuleRules
     {
         Type = ModuleType.External;
 
-        PublicIncludePaths.Add(Path.Combine(ModulePath, "include"));
+        PublicIncludePaths.Add(ModulePath + "/include");
 
         if ((Target.Platform == UnrealTargetPlatform.Win64)
             || (Target.Platform == UnrealTargetPlatform.Win32))
         {
 
-            string LibraryPath = Path.Combine(ModulePath, "/lib");
+            string LibraryPath = ModulePath + "/lib";
 
             if (Target.Platform == UnrealTargetPlatform.Win64)
             {
@@ -32,6 +32,13 @@ public class OSVRClientKit : ModuleRules
 
             PublicLibraryPaths.Add(LibraryPath);
             PublicAdditionalLibraries.Add("osvrClientKit.lib");
+            PublicDelayLoadDLLs.AddRange(
+        			new string[] {
+                "osvrClientKit.dll",
+                "osvrClient.dll",
+                "osvrCommon.dll",
+                "osvrUtil.dll"
+              });
         }
     }
 }

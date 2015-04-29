@@ -1,7 +1,6 @@
 Binaries/
 Intermediate/
 Saved/
-/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/Binaries
-/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/include
-/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/lib
-/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/*.txt
+/OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/include
+/OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/lib
+/OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/*.txt

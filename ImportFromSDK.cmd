@@ -1,8 +1,11 @@
 @echo off
 
 set PRJ_ROOT=%~dp0
-set DEST_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\ThirdParty\OSVRClientKit
 
+set PLUGIN_ROOT=%~dp0OSVRUnreal\Plugins\OSVR
+IF NOT EXIST "%PLUGIN_ROOT%" goto ERROR_WRONG_PROJ_DIR
+
+set DEST_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\Source\OSVRClientKit
 IF NOT EXIST "%DEST_ROOT%" goto ERROR_WRONG_PROJ_DIR
 
 IF %1.==. (
@@ -17,15 +20,14 @@ IF %2.==. (
 )
 
 rem Get rid of the old
-RMDIR /S /Q "%DEST_ROOT%\Binaries"
-RMDIR /S /Q "%DEST_ROOT%\include"
-RMDIR /S /Q "%DEST_ROOT%\lib"
-del "%DEST_ROOT%/*.txt"
+RMDIR /S /Q "%DEST_ROOT%\include" > NUL
+RMDIR /S /Q "%DEST_ROOT%\lib" > NUL
+del "%DEST_ROOT%\*.txt" > NUL
 
 call :copy_arch_indep %osvr32bit% %DEST_ROOT%
 
-call :copy_arch %osvr32bit% %DEST_ROOT% 32
-call :copy_arch %osvr64bit% %DEST_ROOT% 64
+call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
+call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
 goto :eof
 
 
@@ -43,15 +45,15 @@ goto :eof
 rem Architecture-dependent files
 setlocal
 set SRC=%1
-set DEST_ROOT=%2
-set BITS=%3
+set PLUGIN_ROOT=%2
+set DEST_ROOT=%3
+set BITS=%4
 
 copy "%SRC%\osvr-ver.txt" "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /y
 
 rem dlls
-rem mkdir "%DEST_ROOT%\bin\Win%BITS%\"
 for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
-  xcopy %%F "%DEST_ROOT%\Binaries\Win%BITS%\" /Y
+  xcopy %%F "%PLUGIN_ROOT%\Binaries\Win%BITS%\" /Y
 )
 
 rem libs
