@@ -24,18 +24,18 @@ namespace UnrealBuildTool.Rules
 			PublicDependencyModuleNames.AddRange(
 				new string[]
 				{
-                    "Core",
-                    "CoreUObject",      // Provides Actors and Structs
-                    "Engine",           // Used by Actor
-                    "Slate",            // Used by InputDevice to fire bespoke FKey events
-                    "InputCore",        // Provides LOCTEXT and other Input features
-                    //"InputDevice",      // Provides IInputInterface
-                    "RHI",
-            		"RenderCore",
+					"Core",
+					"CoreUObject",      // Provides Actors and Structs
+					"Engine",           // Used by Actor
+					"Slate",            // Used by InputDevice to fire bespoke FKey events
+					"InputCore",        // Provides LOCTEXT and other Input features
+					//"InputDevice",      // Provides IInputInterface
+					"RHI",
+					"RenderCore",
 					"Renderer",
-                    "ShaderCore",
-                    "HeadMountedDisplay",
-                    "Json"
+					"ShaderCore",
+					"HeadMountedDisplay",
+					"Json"
 					// ... add other public dependencies that you statically link with here ...
 				}
 				);
@@ -54,42 +54,42 @@ namespace UnrealBuildTool.Rules
 				}
 				);
 
-            LoadOSVRLib(Target);
+				LoadOSVRLib(Target);
 		}
-        private string ModulePath
-        {
-            get { return Path.GetDirectoryName(RulesCompiler.GetModuleFilename(this.GetType().Name)); }
-        }
+		private string ModulePath
+		{
+			get { return Path.GetDirectoryName(RulesCompiler.GetModuleFilename(this.GetType().Name)); }
+		}
 
-        private string ThirdPartyPath
-        {
-            get { return Path.GetFullPath(Path.Combine(ModulePath, "../../ThirdParty/")); }
-        }
+		private string ThirdPartyPath
+		{
+			get { return Path.GetFullPath(Path.Combine(ModulePath, "../../ThirdParty/")); }
+		}
 
-        public bool LoadOSVRLib(TargetInfo Target)
-        {
-            bool isLibrarySupported = false;
+		public bool LoadOSVRLib(TargetInfo Target)
+		{
+			bool isLibrarySupported = false;
 
-            string LibrariesPath = Path.Combine(ThirdPartyPath, "OSVR", "lib");
-            
-            if (Target.Platform == UnrealTargetPlatform.Win64)
-            {
-                isLibrarySupported = true;
-                PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "Win64", "osvrClientKit.lib"));
-            }
-            else if (Target.Platform == UnrealTargetPlatform.Win32)
-            {
-                isLibrarySupported = true;
-                PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "Win32", "osvrClientKit.lib"));
-            }
+			string LibrariesPath = Path.Combine(ThirdPartyPath, "OSVR", "lib");
 
-            if (isLibrarySupported)
-            {
-                // Include path
-                PublicIncludePaths.Add(Path.Combine(ThirdPartyPath, "OSVR", "include"));
-            }
-            
-            return isLibrarySupported;
-        }
+			if (Target.Platform == UnrealTargetPlatform.Win64)
+			{
+				isLibrarySupported = true;
+				PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "Win64", "osvrClientKit.lib"));
+			}
+			else if (Target.Platform == UnrealTargetPlatform.Win32)
+			{
+				isLibrarySupported = true;
+				PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "Win32", "osvrClientKit.lib"));
+			}
+
+			if (isLibrarySupported)
+			{
+				// Include path
+				PublicIncludePaths.Add(Path.Combine(ThirdPartyPath, "OSVR", "include"));
+			}
+
+			return isLibrarySupported;
+		}
 	}
 }
