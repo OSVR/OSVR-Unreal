@@ -1,4 +1,7 @@
 Binaries/
-Build/
 Intermediate/
-/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVR/*
+Saved/
+/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/Binaries
+/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/include
+/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/lib
+/OSVRUnreal/Plugins/OSVR/ThirdParty/OSVRClientKit/*.txt
