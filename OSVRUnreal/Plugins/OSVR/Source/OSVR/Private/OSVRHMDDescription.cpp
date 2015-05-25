@@ -57,36 +57,24 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) &&
 		JsonObject.IsValid())
-	{
-		
+	{	
 		auto hmdJson = JsonObject->GetObjectField("hmd");
-		auto resolutionsJson = hmdJson->GetArrayField("resolutions"); //might have to change this to object field
+		auto resolutionsJson = hmdJson->GetArrayField("resolutions");
+		auto fieldOfViewJson = hmdJson->GetObjectField("field_of_view");
 		for (int i = 0; i < 2; ++i)
 		{
+			//set resolution
 			DisplaySize[i].X = resolutionsJson[0]->AsObject()->GetNumberField("width") * 0.5f;
 			DisplaySize[i].Y = resolutionsJson[0]->AsObject()->GetNumberField("height");
-			DisplayOrigin[i].Set(i == 0 ? 0 : 960, 0);
-		}
-
-		auto fieldOfView = hmdJson->GetObjectField("field_of_view");
-		for (int i = 0; i < 2; ++i)
-		{
-			Fov[i].X = fieldOfView->GetNumberField("monocular_horizontal");
-			Fov[i].Y = fieldOfView->GetNumberField("monocular_vertical");
-		}
-
-		//set default IPD for now. It's not coming from /display.
-		for (int i = 0; i < 2; ++i)
-		{
+			DisplayOrigin[i].Set(i == 0 ? 0 : DisplaySize[i].X, 0);
+			//set field of view
+			Fov[i].X = fieldOfViewJson->GetNumberField("monocular_horizontal");
+			Fov[i].Y = fieldOfViewJson->GetNumberField("monocular_vertical");
+			//set default IPD for now. It's not coming from /display.
 			Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
-		}
-		for (int i = 0; i < 2; ++i)
-		{
 			PositionalTrackerInterface[i] = "/me/head";
-		}
-		
+		}		
 	}
-
 	return true;
 }
 
