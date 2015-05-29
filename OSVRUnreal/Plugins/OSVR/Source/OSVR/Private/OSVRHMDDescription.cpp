@@ -46,7 +46,7 @@ DescriptionData::DescriptionData()
 		DisplayOrigin[i].Set(i == 0 ? 0 : 960, 0);
 		Fov[i].Set(90, 101.25f);
 		Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
-		PositionalTrackerInterface[i] = "me/head";
+		PositionalTrackerInterface[i] = "/me/head";
 	}
 }
 
@@ -57,56 +57,24 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) &&
 		JsonObject.IsValid())
-	{
-		auto Viewports = JsonObject->GetObjectField(TEXT("viewports"));
-
-		TSharedPtr< FJsonObject > Eyes[2];
-		Eyes[0] = Viewports->GetObjectField("left-eye");
-		Eyes[1] = Viewports->GetObjectField("right-eye");
-
-		if (!Eyes[0].IsValid() || !Eyes[1].IsValid())
-			return false;
-
-		//@TODO: add more checks ...
-
+	{	
+		auto hmdJson = JsonObject->GetObjectField("hmd");
+		auto resolutionsJson = hmdJson->GetArrayField("resolutions");
+		auto fieldOfViewJson = hmdJson->GetObjectField("field_of_view");
 		for (int i = 0; i < 2; ++i)
 		{
-			auto& Eye = Eyes[i];
-			auto DisplayJson = Eye->GetObjectField("display");
-			{
-				auto DisplaySizeJson = DisplayJson->GetArrayField("size");
-
-				DisplaySize[i].X = DisplaySizeJson[0]->AsNumber();
-				DisplaySize[i].Y = DisplaySizeJson[1]->AsNumber();
-
-				auto DisplayOriginJson = DisplayJson->GetArrayField("origin");
-
-				DisplayOrigin[i].X = DisplayOriginJson[0]->AsNumber();
-				DisplayOrigin[i].Y = DisplayOriginJson[1]->AsNumber();
-			}
-
-			auto FovJson = Eye->GetObjectField("fov");
-			{
-				Fov[i].X = FovJson->GetNumberField("horizontal");
-				Fov[i].Y = FovJson->GetNumberField("vertical");
-			}
-
-			auto LocationJson = Eye->GetObjectField("location");
-			{
-				auto TranslateJson = LocationJson->GetArrayField("translate");
-
-				Location[i].X = TranslateJson[0]->AsNumber();
-				Location[i].Y = TranslateJson[1]->AsNumber();
-				Location[i].Z = TranslateJson[2]->AsNumber();
-
-				auto ChildJson = LocationJson->GetObjectField("child");
-				{
-					PositionalTrackerInterface[i] = ChildJson->GetStringField("tracker");
-				}
-			}
-		}
+			//set resolution
+			DisplaySize[i].X = resolutionsJson[0]->AsObject()->GetNumberField("width") * 0.5f;
+			DisplaySize[i].Y = resolutionsJson[0]->AsObject()->GetNumberField("height");
+			DisplayOrigin[i].Set(i == 0 ? 0 : DisplaySize[i].X, 0);
+			//set field of view
+			Fov[i].X = fieldOfViewJson->GetNumberField("monocular_horizontal");
+			Fov[i].Y = fieldOfViewJson->GetNumberField("monocular_vertical");
+			//set default IPD for now. It's not coming from /display.
+			Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
+			PositionalTrackerInterface[i] = "/me/head";
+		}		
 	}
-
 	return true;
 }
 
