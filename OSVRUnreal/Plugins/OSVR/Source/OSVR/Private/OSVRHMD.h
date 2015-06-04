@@ -21,6 +21,8 @@
 #include "HeadMountedDisplay.h"
 #include "IHeadMountedDisplay.h"
 #include "SceneViewExtension.h"
+#include "SceneView.h"
+#include "ShowFlags.h"
 
 /**
  * OSVR Head Mounted Display
@@ -81,7 +83,7 @@ public:
 	virtual void ModifyShowFlags(FEngineShowFlags& ShowFlags) override;
 	virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
 	virtual void PreRenderView_RenderThread(FSceneView& InView) override;
-	virtual void PreRenderViewFamily_RenderThread(FSceneViewFamily& InViewFamily, uint32 InFrameNumber) override;
+	virtual void PreRenderViewFamily_RenderThread(FSceneViewFamily& InViewFamily) override;
 
 	/** Positional tracking control methods */
 	virtual bool IsPositionalTrackingEnabled() const override;

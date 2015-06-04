@@ -50,7 +50,7 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(EStereoscopicPass StereoPass, FM
 	// @TODO
 }
 
-void FOSVRHMD::PreRenderViewFamily_RenderThread(FSceneViewFamily& ViewFamily, uint32 InFrameNumber)
+void FOSVRHMD::PreRenderViewFamily_RenderThread(FSceneViewFamily& ViewFamily)
 {
 	// @TODO
 }
