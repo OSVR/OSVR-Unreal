@@ -12,7 +12,8 @@ public class OSVR : ModuleRules
 
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"Developer/OSVR/Private",
+				"OSVR/Private",
+                "../../../../../Source/Runtime/Renderer/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -26,7 +27,7 @@ public class OSVR : ModuleRules
 				"Engine",           // Used by Actor
 				"Slate",            // Used by InputDevice to fire bespoke FKey events
 				"InputCore",        // Provides LOCTEXT and other Input features
-				//"InputDevice",      // Provides IInputInterface
+				"InputDevice",      // Provides IInputInterface
 				"RHI",
 				"RenderCore",
 				"Renderer",
@@ -35,12 +36,24 @@ public class OSVR : ModuleRules
 				"Json"
 				// ... add other public dependencies that you statically link with here ...
 			}
-			);
+		);
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"OSVRClientKit"
+				"OSVRClientKit",
+                "Core",
+				"CoreUObject",      // Provides Actors and Structs
+				"Engine",           // Used by Actor
+				"Slate",            // Used by InputDevice to fire bespoke FKey events
+				"InputCore",        // Provides LOCTEXT and other Input features
+				"InputDevice",      // Provides IInputInterface
+				"RHI",
+				"RenderCore",
+				"Renderer",
+				"ShaderCore",
+				"HeadMountedDisplay",
+				"Json"
 				// ... add private dependencies that you statically link with here ...
 			}
 			);
@@ -51,6 +64,12 @@ public class OSVR : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
+
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            AddThirdPartyPrivateStaticDependencies(Target, "OpenVR");
+            PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });     //@todo steamvr: multiplatform
+        }
 
 	}
 }
