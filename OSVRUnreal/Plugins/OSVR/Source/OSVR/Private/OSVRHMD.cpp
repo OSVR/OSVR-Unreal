@@ -172,10 +172,10 @@ bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 	return false;
 }
 
-TSharedPtr<class ISceneViewExtension, ESPMode::ThreadSafe> FOSVRHMD::GetViewExtension()
+TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > FOSVRHMD::GetViewExtension()
 {
-	TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> ptr(MakeShareable(new FOSVRHMD(this)));
-	return ptr;
+	TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > ptr(AsShared());
+	return StaticCastSharedPtr< ISceneViewExtension >(ptr);
 }
 
 bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)

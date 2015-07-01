@@ -27,7 +27,7 @@
 /**
  * OSVR Head Mounted Display
  */
-class FOSVRHMD : public IHeadMountedDisplay, public ISceneViewExtension
+class FOSVRHMD : public IHeadMountedDisplay, public ISceneViewExtension, public TSharedFromThis< FOSVRHMD, ESPMode::ThreadSafe >
 {
 public:
 	/** IHeadMountedDisplay interface */
