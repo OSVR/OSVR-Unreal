@@ -8,7 +8,7 @@
 	"CreatedByURL" : "http://osvr.github.io",
 	"EngineVersion" : "4.2.0",
 	"Description" : "Open Source Virtual Reality (OSVR) plugin.",
-	"Category" : "Head Mounted Displays.Devices",
+	"Category" : "Virtual Reality",
 	"EnabledByDefault" : true,
 
 	"Modules" :
