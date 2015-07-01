@@ -74,16 +74,6 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 	return false;
 }
 
-bool FOSVRHMD::IsFullscreenAllowed()
-{
-	// @TODO
-	return true;
-}
-
-void FOSVRHMD::RecordAnalytics()
-{
-}
-
 bool FOSVRHMD::DoesSupportPositionalTracking() const
 {
 	return true;
@@ -303,11 +293,6 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 	return bStereoEnabled;
 }
 
-void FOSVRHMD::UpdateScreenSettings(const FViewport*)
-{
-	// @TODO
-}
-
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
 	SizeX = SizeX / 2;
@@ -448,11 +433,6 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 	InViewFamily.bUseSeparateRenderTarget = false;
 }
 
-void FOSVRHMD::BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
-{
-	// @TODO
-}
-
 bool FOSVRHMD::IsHeadTrackingAllowed() const
 {
 	return GEngine->IsStereoscopic3D();
@@ -513,14 +493,4 @@ bool FOSVRHMD::IsInitialized() const
 {
 	// @TODO
 	return true;
-}
-
-bool FOSVRHMD::HandleInputKey(UPlayerInput* pPlayerInput,
-							  const FKey& Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
-{
-	return false;
-}
-
-void FOSVRHMD::DrawDebug(UCanvas* Canvas)
-{
 }

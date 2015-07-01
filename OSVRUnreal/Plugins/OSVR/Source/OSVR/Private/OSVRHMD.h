@@ -37,26 +37,45 @@ public:
 	virtual EHMDDeviceType::Type GetHMDDeviceType() const override;
 	virtual bool GetHMDMonitorInfo(MonitorInfo&) override;
 
+	virtual void GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const override;
+
 	virtual bool DoesSupportPositionalTracking() const override;
 	virtual bool HasValidTrackingPosition() override;
 	virtual void GetPositionalTrackingCameraProperties(FVector& OutOrigin, FQuat& OutOrientation, float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const override;
 
 	virtual void SetInterpupillaryDistance(float NewInterpupillaryDistance) override;
 	virtual float GetInterpupillaryDistance() const override;
-	virtual void GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const override;
 
 	virtual void GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition) override;
+	virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
 	virtual void ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation) override;
-	virtual void UpdatePlayerCameraRotation(APlayerCameraManager*, struct FMinimalViewInfo& POV) override;
+	virtual void UpdatePlayerCameraRotation(class APlayerCameraManager* Camera, struct FMinimalViewInfo& POV) override;
 
 	virtual bool IsChromaAbCorrectionEnabled() const override;
 
-	virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
 	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
 	virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 
-	virtual bool IsFullscreenAllowed() override;
-	virtual void RecordAnalytics() override;
+	virtual bool IsPositionalTrackingEnabled() const override;
+	virtual bool EnablePositionalTracking(bool enable) override;
+
+	virtual bool IsHeadTrackingAllowed() const override;
+
+	virtual bool IsInLowPersistenceMode() const override;
+	virtual void EnableLowPersistenceMode(bool Enable = true) override;
+
+#if 0
+    // seen in simplehmd
+	virtual void SetClippingPlanes(float NCP, float FCP) override;
+
+	virtual void SetBaseRotation(const FRotator& BaseRot) override;
+	virtual FRotator GetBaseRotation() const override;
+
+	virtual void SetBaseOrientation(const FQuat& BaseOrient) override;
+	virtual FQuat GetBaseOrientation() const override;
+#endif
+
+	virtual void DrawDistortionMesh_RenderThread(struct FRenderingCompositePassContext& Context, const FIntPoint& TextureSize) override;
 
 	/** IStereoRendering interface */
 	virtual bool IsStereoEnabled() const override;
@@ -79,18 +98,11 @@ public:
 	/** ISceneViewExtension interface */
 	virtual void SetupViewFamily(FSceneViewFamily& InViewFamily) override;
 	virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
-	virtual void BeginRenderViewFamily(FSceneViewFamily& InViewFamily) override;
+	virtual void BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
+	{
+	}
 	virtual void PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& InView) override;
 	virtual void PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& InViewFamily) override;
-
-	/** Positional tracking control methods */
-	virtual bool IsPositionalTrackingEnabled() const override;
-	virtual bool EnablePositionalTracking(bool enable) override;
-
-	virtual bool IsHeadTrackingAllowed() const override;
-
-	virtual bool IsInLowPersistenceMode() const override;
-	virtual void EnableLowPersistenceMode(bool Enable = true) override;
 
 	/** Resets orientation by setting roll and pitch to 0, 
 	    assuming that current yaw is forward direction and assuming
@@ -101,21 +113,14 @@ public:
 	virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
 	void SetCurrentHmdOrientationAndPositionAsBase();
 
-	virtual void DrawDistortionMesh_RenderThread(struct FRenderingCompositePassContext& Context, const FIntPoint& TextureSize) override;
-	virtual void UpdateScreenSettings(const FViewport*) override;
-
-	virtual bool HandleInputKey(class UPlayerInput*, const FKey& Key, EInputEvent EventType, float AmountDepressed, bool bGamepad) override;
-
-	virtual void DrawDebug(UCanvas* Canvas) override;
-
-	virtual void FinishRenderingFrame_RenderThread(FRHICommandListImmediate& RHICmdList) override;
-
+public:
 	/** Constructor */
 	FOSVRHMD();
 
 	/** Destructor */
 	virtual ~FOSVRHMD();
 
+	/** @return	True if the HMD was initialized OK */
 	bool IsInitialized() const;
 
 private:

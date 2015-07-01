@@ -60,11 +60,6 @@ void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, 
 	// @TODO
 }
 
-void FOSVRHMD::FinishRenderingFrame_RenderThread(FRHICommandListImmediate& RHICmdList)
-{
-	// @TODO
-}
-
 void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& InViewport, class SViewport*)
 {
 	// @TODO
