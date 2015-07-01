@@ -64,12 +64,5 @@ public class OSVR : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
-
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            AddThirdPartyPrivateStaticDependencies(Target, "OpenVR");
-            PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });     //@todo steamvr: multiplatform
-        }
-
 	}
 }
