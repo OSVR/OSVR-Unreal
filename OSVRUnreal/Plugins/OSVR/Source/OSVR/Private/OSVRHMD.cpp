@@ -19,6 +19,8 @@
 
 #include "OSVRTypes.h"
 
+#include "SharedPointer.h"
+
 #if OSVR_ENABLED
 extern OSVR_ClientContext osvrClientContext;
 #else
@@ -87,12 +89,12 @@ bool FOSVRHMD::DoesSupportPositionalTracking() const
 	return true;
 }
 
-bool FOSVRHMD::HasValidTrackingPosition() const
+bool FOSVRHMD::HasValidTrackingPosition()
 {
 	return bHmdPosTracking && bHaveVisionTracking;
 }
 
-void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FRotator& OutOrientation,
+void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FQuat& OutOrientation,
 													 float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
 {
 	// @TODO
@@ -129,7 +131,7 @@ void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) 
 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-	checkf(IsInGameThread());
+	checkf(IsInGameThread(), TEXT("Orientation and position failed IsInGameThread test"));
 
 	CurrentOrientation = LastHmdOrientation = CurHmdOrientation;
 	CurrentPosition = CurHmdPosition;
@@ -170,9 +172,10 @@ bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 	return false;
 }
 
-ISceneViewExtension* FOSVRHMD::GetViewExtension()
+TSharedPtr<class ISceneViewExtension, ESPMode::ThreadSafe> FOSVRHMD::GetViewExtension()
 {
-	return this;
+	TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> ptr(MakeShareable(new FOSVRHMD(this)));
+	return ptr;
 }
 
 bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
@@ -411,7 +414,7 @@ void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 	// @TODO
 }
 
-void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
+/*void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
 	FMatrix m;
 	m.SetIdentity();
@@ -423,18 +426,18 @@ void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, U
 	FMatrix m;
 	m.SetIdentity();
 	InCanvas->PushAbsoluteTransform(m);
-}
+}*/
 
 //---------------------------------------------------
 // ISceneViewExtension Implementation
 //---------------------------------------------------
 
-void FOSVRHMD::ModifyShowFlags(FEngineShowFlags& ShowFlags)
+void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
-	ShowFlags.MotionBlur = 0;
-	ShowFlags.HMDDistortion = false;
-	ShowFlags.ScreenPercentage = 1.0f;
-	ShowFlags.StereoRendering = IsStereoEnabled();
+	InViewFamily.EngineShowFlags.MotionBlur = 0;
+	InViewFamily.EngineShowFlags.HMDDistortion = false;
+	InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+	InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
 void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
@@ -443,6 +446,11 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 	InView.BaseHmdLocation = FVector(0.f);
 	WorldToMetersScale = InView.WorldToMetersScale;
 	InViewFamily.bUseSeparateRenderTarget = false;
+}
+
+void FOSVRHMD::BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
+{
+	// @TODO
 }
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const
@@ -496,6 +504,36 @@ FOSVRHMD::FOSVRHMD()
 	GEngine->bSmoothFrameRate = false;
 }
 
+FOSVRHMD::FOSVRHMD(FOSVRHMD* other)
+	: LastHmdOrientation(FQuat::Identity),
+	CurHmdOrientation(FQuat::Identity),
+	DeltaControlRotation(FRotator::ZeroRotator),
+	DeltaControlOrientation(FQuat::Identity),
+	CurHmdPosition(FVector::ZeroVector),
+	BaseOrientation(FQuat::Identity),
+	BasePosition(FVector::ZeroVector),
+	WorldToMetersScale(100.0f),
+	bHmdPosTracking(false),
+	bHaveVisionTracking(false),
+	bStereoEnabled(true),
+	bHmdEnabled(true),
+	OSVRClientInterface(nullptr),
+	OSVRInterfaceName("/me/head")
+{
+	HMDDescription.Init(osvrClientContext);
+	OSVRInterfaceName = other->OSVRInterfaceName;
+
+	EnablePositionalTracking(true);
+
+	// enable vsync
+	IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
+	if (CVSyncVar)
+		CVSyncVar->Set(true);
+
+	// Uncap fps to enable FPS higher than 62
+	GEngine->bSmoothFrameRate = false;
+}
+
 FOSVRHMD::~FOSVRHMD()
 {
 	EnablePositionalTracking(false);
@@ -513,6 +551,6 @@ bool FOSVRHMD::HandleInputKey(UPlayerInput* pPlayerInput,
 	return false;
 }
 
-void FOSVRHMD::DrawDebug(UCanvas* Canvas, EStereoscopicPass StereoPass)
+void FOSVRHMD::DrawDebug(UCanvas* Canvas)
 {
 }
