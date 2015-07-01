@@ -28,7 +28,7 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
 {
-	if (Context.View->StereoPass == eSSP_LEFT_EYE)
+	if (Context.View.StereoPass == eSSP_LEFT_EYE)
 	{
 		EyeToSrcUVOffsetValue.X = 0.0f;
 		EyeToSrcUVOffsetValue.Y = 0.0f;
