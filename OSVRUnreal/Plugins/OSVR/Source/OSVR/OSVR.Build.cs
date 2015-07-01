@@ -6,8 +6,7 @@ public class OSVR : ModuleRules
 	{
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"OSVR/Private",
-                "../../../../../Source/Runtime/Renderer/Private",
+				"OSVR/Private"
 				// ... add other private include paths required here ...
 			}
 			);

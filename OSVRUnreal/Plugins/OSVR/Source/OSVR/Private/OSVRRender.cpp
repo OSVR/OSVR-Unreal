@@ -16,9 +16,11 @@
 
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
-//#include "RendererPrivate.h"
-//#include "ScenePrivate.h"
-//#include "PostProcess/PostProcessHMD.h"
+
+// Must put path from Engine/Source to these includes since we are an out-of-tree module.
+#include "Runtime/Renderer/Private/RendererPrivate.h"
+#include "Runtime/Renderer/Private/ScenePrivate.h"
+#include "Runtime/Renderer/Private/PostProcess/PostProcessHMD.h"
 
 void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FIntPoint& TextureSize)
 {
