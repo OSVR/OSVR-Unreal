@@ -504,36 +504,6 @@ FOSVRHMD::FOSVRHMD()
 	GEngine->bSmoothFrameRate = false;
 }
 
-FOSVRHMD::FOSVRHMD(FOSVRHMD* other)
-	: LastHmdOrientation(FQuat::Identity),
-	  CurHmdOrientation(FQuat::Identity),
-	  DeltaControlRotation(FRotator::ZeroRotator),
-	  DeltaControlOrientation(FQuat::Identity),
-	  CurHmdPosition(FVector::ZeroVector),
-	  BaseOrientation(FQuat::Identity),
-	  BasePosition(FVector::ZeroVector),
-	  WorldToMetersScale(100.0f),
-	  bHmdPosTracking(false),
-	  bHaveVisionTracking(false),
-	  bStereoEnabled(true),
-	  bHmdEnabled(true),
-	  OSVRClientInterface(nullptr),
-	  OSVRInterfaceName("/me/head")
-{
-	HMDDescription.Init(osvrClientContext);
-	OSVRInterfaceName = other->OSVRInterfaceName;
-
-	EnablePositionalTracking(true);
-
-	// enable vsync
-	IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
-	if (CVSyncVar)
-		CVSyncVar->Set(true);
-
-	// Uncap fps to enable FPS higher than 62
-	GEngine->bSmoothFrameRate = false;
-}
-
 FOSVRHMD::~FOSVRHMD()
 {
 	EnablePositionalTracking(false);

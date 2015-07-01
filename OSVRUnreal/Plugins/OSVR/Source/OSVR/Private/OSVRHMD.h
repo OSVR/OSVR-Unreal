@@ -115,7 +115,6 @@ public:
 
 	/** Constructor */
 	FOSVRHMD();
-	FOSVRHMD(FOSVRHMD* other);
 
 	/** Destructor */
 	virtual ~FOSVRHMD();
