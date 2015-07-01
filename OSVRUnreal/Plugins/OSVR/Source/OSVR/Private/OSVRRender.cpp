@@ -20,7 +20,6 @@
 //#include "ScenePrivate.h"
 //#include "PostProcess/PostProcessHMD.h"
 
-
 void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FIntPoint& TextureSize)
 {
 	// @TODO

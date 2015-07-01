@@ -52,7 +52,7 @@ public:
 
 	virtual bool IsChromaAbCorrectionEnabled() const override;
 
-	virtual TSharedPtr<class ISceneViewExtension, ESPMode::ThreadSafe> GetViewExtension() override;
+	virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
 	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
 	virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 

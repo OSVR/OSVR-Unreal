@@ -506,19 +506,19 @@ FOSVRHMD::FOSVRHMD()
 
 FOSVRHMD::FOSVRHMD(FOSVRHMD* other)
 	: LastHmdOrientation(FQuat::Identity),
-	CurHmdOrientation(FQuat::Identity),
-	DeltaControlRotation(FRotator::ZeroRotator),
-	DeltaControlOrientation(FQuat::Identity),
-	CurHmdPosition(FVector::ZeroVector),
-	BaseOrientation(FQuat::Identity),
-	BasePosition(FVector::ZeroVector),
-	WorldToMetersScale(100.0f),
-	bHmdPosTracking(false),
-	bHaveVisionTracking(false),
-	bStereoEnabled(true),
-	bHmdEnabled(true),
-	OSVRClientInterface(nullptr),
-	OSVRInterfaceName("/me/head")
+	  CurHmdOrientation(FQuat::Identity),
+	  DeltaControlRotation(FRotator::ZeroRotator),
+	  DeltaControlOrientation(FQuat::Identity),
+	  CurHmdPosition(FVector::ZeroVector),
+	  BaseOrientation(FQuat::Identity),
+	  BasePosition(FVector::ZeroVector),
+	  WorldToMetersScale(100.0f),
+	  bHmdPosTracking(false),
+	  bHaveVisionTracking(false),
+	  bStereoEnabled(true),
+	  bHmdEnabled(true),
+	  OSVRClientInterface(nullptr),
+	  OSVRInterfaceName("/me/head")
 {
 	HMDDescription.Init(osvrClientContext);
 	OSVRInterfaceName = other->OSVRInterfaceName;
