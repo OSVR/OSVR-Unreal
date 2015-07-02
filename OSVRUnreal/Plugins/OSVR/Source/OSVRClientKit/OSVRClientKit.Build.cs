@@ -1,53 +1,42 @@
-using UnrealBuildTool;
 
-using System.IO;
+using System;
+using UnrealBuildTool;
 
 public class OSVRClientKit : ModuleRules
 {
-    private string ModulePath
-    {
-        get { return Path.GetDirectoryName(RulesCompiler.GetModuleFilename(this.GetType().Name)); }
-    }
 
     public OSVRClientKit(TargetInfo Target)
     {
         Type = ModuleType.External;
 
-        PublicIncludePaths.Add(ModulePath + "/include");
+        PublicIncludePaths.Add(ModuleDirectory + "/include");
 
         if ((Target.Platform == UnrealTargetPlatform.Win64)
             || (Target.Platform == UnrealTargetPlatform.Win32))
         {
 
-            string LibraryPath = ModulePath + "/lib";
-            string DllPath = ModulePath + "/bin";
-
+            string PlatformAbbrev = "Win32";
             if (Target.Platform == UnrealTargetPlatform.Win64)
             {
-                LibraryPath += "/Win64";
-                DllPath += "/Win64";
-            }
-            else if (Target.Platform == UnrealTargetPlatform.Win32)
-            {
-                LibraryPath += "/Win32";
-                DllPath += "/Win32";
+                PlatformAbbrev = "Win64";
             }
 
-            PublicLibraryPaths.Add(LibraryPath);
+
+            PublicLibraryPaths.Add(String.Format("{0}/lib/{1}", ModuleDirectory, PlatformAbbrev));
             PublicAdditionalLibraries.Add("osvrClientKit.lib");
             PublicDelayLoadDLLs.AddRange(
-        			new string[] {
+                    new string[] {
                 "osvrClientKit.dll",
                 "osvrClient.dll",
                 "osvrCommon.dll",
                 "osvrUtil.dll"
               });
 
-            DllPath += "/";
 
+            string DllFormat = "{0}/bin/{1}/{2}";
             foreach (var dll in PublicDelayLoadDLLs)
             {
-                RuntimeDependencies.Add(new RuntimeDependency(DllPath + dll));
+                RuntimeDependencies.Add(new RuntimeDependency(String.Format(DllFormat, ModuleDirectory, PlatformAbbrev, dll)));
             }
         }
     }

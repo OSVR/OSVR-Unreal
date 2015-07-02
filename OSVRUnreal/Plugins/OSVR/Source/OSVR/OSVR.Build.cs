@@ -2,17 +2,17 @@ using UnrealBuildTool;
 
 public class OSVR : ModuleRules
 {
-	public OSVR(TargetInfo Target)
-	{
-		PrivateIncludePaths.AddRange(
-			new string[] {
+    public OSVR(TargetInfo Target)
+    {
+        PrivateIncludePaths.AddRange(
+            new string[] {
 				"OSVR/Private"
 				// ... add other private include paths required here ...
 			}
-			);
+            );
 
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
+        PrivateDependencyModuleNames.AddRange(
+            new string[]
 			{
 				"OSVRClientKit",
                 "Core",
@@ -29,6 +29,6 @@ public class OSVR : ModuleRules
 				"Json"
 				// ... add private dependencies that you statically link with here ...
 			}
-			);
-	}
+            );
+    }
 }
