@@ -1,6 +1,7 @@
 Binaries/
 Intermediate/
 Saved/
+/OSVRUnreal/Config/DefaultGame.ini
 /OSVRUnreal/Build/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/include/
