@@ -16,18 +16,20 @@
 
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
-//#include "RendererPrivate.h"
-//#include "ScenePrivate.h"
-//#include "PostProcess/PostProcessHMD.h"
 
-void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FSceneView& View, const FIntPoint& TextureSize)
+// Must put path from Engine/Source to these includes since we are an out-of-tree module.
+#include "Runtime/Renderer/Private/RendererPrivate.h"
+#include "Runtime/Renderer/Private/ScenePrivate.h"
+#include "Runtime/Renderer/Private/PostProcess/PostProcessHMD.h"
+
+void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FIntPoint& TextureSize)
 {
 	// @TODO
 }
 
-void FOSVRHMD::GetEyeRenderParams_RenderThread(EStereoscopicPass StereoPass, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
+void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
 {
-	if (StereoPass == eSSP_LEFT_EYE)
+	if (Context.View.StereoPass == eSSP_LEFT_EYE)
 	{
 		EyeToSrcUVOffsetValue.X = 0.0f;
 		EyeToSrcUVOffsetValue.Y = 0.0f;
@@ -45,22 +47,17 @@ void FOSVRHMD::GetEyeRenderParams_RenderThread(EStereoscopicPass StereoPass, FVe
 	}
 }
 
-void FOSVRHMD::GetTimewarpMatrices_RenderThread(EStereoscopicPass StereoPass, FMatrix& EyeRotationStart, FMatrix& EyeRotationEnd) const
+void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingCompositePassContext& Context, FMatrix& EyeRotationStart, FMatrix& EyeRotationEnd) const
 {
 	// @TODO
 }
 
-void FOSVRHMD::PreRenderViewFamily_RenderThread(FSceneViewFamily& ViewFamily)
+void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
 	// @TODO
 }
 
-void FOSVRHMD::PreRenderView_RenderThread(FSceneView& View)
-{
-	// @TODO
-}
-
-void FOSVRHMD::FinishRenderingFrame_RenderThread(FRHICommandListImmediate& RHICmdList)
+void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
 {
 	// @TODO
 }
