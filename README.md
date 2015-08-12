@@ -14,6 +14,8 @@ The plugin itself is inside `OSVRUnreal/Plugins/OSVR`.
 
 Currently works with Unreal Engine 4.6.x.
 
+Additional branches (soon to be merged) such as https://github.com/OSVR/OSVR-Unreal/tree/ue4_8 work with Unreal Engine 4.8 and other versions.
+
 ## License
 
 This project: Licensed under the Apache License, Version 2.0.
