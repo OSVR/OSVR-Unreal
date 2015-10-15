@@ -31,7 +31,7 @@ class FOSVR : public IOSVR
 	virtual void ShutdownModule() override;
 
 	/** IHeadMountedDisplayModule implementation */
-	virtual TSharedPtr< class IHeadMountedDisplay > CreateHeadMountedDisplay() override;
+	virtual TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > CreateHeadMountedDisplay() override;
 
 	// Pre-init the HMD module (optional).
 	//virtual void PreInit() override;
@@ -48,9 +48,9 @@ OSVREntryPoint* FOSVR::GetEntryPoint()
 	return EntryPoint.Get();
 }
 
-TSharedPtr< class IHeadMountedDisplay > FOSVR::CreateHeadMountedDisplay()
+TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMountedDisplay()
 {
-	TSharedPtr< FOSVRHMD > OSVRHMD(new FOSVRHMD());
+	TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
 	if (OSVRHMD->IsInitialized())
 	{
 		return OSVRHMD;

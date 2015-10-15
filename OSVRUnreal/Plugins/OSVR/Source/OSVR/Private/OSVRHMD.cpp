@@ -19,6 +19,8 @@
 
 #include "OSVRTypes.h"
 
+#include "SharedPointer.h"
+
 #if OSVR_ENABLED
 extern OSVR_ClientContext osvrClientContext;
 #else
@@ -72,27 +74,17 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 	return false;
 }
 
-bool FOSVRHMD::IsFullscreenAllowed()
-{
-	// @TODO
-	return true;
-}
-
-void FOSVRHMD::RecordAnalytics()
-{
-}
-
 bool FOSVRHMD::DoesSupportPositionalTracking() const
 {
 	return true;
 }
 
-bool FOSVRHMD::HasValidTrackingPosition() const
+bool FOSVRHMD::HasValidTrackingPosition()
 {
 	return bHmdPosTracking && bHaveVisionTracking;
 }
 
-void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FRotator& OutOrientation,
+void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FQuat& OutOrientation,
 													 float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
 {
 	// @TODO
@@ -129,7 +121,7 @@ void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) 
 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-	checkf(IsInGameThread());
+	checkf(IsInGameThread(), TEXT("Orientation and position failed IsInGameThread test"));
 
 	CurrentOrientation = LastHmdOrientation = CurHmdOrientation;
 	CurrentPosition = CurHmdPosition;
@@ -170,9 +162,10 @@ bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 	return false;
 }
 
-ISceneViewExtension* FOSVRHMD::GetViewExtension()
+TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > FOSVRHMD::GetViewExtension()
 {
-	return this;
+	TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > ptr(AsShared());
+	return StaticCastSharedPtr< ISceneViewExtension >(ptr);
 }
 
 bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
@@ -300,11 +293,6 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 	return bStereoEnabled;
 }
 
-void FOSVRHMD::UpdateScreenSettings(const FViewport*)
-{
-	// @TODO
-}
-
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
 	SizeX = SizeX / 2;
@@ -411,7 +399,7 @@ void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 	// @TODO
 }
 
-void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
+/*void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
 	FMatrix m;
 	m.SetIdentity();
@@ -423,18 +411,18 @@ void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, U
 	FMatrix m;
 	m.SetIdentity();
 	InCanvas->PushAbsoluteTransform(m);
-}
+}*/
 
 //---------------------------------------------------
 // ISceneViewExtension Implementation
 //---------------------------------------------------
 
-void FOSVRHMD::ModifyShowFlags(FEngineShowFlags& ShowFlags)
+void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
-	ShowFlags.MotionBlur = 0;
-	ShowFlags.HMDDistortion = false;
-	ShowFlags.ScreenPercentage = 1.0f;
-	ShowFlags.StereoRendering = IsStereoEnabled();
+	InViewFamily.EngineShowFlags.MotionBlur = 0;
+	InViewFamily.EngineShowFlags.HMDDistortion = false;
+	InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+	InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
 void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
@@ -505,14 +493,4 @@ bool FOSVRHMD::IsInitialized() const
 {
 	// @TODO
 	return true;
-}
-
-bool FOSVRHMD::HandleInputKey(UPlayerInput* pPlayerInput,
-							  const FKey& Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
-{
-	return false;
-}
-
-void FOSVRHMD::DrawDebug(UCanvas* Canvas, EStereoscopicPass StereoPass)
-{
 }

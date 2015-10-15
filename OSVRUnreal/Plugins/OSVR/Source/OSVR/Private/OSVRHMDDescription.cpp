@@ -57,7 +57,7 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject) &&
 		JsonObject.IsValid())
-	{	
+	{
 		auto hmdJson = JsonObject->GetObjectField("hmd");
 		auto resolutionsJson = hmdJson->GetArrayField("resolutions");
 		auto fieldOfViewJson = hmdJson->GetObjectField("field_of_view");
@@ -73,7 +73,7 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 			//set default IPD for now. It's not coming from /display.
 			Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
 			PositionalTrackerInterface[i] = "/me/head";
-		}		
+		}
 	}
 	return true;
 }
