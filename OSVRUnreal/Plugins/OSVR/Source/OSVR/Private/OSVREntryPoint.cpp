@@ -23,7 +23,7 @@ OSVR_ClientContext osvrClientContext(nullptr);
 
 OSVREntryPoint::OSVREntryPoint()
 {
-	osvrClientContext = osvrClientInit("OSVR Unreal Engine 4 Plugin");
+	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
 
 	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
 		osvrClientContext
