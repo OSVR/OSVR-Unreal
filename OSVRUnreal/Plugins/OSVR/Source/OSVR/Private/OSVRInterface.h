@@ -63,13 +63,11 @@ private:
 	void DeregisterCallbacks();
 
 private:
-#if OSVR_ENABLED
 	friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PoseReport* Report);
 	friend static void OSVRPositionCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PositionReport* Report);
 	friend static void OSVROrientationCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_OrientationReport* Report);
 	friend static void OSVRButtonCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_ButtonReport* Report);
 	friend static void OSVRAnalogCallback(void* Userdata, const OSVR_TimeValue* Timestamp, const OSVR_AnalogReport* Report);
-#endif // OSVR_ENABLED
 
 	OSVRInterface(const OSVRInterface&);
 	OSVRInterface& operator=(const OSVRInterface&);

@@ -16,8 +16,6 @@
 
 #pragma once
 
-#if OSVR_ENABLED
-
 FORCEINLINE FVector OSVR2FVector(const OSVR_Vec3& Vec3)
 {
 	// OSVR: The coordinate system is right-handed, with X to the right, Y up, and Z near.
@@ -32,5 +30,3 @@ FORCEINLINE FQuat OSVR2FQuat(const OSVR_Quaternion& Quat)
 	//q = q * FQuat(FVector(0, 1, 0), -15 * PI / 180);
 	return q;
 }
-
-#endif // OSVR_ENABLED

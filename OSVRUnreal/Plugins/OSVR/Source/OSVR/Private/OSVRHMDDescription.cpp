@@ -95,7 +95,6 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext)
 
 	static const char* Path = "/display";
 
-#if OSVR_ENABLED
 	size_t Length;
 	if (osvrClientGetStringParameterLength(OSVRClientContext, Path, &Length) == OSVR_RETURN_FAILURE)
 		return false;
@@ -108,7 +107,6 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext)
 		return false;
 
 	Valid = GetData(Data).InitFromJSON(Buffer);
-#endif // OSVR_ENABLED
 
 	return Valid;
 }

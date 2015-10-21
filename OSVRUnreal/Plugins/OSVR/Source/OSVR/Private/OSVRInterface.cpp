@@ -18,8 +18,6 @@
 #include "OSVRInterface.h"
 #include "OSVRTypes.h"
 
-#if OSVR_ENABLED
-
 /*
 static void OSVRPoseCallback(void * Userdata, const OSVR_TimeValue* Timestamp, const OSVR_PoseReport* Report)
 {
@@ -78,7 +76,6 @@ static void OSVRAnalogCallback(void* Userdata, const OSVR_TimeValue* Timestamp, 
 	}
 }
 
-#endif // OSVR_ENABLED
 
 OSVRInterface::OSVRInterface()
 	: OSVRClientInterface(nullptr),
@@ -105,8 +102,6 @@ bool OSVRInterface::Init(OSVR_ClientContext OSVRClientContext, const FName& Inte
 {
 	bool Result(true);
 
-#if OSVR_ENABLED
-
 	OSVR_ReturnCode ReturnCode = osvrClientGetInterface(OSVRClientContext, InterfaceName.GetPlainANSIString(), &OSVRClientInterface);
 	Result = ReturnCode == OSVR_RETURN_SUCCESS;
 
@@ -115,8 +110,6 @@ bool OSVRInterface::Init(OSVR_ClientContext OSVRClientContext, const FName& Inte
 	RefreshCapabilities();
 	RegisterCallbacks();
 
-#endif // OSVR_ENABLED
-
 	Name = InterfaceName;
 
 	return Result;
@@ -124,8 +117,6 @@ bool OSVRInterface::Init(OSVR_ClientContext OSVRClientContext, const FName& Inte
 
 void OSVRInterface::Shutdown()
 {
-#if OSVR_ENABLED
-
 	DeregisterCallbacks();
 
 	if (OSVRClientInterface != nullptr)
@@ -135,8 +126,6 @@ void OSVRInterface::Shutdown()
 
 		OSVRClientInterface = nullptr;
 	}
-
-#endif // OSVR_ENABLED
 }
 
 const FName& OSVRInterface::GetName() const
@@ -178,15 +167,13 @@ bool OSVRInterface::GetPosition(FVector& Value, bool Latest) const
 {
 	if (Latest)
 	{
-#if OSVR_ENABLED
-		OSVR_TimeValue Time;
+        OSVR_TimeValue Time;
 		OSVR_PositionState Position;
 		OSVR_ReturnCode ReturnCode = osvrGetPositionState(OSVRClientInterface, &Time, &Position);
 
 		Value = OSVR2FVector(Position);
 
 		return ReturnCode == OSVR_RETURN_SUCCESS;
-#endif // OSVR_ENABLED
 	}
 	else
 	{
@@ -200,7 +187,6 @@ bool OSVRInterface::GetOrientation(FQuat& Value, bool Latest) const
 {
 	if (Latest)
 	{
-#if OSVR_ENABLED
 		OSVR_TimeValue Time;
 		OSVR_OrientationState Orientation;
 		OSVR_ReturnCode ReturnCode = osvrGetOrientationState(OSVRClientInterface, &Time, &Orientation);
@@ -208,7 +194,6 @@ bool OSVRInterface::GetOrientation(FQuat& Value, bool Latest) const
 		Value = OSVR2FQuat(Orientation);
 
 		return ReturnCode == OSVR_RETURN_SUCCESS;
-#endif // OSVR_ENABLED
 	}
 	else
 	{
@@ -222,7 +207,6 @@ bool OSVRInterface::GetPose(FTransform& Value, bool Latest) const
 {
 	if (Latest)
 	{
-#if OSVR_ENABLED
 		OSVR_TimeValue Time;
 		OSVR_PoseState Pose;
 		OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
@@ -231,7 +215,6 @@ bool OSVRInterface::GetPose(FTransform& Value, bool Latest) const
 		Value.SetRotation(OSVR2FQuat(Pose.rotation));
 
 		return ReturnCode == OSVR_RETURN_SUCCESS;
-#endif // OSVR_ENABLED
 	}
 	else
 	{
@@ -245,7 +228,6 @@ bool OSVRInterface::GetButtonState(uint8& Value, bool Latest) const
 {
 	if (Latest)
 	{
-#if OSVR_ENABLED
 		OSVR_TimeValue Time;
 		OSVR_ButtonState Button;
 		OSVR_ReturnCode ReturnCode = osvrGetButtonState(OSVRClientInterface, &Time, &Button);
@@ -253,7 +235,6 @@ bool OSVRInterface::GetButtonState(uint8& Value, bool Latest) const
 		Value = Button;
 
 		return ReturnCode == OSVR_RETURN_SUCCESS;
-#endif // OSVR_ENABLED
 	}
 	else
 	{
@@ -267,7 +248,6 @@ bool OSVRInterface::GetAnalogState(float& Value, bool Latest) const
 {
 	if (Latest)
 	{
-#if OSVR_ENABLED
 		OSVR_TimeValue Time;
 		OSVR_AnalogState Analog;
 		OSVR_ReturnCode ReturnCode = osvrGetAnalogState(OSVRClientInterface, &Time, &Analog);
@@ -275,7 +255,6 @@ bool OSVRInterface::GetAnalogState(float& Value, bool Latest) const
 		Value = Analog;
 
 		return ReturnCode == OSVR_RETURN_SUCCESS;
-#endif // OSVR_ENABLED
 	}
 	else
 	{
@@ -292,7 +271,6 @@ OSVR_ClientInterface OSVRInterface::GetRawInterface()
 
 void OSVRInterface::RefreshCapabilities()
 {
-#if OSVR_ENABLED
 
 	if (OSVRClientInterface == nullptr)
 		return;
@@ -321,12 +299,10 @@ void OSVRInterface::RefreshCapabilities()
 	Capabilities = POSITION_STATE_AVAILABLE | ORIENTATION_STATE_AVAILABLE | BUTTON_STATE_AVAILABLE | ANALOG_STATE_AVAILABLE;
 #endif
 
-#endif // OSVR_ENABLED
 }
 
 void OSVRInterface::RegisterCallbacks()
 {
-#if OSVR_ENABLED
 
 	if (HasPoseState())
 	{
@@ -351,7 +327,6 @@ void OSVRInterface::RegisterCallbacks()
 		osvrRegisterButtonCallback(GetRawInterface(), &OSVRButtonCallback, this);
 	}
 
-#endif // OSVR_ENABLED
 }
 
 void OSVRInterface::DeregisterCallbacks()

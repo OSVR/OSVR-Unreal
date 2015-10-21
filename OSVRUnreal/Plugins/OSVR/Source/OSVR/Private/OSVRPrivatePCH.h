@@ -10,16 +10,10 @@
 
 #include "Engine.h"
 
-#define OSVR_ENABLED 1
 #define OSVR_INPUTDEVICE_ENABLED 0
 
-#if OSVR_ENABLED
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/ClientKit/InterfaceCallbackC.h>
 #include <osvr/ClientKit/InterfaceStateC.h>
 #include <osvr/ClientKit/ParametersC.h>
-#else
-typedef void* OSVR_ClientContext;
-typedef void* OSVR_ClientInterface;
-#endif // OSVR_ENABLED

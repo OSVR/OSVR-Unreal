@@ -21,11 +21,7 @@
 
 #include "SharedPointer.h"
 
-#if OSVR_ENABLED
 extern OSVR_ClientContext osvrClientContext;
-#else
-OSVR_ClientContext osvrClientContext(nullptr);
-#endif //OSVR_ENABLED
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -138,8 +134,8 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 
 	// Pitch from other sources is never good, because there is an absolute up and down that must be respected to avoid motion sickness.
 	// Same with roll.
-	//DeltaControlRotation.Pitch = 0;
-	//DeltaControlRotation.Roll = 0;
+	DeltaControlRotation.Pitch = 0;
+	DeltaControlRotation.Roll = 0;
 	DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
 	ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
@@ -243,8 +239,6 @@ bool FOSVRHMD::EnablePositionalTracking(bool enable)
 {
 	if (enable && !IsPositionalTrackingEnabled())
 	{
-#if OSVR_ENABLED
-
 		OSVR_ReturnCode ReturnCode = osvrClientGetInterface(osvrClientContext, TCHAR_TO_ANSI(*OSVRInterfaceName), &OSVRClientInterface);
 
 		if (ReturnCode == OSVR_RETURN_SUCCESS)
@@ -253,13 +247,9 @@ bool FOSVRHMD::EnablePositionalTracking(bool enable)
 
 			bHmdPosTracking = ReturnCode == OSVR_RETURN_SUCCESS;
 		}
-
-#endif // OSVR_ENABLED
 	}
 	else
 	{
-#if OSVR_ENABLED
-
 		if (OSVRClientInterface != nullptr)
 		{
 			OSVR_ReturnCode ReturnCode = osvrClientFreeInterface(osvrClientContext, OSVRClientInterface);
@@ -271,8 +261,6 @@ bool FOSVRHMD::EnablePositionalTracking(bool enable)
 		}
 
 		bHmdPosTracking = false;
-
-#endif // OSVR_ENABLED
 	}
 
 	return IsPositionalTrackingEnabled();
@@ -331,15 +319,13 @@ void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
 {
 	FQuat CurrentRotation(FQuat::Identity);
 
-#if OSVR_ENABLED
-	OSVR_TimeValue Time;
+    OSVR_TimeValue Time;
 	OSVR_PoseState Pose;
 	OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
 	if (ReturnCode != OSVR_RETURN_SUCCESS)
 		return;
 
 	CurrentRotation = OSVR2FQuat(Pose.rotation);
-#endif // OSVR_ENABLED
 
 	if (adjustOrientation)
 	{
@@ -366,8 +352,6 @@ void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
 void FOSVRHMD::ResetPosition()
 {
 	FVector CurrentPosition(FVector::ZeroVector);
-
-#if OSVR_ENABLED
 	OSVR_TimeValue Time;
 	OSVR_PoseState Pose;
 	OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
@@ -375,7 +359,6 @@ void FOSVRHMD::ResetPosition()
 		return;
 
 	CurrentPosition = OSVR2FVector(Pose.translation);
-#endif // OSVR_ENABLED
 
 	// Reset position
 	BasePosition = CurrentPosition * WorldToMetersScale;
@@ -438,8 +421,6 @@ bool FOSVRHMD::IsHeadTrackingAllowed() const
 	return GEngine->IsStereoscopic3D();
 }
 
-#if OSVR_ENABLED
-
 static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report)
 {
 	auto This = reinterpret_cast< FOSVRHMD* >(Userdata);
@@ -451,8 +432,6 @@ static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/
 		This->bHaveVisionTracking = true;
 	}
 }
-
-#endif // OSVR_ENABLED
 
 FOSVRHMD::FOSVRHMD()
 	: LastHmdOrientation(FQuat::Identity),
