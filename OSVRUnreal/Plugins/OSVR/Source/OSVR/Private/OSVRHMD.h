@@ -148,9 +148,7 @@ private:
 	bool bStereoEnabled;
 	bool bHmdEnabled;
 
-#if OSVR_ENABLED
 	friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report);
-#endif // OSVR_ENABLED
 
 	OSVRHMDDescription HMDDescription;
 

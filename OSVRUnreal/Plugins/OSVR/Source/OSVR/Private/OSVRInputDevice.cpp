@@ -31,9 +31,7 @@
 
 #include "OSVRTypes.h"
 
-#if OSVR_ENABLED
 extern OSVR_ClientContext osvrClientContext;
-#endif // OSVR_ENABLED
 
 DEFINE_LOG_CATEGORY_STATIC(LogOSVRInputDevice, Log, All);
 
@@ -52,9 +50,7 @@ void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, 
 
 void FOSVRInputDevice::Tick(float DeltaTime)
 {
-#if OSVR_ENABLED
 	osvrClientUpdate(osvrClientContext);
-#endif // OSVR_ENABLED
 }
 
 void FOSVRInputDevice::SendControllerEvents()
