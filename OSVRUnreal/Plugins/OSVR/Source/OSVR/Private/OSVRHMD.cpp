@@ -100,7 +100,7 @@ void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
 bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
     check(IsInGameThread());
     if (!bHmdOverridesApplied) {
-        IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"))->Set(0);
+        IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"))->Set(1);
         bHmdOverridesApplied = true;
     }
     return true;
