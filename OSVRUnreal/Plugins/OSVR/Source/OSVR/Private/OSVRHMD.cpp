@@ -97,6 +97,15 @@ void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
 	// @TODO
 }
 
+bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
+    check(IsInGameThread());
+    if (!bHmdOverridesApplied) {
+        IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"))->Set(0);
+        bHmdOverridesApplied = true;
+    }
+    return true;
+}
+
 float FOSVRHMD::GetInterpupillaryDistance() const
 {
 	return HMDDescription.GetInterpupillaryDistance();
@@ -446,6 +455,7 @@ FOSVRHMD::FOSVRHMD()
 	  bHaveVisionTracking(false),
 	  bStereoEnabled(true),
 	  bHmdEnabled(true),
+      bHmdOverridesApplied(false),
 	  OSVRClientInterface(nullptr),
 	  OSVRInterfaceName("/me/head")
 {

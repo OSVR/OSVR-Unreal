@@ -63,6 +63,7 @@ public:
 
 	virtual bool IsInLowPersistenceMode() const override;
 	virtual void EnableLowPersistenceMode(bool Enable = true) override;
+    virtual bool OnStartGameFrame(FWorldContext& WorldContext) override;
 
 #if 0
     // seen in simplehmd
@@ -147,7 +148,7 @@ private:
 
 	bool bStereoEnabled;
 	bool bHmdEnabled;
-
+    bool bHmdOverridesApplied;
 	friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report);
 
 	OSVRHMDDescription HMDDescription;
