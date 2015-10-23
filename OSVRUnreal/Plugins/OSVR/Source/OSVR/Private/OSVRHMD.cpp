@@ -14,12 +14,15 @@
 // limitations under the License.
 //
 
+
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
-
 #include "OSVRTypes.h"
-
 #include "SharedPointer.h"
+
+#include <osvr/Util/MatrixConventionsC.h>
+#include <cmath>
+#include <vector>
 
 extern OSVR_ClientContext osvrClientContext;
 
@@ -29,72 +32,95 @@ extern OSVR_ClientContext osvrClientContext;
 
 bool FOSVRHMD::IsHMDConnected()
 {
-	// @TODO: we need a hook in OSVR
-	return true;
+  // @TODO: we need a hook in OSVR
+  return true;
 }
 
 bool FOSVRHMD::IsHMDEnabled() const
 {
-	return bHmdEnabled;
+  return bHmdEnabled;
 }
 
 void FOSVRHMD::EnableHMD(bool enable)
 {
-	bHmdEnabled = enable;
+  bHmdEnabled = enable;
 
-	if (!bHmdEnabled)
-	{
-		EnableStereo(false);
-	}
+  if (!bHmdEnabled)
+  {
+    EnableStereo(false);
+  }
 }
 
 EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 {
-	return EHMDDeviceType::DT_ES2GenericStereoMesh;
+  return EHMDDeviceType::DT_ES2GenericStereoMesh;
+}
+
+void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const {
+    OSVR_DisplayDimension width, height;
+    if (osvrClientGetDisplayDimensions(DisplayConfig, 0, &width, &height) == OSVR_RETURN_FAILURE) {
+        // @todo error handling
+    }
+
+    OSVR_ViewportDimension left, bottomIgnored, widthIgnored, heightIgnored;
+    if (osvrClientGetRelativeViewportForViewerEyeSurface(DisplayConfig, 0, 0, 0,
+        &left, &bottomIgnored, &widthIgnored, &heightIgnored) == OSVR_RETURN_FAILURE) {
+        // @todo error handling
+    }
+
+    MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
+    MonitorDesc.MonitorId = 0;				  //@TODO
+    //MonitorDesc.DesktopX = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).X;
+    //MonitorDesc.DesktopY = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).Y;
+    MonitorDesc.DesktopX = left;
+    MonitorDesc.DesktopY = 0;
+    MonitorDesc.ResolutionX = width;
+    MonitorDesc.ResolutionY = height;
 }
 
 bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 {
-	if (IsInitialized() && HMDDescription.IsValid())
-	{
-		HMDDescription.GetMonitorInfo(MonitorDesc);
-		return true;
-	}
-	else
-	{
-		MonitorDesc.MonitorName = "";
-		MonitorDesc.MonitorId = 0;
-		MonitorDesc.DesktopX = MonitorDesc.DesktopY = MonitorDesc.ResolutionX = MonitorDesc.ResolutionY = 0;
-	}
+  if (IsInitialized()
+    && osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS)
+  {
+    GetMonitorInfo(MonitorDesc);
+    return true;
+  }
+  else
+  {
+    MonitorDesc.MonitorName = "";
+    MonitorDesc.MonitorId = 0;
+    MonitorDesc.DesktopX = MonitorDesc.DesktopY = MonitorDesc.ResolutionX = MonitorDesc.ResolutionY = 0;
+  }
 
-	return false;
+  return false;
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
 {
-	return true;
+  return true;
 }
 
 bool FOSVRHMD::HasValidTrackingPosition()
 {
-	return bHmdPosTracking && bHaveVisionTracking;
+  return bHmdPosTracking && bHaveVisionTracking;
 }
 
 void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FQuat& OutOrientation,
-													 float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
+  float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
 {
-	// @TODO
+  // @TODO
 }
 
 bool FOSVRHMD::IsInLowPersistenceMode() const
 {
-	// @TODO
-	return true;
+  // @TODO
+  return true;
 }
 
 void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
 {
-	// @TODO
+  // @TODO
 }
 
 bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
@@ -108,171 +134,191 @@ bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
 
 float FOSVRHMD::GetInterpupillaryDistance() const
 {
-	return HMDDescription.GetInterpupillaryDistance();
+  if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
+    OSVR_Pose3 leftEye, rightEye;
+    osvrClientGetViewerEyePose(DisplayConfig, 0, 0, &leftEye);
+    osvrClientGetViewerEyePose(DisplayConfig, 0, 0, &rightEye);
+    double dx = leftEye.translation.data[0] - rightEye.translation.data[0];
+    double dy = leftEye.translation.data[1] - rightEye.translation.data[1];
+    double dz = leftEye.translation.data[2] - rightEye.translation.data[2];
+
+
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+  }
+  // return the mean IPD
+  return 0.065f;
 }
 
 void FOSVRHMD::SetInterpupillaryDistance(float NewInterpupillaryDistance)
 {
-	// @TODO
+  // @TODO
 }
 
 void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const
 {
-	FVector2D FOVs = HMDDescription.GetFov(OSVRHMDDescription::LEFT_EYE);
+  FVector2D FOVs = HMDDescription.GetFov(OSVRHMDDescription::LEFT_EYE);
 
-	OutHFOVInDegrees = FOVs.X;
-	OutVFOVInDegrees = FOVs.Y;
+  OutHFOVInDegrees = FOVs.X;
+  OutVFOVInDegrees = FOVs.Y;
 }
 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-	checkf(IsInGameThread(), TEXT("Orientation and position failed IsInGameThread test"));
+  checkf(IsInGameThread(), TEXT("Orientation and position failed IsInGameThread test"));
 
-	CurrentOrientation = LastHmdOrientation = CurHmdOrientation;
-	CurrentPosition = CurHmdPosition;
+  CurrentOrientation = LastHmdOrientation = CurHmdOrientation;
+  CurrentPosition = CurHmdPosition;
 }
 
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
-	ViewRotation.Normalize();
+  ViewRotation.Normalize();
 
-	LastHmdOrientation = CurHmdOrientation;
+  LastHmdOrientation = CurHmdOrientation;
 
-	const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
-	DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
+  const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
+  DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
 
-	// Pitch from other sources is never good, because there is an absolute up and down that must be respected to avoid motion sickness.
-	// Same with roll.
-	DeltaControlRotation.Pitch = 0;
-	DeltaControlRotation.Roll = 0;
-	DeltaControlOrientation = DeltaControlRotation.Quaternion();
+  // Pitch from other sources is never good, because there is an absolute up and down that must be respected to avoid motion sickness.
+  // Same with roll.
+  DeltaControlRotation.Pitch = 0;
+  DeltaControlRotation.Roll = 0;
+  DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-	ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
+  ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
 }
 
 void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct FMinimalViewInfo& POV)
 {
-	LastHmdOrientation = CurHmdOrientation;
+  LastHmdOrientation = CurHmdOrientation;
 
-	DeltaControlRotation = POV.Rotation;
-	DeltaControlOrientation = DeltaControlRotation.Quaternion();
+  DeltaControlRotation = POV.Rotation;
+  DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-	// Apply HMD orientation to camera rotation.
-	POV.Rotation = FRotator(POV.Rotation.Quaternion() * CurHmdOrientation);
+  // Apply HMD orientation to camera rotation.
+  POV.Rotation = FRotator(POV.Rotation.Quaternion() * CurHmdOrientation);
 }
 
 bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 {
-	// @TODO
-	return false;
+  // @TODO
+  return false;
 }
 
 TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > FOSVRHMD::GetViewExtension()
 {
-	TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > ptr(AsShared());
-	return StaticCastSharedPtr< ISceneViewExtension >(ptr);
+  TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > ptr(AsShared());
+  return StaticCastSharedPtr< ISceneViewExtension >(ptr);
 }
 
 bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
-	if (FParse::Command(&Cmd, TEXT("STEREO")))
-	{
-		if (FParse::Command(&Cmd, TEXT("ON")))
-		{
-			if (!IsHMDEnabled())
-			{
-				Ar.Logf(TEXT("HMD is disabled. Use 'hmd enable' to re-enable it."));
-			}
-			EnableStereo(true);
-			return true;
-		}
-		else if (FParse::Command(&Cmd, TEXT("OFF")))
-		{
-			EnableStereo(false);
-			return true;
-		}
-	}
-	else if (FParse::Command(&Cmd, TEXT("HMD")))
-	{
-		if (FParse::Command(&Cmd, TEXT("ENABLE")))
-		{
-			EnableHMD(true);
-			return true;
-		}
-		else if (FParse::Command(&Cmd, TEXT("DISABLE")))
-		{
-			EnableHMD(false);
-			return true;
-		}
-	}
-	else if (FParse::Command(&Cmd, TEXT("UNCAPFPS")))
-	{
-		GEngine->bSmoothFrameRate = false;
-		return true;
-	}
-	else if (FParse::Command(&Cmd, TEXT("HEADTRACKING")))
-	{
-		FString val;
-		if (FParse::Value(Cmd, TEXT("SOURCE="), val))
-		{
-			EnablePositionalTracking(false);
-			OSVRInterfaceName = val;
-			EnablePositionalTracking(true);
-		}
-		if (FParse::Command(&Cmd, TEXT("ENABLE")))
-		{
-			EnablePositionalTracking(true);
-			return true;
-		}
-		else if (FParse::Command(&Cmd, TEXT("DISABLE")))
-		{
-			EnablePositionalTracking(false);
-			return true;
-		}
-	}
+  if (FParse::Command(&Cmd, TEXT("STEREO")))
+  {
+    if (FParse::Command(&Cmd, TEXT("ON")))
+    {
+      if (!IsHMDEnabled())
+      {
+        Ar.Logf(TEXT("HMD is disabled. Use 'hmd enable' to re-enable it."));
+      }
+      EnableStereo(true);
+      return true;
+    }
+    else if (FParse::Command(&Cmd, TEXT("OFF")))
+    {
+      EnableStereo(false);
+      return true;
+    }
+  }
+  else if (FParse::Command(&Cmd, TEXT("HMD")))
+  {
+    if (FParse::Command(&Cmd, TEXT("ENABLE")))
+    {
+      EnableHMD(true);
+      return true;
+    }
+    else if (FParse::Command(&Cmd, TEXT("DISABLE")))
+    {
+      EnableHMD(false);
+      return true;
+    }
+  }
+  else if (FParse::Command(&Cmd, TEXT("UNCAPFPS")))
+  {
+    GEngine->bSmoothFrameRate = false;
+    return true;
+  }
+  else if (FParse::Command(&Cmd, TEXT("HEADTRACKING")))
+  {
+    FString val;
+    if (FParse::Value(Cmd, TEXT("SOURCE="), val))
+    {
+      EnablePositionalTracking(false);
+      //OSVRInterfaceName = val;
+      EnablePositionalTracking(true);
+    }
+    if (FParse::Command(&Cmd, TEXT("ENABLE")))
+    {
+      EnablePositionalTracking(true);
+      return true;
+    }
+    else if (FParse::Command(&Cmd, TEXT("DISABLE")))
+    {
+      EnablePositionalTracking(false);
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
 void FOSVRHMD::OnScreenModeChange(EWindowMode::Type WindowMode)
 {
-	EnableStereo(WindowMode != EWindowMode::Windowed);
+  EnableStereo(WindowMode != EWindowMode::Windowed);
 }
 
 bool FOSVRHMD::IsPositionalTrackingEnabled() const
 {
-	return bHmdPosTracking;
+  return bHmdPosTracking;
 }
 
 bool FOSVRHMD::EnablePositionalTracking(bool enable)
 {
-	if (enable && !IsPositionalTrackingEnabled())
-	{
-		OSVR_ReturnCode ReturnCode = osvrClientGetInterface(osvrClientContext, TCHAR_TO_ANSI(*OSVRInterfaceName), &OSVRClientInterface);
+  if (enable && !IsPositionalTrackingEnabled())
+  {
+    //OSVR_ReturnCode ReturnCode = osvrClientGetInterface(osvrClientContext, TCHAR_TO_ANSI(*OSVRInterfaceName), &OSVRClientInterface);
+    OSVR_ReturnCode ReturnCode = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
+    if (ReturnCode == OSVR_RETURN_SUCCESS)
+    {
+      int numTries = 0;
+      while (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_FAILURE && numTries++ < 10000) {
+        osvrClientUpdate(osvrClientContext);
+      }
+      if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
+          //ReturnCode = osvrRegisterPoseCallback(osvrClientContext, &OSVRPoseCallback, this);
+          //bHmdPosTracking = ReturnCode == OSVR_RETURN_SUCCESS;
+          bHmdPosTracking = true;
+      }
+    }
+  }
+  else
+  {
+    if (DisplayConfig != nullptr)
+    {
+      //OSVR_ReturnCode ReturnCode = osvrClientFreeInterface(osvrClientContext, OSVRClientInterface);
+      OSVR_ReturnCode ReturnCode = osvrClientFreeDisplay(DisplayConfig);
+      check(ReturnCode == OSVR_RETURN_SUCCESS);
 
-		if (ReturnCode == OSVR_RETURN_SUCCESS)
-		{
-			ReturnCode = osvrRegisterPoseCallback(OSVRClientInterface, &OSVRPoseCallback, this);
+      //@TODO: unregister pose callback but this call is missing in the OSVR API !
 
-			bHmdPosTracking = ReturnCode == OSVR_RETURN_SUCCESS;
-		}
-	}
-	else
-	{
-		if (OSVRClientInterface != nullptr)
-		{
-			OSVR_ReturnCode ReturnCode = osvrClientFreeInterface(osvrClientContext, OSVRClientInterface);
-			check(ReturnCode == OSVR_RETURN_SUCCESS);
+      //OSVRClientInterface = nullptr;
+      DisplayConfig = nullptr;
+    }
 
-			//@TODO: unregister pose callback but this call is missing in the OSVR API !
+    bHmdPosTracking = false;
+  }
 
-			OSVRClientInterface = nullptr;
-		}
-
-		bHmdPosTracking = false;
-	}
-
-	return IsPositionalTrackingEnabled();
+  return IsPositionalTrackingEnabled();
 }
 
 //---------------------------------------------------
@@ -281,128 +327,146 @@ bool FOSVRHMD::EnablePositionalTracking(bool enable)
 
 bool FOSVRHMD::IsStereoEnabled() const
 {
-	return bStereoEnabled && bHmdEnabled;
+  return bStereoEnabled && bHmdEnabled;
 }
 
 bool FOSVRHMD::EnableStereo(bool stereo)
 {
-	bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
-	return bStereoEnabled;
+  bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
+  return bStereoEnabled;
 }
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
-	SizeX = SizeX / 2;
-	if (StereoPass == eSSP_RIGHT_EYE)
-	{
-		X += SizeX;
-	}
+  SizeX = SizeX / 2;
+  if (StereoPass == eSSP_RIGHT_EYE)
+  {
+    X += SizeX;
+  }
 }
 
 void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation, const float WorldToMeters, FVector& ViewLocation)
 {
-	if (StereoPassType != eSSP_FULL)
-	{
-		float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
-		const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? EyeOffset : -EyeOffset;
-		ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
+  if (StereoPassType != eSSP_FULL)
+  {
+    float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
+    const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? EyeOffset : -EyeOffset;
+    ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
 
-		const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
-		ViewLocation += vHMDPosition;
-		LastHmdPosition = CurHmdPosition;
-	}
+    const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
+    ViewLocation += vHMDPosition;
+    LastHmdPosition = CurHmdPosition;
+  }
 }
 
 void FOSVRHMD::ResetOrientationAndPosition(float yaw)
 {
-	ResetOrientation(yaw);
-	ResetPosition();
+  ResetOrientation(yaw);
+  ResetPosition();
 }
 
 void FOSVRHMD::ResetOrientation(float yaw)
 {
-	ResetOrientation(true, yaw);
+  ResetOrientation(true, yaw);
 }
 
 void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
 {
-	FQuat CurrentRotation(FQuat::Identity);
+  FQuat CurrentRotation(FQuat::Identity);
 
-    OSVR_TimeValue Time;
-	OSVR_PoseState Pose;
-	OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
-	if (ReturnCode != OSVR_RETURN_SUCCESS)
-		return;
+  //OSVR_TimeValue Time;
+  OSVR_PoseState Pose;
+  //OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
+  OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
+  if (ReturnCode != OSVR_RETURN_SUCCESS)
+    return;
 
-	CurrentRotation = OSVR2FQuat(Pose.rotation);
+  CurrentRotation = OSVR2FQuat(Pose.rotation);
 
-	if (adjustOrientation)
-	{
-		FRotator ViewRotation;
-		ViewRotation = FRotator(CurrentRotation);
-		ViewRotation.Pitch = 0;
-		ViewRotation.Roll = 0;
+  if (adjustOrientation)
+  {
+    FRotator ViewRotation;
+    ViewRotation = FRotator(CurrentRotation);
+    ViewRotation.Pitch = 0;
+    ViewRotation.Roll = 0;
 
-		if (yaw != 0.f)
-		{
-			// apply optional yaw offset
-			ViewRotation.Yaw -= yaw;
-			ViewRotation.Normalize();
-		}
+    if (yaw != 0.f)
+    {
+      // apply optional yaw offset
+      ViewRotation.Yaw -= yaw;
+      ViewRotation.Normalize();
+    }
 
-		BaseOrientation = ViewRotation.Quaternion();
-	}
-	else
-	{
-		BaseOrientation = CurrentRotation;
-	}
+    BaseOrientation = ViewRotation.Quaternion();
+  }
+  else
+  {
+    BaseOrientation = CurrentRotation;
+  }
 }
 
 void FOSVRHMD::ResetPosition()
 {
-	FVector CurrentPosition(FVector::ZeroVector);
-	OSVR_TimeValue Time;
-	OSVR_PoseState Pose;
-	OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
-	if (ReturnCode != OSVR_RETURN_SUCCESS)
-		return;
+  FVector CurrentPosition(FVector::ZeroVector);
+  //OSVR_TimeValue Time;
+  OSVR_PoseState Pose;
+  //OSVR_ReturnCode ReturnCode = osvrGetPoseState(OSVRClientInterface, &Time, &Pose);
+  OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
+  if (ReturnCode != OSVR_RETURN_SUCCESS)
+    return;
 
-	CurrentPosition = OSVR2FVector(Pose.translation);
+  CurrentPosition = OSVR2FVector(Pose.translation);
 
-	// Reset position
-	BasePosition = CurrentPosition * WorldToMetersScale;
+  // Reset position
+  BasePosition = CurrentPosition * WorldToMetersScale;
 }
 
 void FOSVRHMD::SetCurrentHmdOrientationAndPositionAsBase()
 {
-	ResetPosition();
-	ResetOrientation(false, 0);
+  ResetPosition();
+  ResetOrientation(false, 0);
 }
 
+namespace {
+  static OSVR_MatrixConventions gMatrixFlags = OSVR_MATRIX_ROWMAJOR | OSVR_MATRIX_LHINPUT;
+
+}
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
-	return HMDDescription.GetProjectionMatrix(StereoPassType == eSSP_LEFT_EYE
-												  ? OSVRHMDDescription::LEFT_EYE
-												  : OSVRHMDDescription::RIGHT_EYE);
+  OSVR_EyeCount eye = 0;
+  if (StereoPassType == eSSP_LEFT_EYE) {
+    eye = 0;
+  }
+  else if (StereoPassType == eSSP_RIGHT_EYE) {
+    eye = 1;
+  }
+
+  float yUpMatrix[16];
+  if (osvrClientGetViewerEyeSurfaceProjectionMatrixf(DisplayConfig, 0, eye, 0, 1.0f, 1000.0f, gMatrixFlags, yUpMatrix) == OSVR_RETURN_FAILURE) {
+    throw std::exception("FOSVRHMD::GetStereoProjectionMatrix: couldn't get the viewer eye matrix.");
+  }
+  FMatrix ret = OSVR2FMatrix(yUpMatrix);
+  // @todo do a change of basis here
+  return ret;
 }
 
 void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 {
-	// @TODO
+  // @TODO
 }
 
 /*void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
-	FMatrix m;
-	m.SetIdentity();
-	InCanvas->PushAbsoluteTransform(m);
+FMatrix m;
+m.SetIdentity();
+InCanvas->PushAbsoluteTransform(m);
 }
 
 void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FSceneView* InView) const
 {
-	FMatrix m;
-	m.SetIdentity();
-	InCanvas->PushAbsoluteTransform(m);
+FMatrix m;
+m.SetIdentity();
+InCanvas->PushAbsoluteTransform(m);
 }*/
 
 //---------------------------------------------------
@@ -411,75 +475,76 @@ void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, U
 
 void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
-	InViewFamily.EngineShowFlags.MotionBlur = 0;
-	InViewFamily.EngineShowFlags.HMDDistortion = false;
-	InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
-	InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
+  InViewFamily.EngineShowFlags.MotionBlur = 0;
+  InViewFamily.EngineShowFlags.HMDDistortion = false;
+  InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+  InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
 void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 {
-	InView.BaseHmdOrientation = FQuat(FRotator(0.0f, 0.0f, 0.0f));
-	InView.BaseHmdLocation = FVector(0.f);
-	WorldToMetersScale = InView.WorldToMetersScale;
-	InViewFamily.bUseSeparateRenderTarget = false;
+  InView.BaseHmdOrientation = FQuat(FRotator(0.0f, 0.0f, 0.0f));
+  InView.BaseHmdLocation = FVector(0.f);
+  WorldToMetersScale = InView.WorldToMetersScale;
+  InViewFamily.bUseSeparateRenderTarget = false;
 }
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const
 {
-	return GEngine->IsStereoscopic3D();
+  return GEngine->IsStereoscopic3D();
 }
 
-static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report)
-{
-	auto This = reinterpret_cast< FOSVRHMD* >(Userdata);
-	if (This && Report)
-	{
-		This->CurHmdPosition = This->BaseOrientation.Inverse().RotateVector((OSVR2FVector(Report->pose.translation) * This->WorldToMetersScale) - This->BasePosition);
-		This->CurHmdOrientation = This->BaseOrientation.Inverse() * OSVR2FQuat(Report->pose.rotation);
-
-		This->bHaveVisionTracking = true;
-	}
-}
+//static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report)
+//{
+//  auto This = reinterpret_cast< FOSVRHMD* >(Userdata);
+//  if (This && Report)
+//  {
+//    This->CurHmdPosition = This->BaseOrientation.Inverse().RotateVector((OSVR2FVector(Report->pose.translation) * This->WorldToMetersScale) - This->BasePosition);
+//    This->CurHmdOrientation = This->BaseOrientation.Inverse() * OSVR2FQuat(Report->pose.rotation);
+//
+//    This->bHaveVisionTracking = true;
+//  }
+//}
 
 FOSVRHMD::FOSVRHMD()
-	: LastHmdOrientation(FQuat::Identity),
-	  CurHmdOrientation(FQuat::Identity),
-	  DeltaControlRotation(FRotator::ZeroRotator),
-	  DeltaControlOrientation(FQuat::Identity),
-	  CurHmdPosition(FVector::ZeroVector),
-	  BaseOrientation(FQuat::Identity),
-	  BasePosition(FVector::ZeroVector),
-	  WorldToMetersScale(100.0f),
-	  bHmdPosTracking(false),
-	  bHaveVisionTracking(false),
-	  bStereoEnabled(true),
-	  bHmdEnabled(true),
-      bHmdOverridesApplied(false),
-	  OSVRClientInterface(nullptr),
-	  OSVRInterfaceName("/me/head")
+  : LastHmdOrientation(FQuat::Identity),
+  CurHmdOrientation(FQuat::Identity),
+  DeltaControlRotation(FRotator::ZeroRotator),
+  DeltaControlOrientation(FQuat::Identity),
+  CurHmdPosition(FVector::ZeroVector),
+  BaseOrientation(FQuat::Identity),
+  BasePosition(FVector::ZeroVector),
+  WorldToMetersScale(100.0f),
+  bHmdPosTracking(false),
+  bHaveVisionTracking(false),
+  bStereoEnabled(true),
+  bHmdEnabled(true),
+  bHmdOverridesApplied(false),
+  DisplayConfig(nullptr)
+  //OSVRClientInterface(nullptr),
+  //OSVRInterfaceName("/me/head")
 {
-	HMDDescription.Init(osvrClientContext);
-	OSVRInterfaceName = HMDDescription.GetPositionalTrackerInterface(OSVRHMDDescription::LEFT_EYE);
+  HMDDescription.Init(osvrClientContext);
+  //OSVRInterfaceName = HMDDescription.GetPositionalTrackerInterface(OSVRHMDDescription::LEFT_EYE);
 
-	EnablePositionalTracking(true);
+  EnablePositionalTracking(true);
 
-	// enable vsync
-	IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
-	if (CVSyncVar)
-		CVSyncVar->Set(true);
+  // enable vsync
+  IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
+  if (CVSyncVar)
+    CVSyncVar->Set(true);
 
-	// Uncap fps to enable FPS higher than 62
-	GEngine->bSmoothFrameRate = false;
+  // Uncap fps to enable FPS higher than 62
+  GEngine->bSmoothFrameRate = false;
 }
 
 FOSVRHMD::~FOSVRHMD()
 {
-	EnablePositionalTracking(false);
+  EnablePositionalTracking(false);
 }
 
 bool FOSVRHMD::IsInitialized() const
 {
-	// @TODO
-	return true;
+  // @TODO
+  return true;
 }

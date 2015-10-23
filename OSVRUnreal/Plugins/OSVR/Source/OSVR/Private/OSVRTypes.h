@@ -30,3 +30,12 @@ FORCEINLINE FQuat OSVR2FQuat(const OSVR_Quaternion& Quat)
 	//q = q * FQuat(FVector(0, 1, 0), -15 * PI / 180);
 	return q;
 }
+
+// Assumes row-major, left-handed matrix
+FORCEINLINE FMatrix OSVR2FMatrix(const float in[16]) {
+    return FMatrix(
+        FPlane(in[0], in[1], in[2], in[3]),
+        FPlane(in[4], in[5], in[6], in[7]),
+        FPlane(in[8], in[9], in[10], in[11]),
+        FPlane(in[12], in[13], in[14], in[15]));
+}
