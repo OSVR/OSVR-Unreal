@@ -148,25 +148,26 @@ bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
 
 float FOSVRHMD::GetInterpupillaryDistance() const
 {
-    if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
-        OSVR_Pose3 leftEye, rightEye;
-        OSVR_ReturnCode returnCode;
+    return HMDDescription.GetInterpupillaryDistance();
+    //if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
+    //    OSVR_Pose3 leftEye, rightEye;
+    //    OSVR_ReturnCode returnCode;
 
-        returnCode = osvrClientGetViewerEyePose(DisplayConfig, 0, 0, &leftEye);
-        check(returnCode == OSVR_RETURN_SUCCESS);
+    //    returnCode = osvrClientGetViewerEyePose(DisplayConfig, 0, 0, &leftEye);
+    //    check(returnCode == OSVR_RETURN_SUCCESS);
 
-        returnCode = osvrClientGetViewerEyePose(DisplayConfig, 0, 0, &rightEye);
-        check(returnCode == OSVR_RETURN_SUCCESS);
+    //    returnCode = osvrClientGetViewerEyePose(DisplayConfig, 0, 1, &rightEye);
+    //    check(returnCode == OSVR_RETURN_SUCCESS);
 
-        double dx = leftEye.translation.data[0] - rightEye.translation.data[0];
-        double dy = leftEye.translation.data[1] - rightEye.translation.data[1];
-        double dz = leftEye.translation.data[2] - rightEye.translation.data[2];
+    //    double dx = leftEye.translation.data[0] - rightEye.translation.data[0];
+    //    double dy = leftEye.translation.data[1] - rightEye.translation.data[1];
+    //    double dz = leftEye.translation.data[2] - rightEye.translation.data[2];
 
-        double ret = std::sqrt(dx * dx + dy * dy + dz * dz);
-        return (float)ret;
-    }
-    // return the mean IPD
-    return 0.065f;
+    //    double ret = std::sqrt(dx * dx + dy * dy + dz * dz);
+    //    return (float)ret;
+    //}
+    //// return the mean IPD
+    //return 0.065f;
 }
 
 void FOSVRHMD::SetInterpupillaryDistance(float NewInterpupillaryDistance)
@@ -564,10 +565,10 @@ FOSVRHMD::FOSVRHMD()
     //OSVRClientInterface(nullptr),
     //OSVRInterfaceName("/me/head")
 {
-    HMDDescription.Init(osvrClientContext);
+    EnablePositionalTracking(true);
+    HMDDescription.Init(osvrClientContext, DisplayConfig);
     //OSVRInterfaceName = HMDDescription.GetPositionalTrackerInterface(OSVRHMDDescription::LEFT_EYE);
 
-    EnablePositionalTracking(true);
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));

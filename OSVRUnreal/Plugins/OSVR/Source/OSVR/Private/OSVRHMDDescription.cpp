@@ -22,10 +22,10 @@
 struct DescriptionData
 {
 	FVector2D DisplaySize[2];
-	FVector2D DisplayOrigin[2];
+	//FVector2D DisplayOrigin[2];
 	FVector2D Fov[2];
-	FVector Location[2];
-	FString PositionalTrackerInterface[2];
+	//FVector Location[2];
+	//FString PositionalTrackerInterface[2];
 
 	DescriptionData();
 
@@ -43,10 +43,10 @@ DescriptionData::DescriptionData()
 	for (int i = 0; i < 2; ++i)
 	{
 		DisplaySize[i].Set(960, 1080);
-		DisplayOrigin[i].Set(i == 0 ? 0 : 960, 0);
+		//DisplayOrigin[i].Set(i == 0 ? 0 : 960, 0);
 		Fov[i].Set(90, 101.25f);
-		Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
-		PositionalTrackerInterface[i] = "/me/head";
+		//Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
+		//PositionalTrackerInterface[i] = "/me/head";
 	}
 }
 
@@ -64,15 +64,15 @@ bool DescriptionData::InitFromJSON(const char* JSON)
 		for (int i = 0; i < 2; ++i)
 		{
 			//set resolution
-			DisplaySize[i].X = resolutionsJson[0]->AsObject()->GetNumberField("width") * 0.5f;
-			DisplaySize[i].Y = resolutionsJson[0]->AsObject()->GetNumberField("height");
-			DisplayOrigin[i].Set(i == 0 ? 0 : DisplaySize[i].X, 0);
+			//DisplaySize[i].X = resolutionsJson[0]->AsObject()->GetNumberField("width") * 0.5f;
+			//DisplaySize[i].Y = resolutionsJson[0]->AsObject()->GetNumberField("height");
+			//DisplayOrigin[i].Set(i == 0 ? 0 : DisplaySize[i].X, 0);
 			//set field of view
 			Fov[i].X = fieldOfViewJson->GetNumberField("monocular_horizontal");
 			Fov[i].Y = fieldOfViewJson->GetNumberField("monocular_vertical");
 			//set default IPD for now. It's not coming from /display.
-			Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
-			PositionalTrackerInterface[i] = "/me/head";
+			//Location[i].Set(i == 0 ? -0.0325 : 0.0325, 0, 0);
+			//PositionalTrackerInterface[i] = "/me/head";
 		}
 	}
 	return true;
@@ -89,7 +89,47 @@ OSVRHMDDescription::~OSVRHMDDescription()
 	delete Data;
 }
 
-bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext)
+void OSVRHMDDescription::InitIPD(OSVR_DisplayConfig displayConfig) {
+    OSVR_Pose3 leftEye, rightEye;
+    OSVR_ReturnCode returnCode;
+
+    returnCode = osvrClientGetViewerEyePose(displayConfig, 0, 0, &leftEye);
+    check(returnCode == OSVR_RETURN_SUCCESS);
+
+    returnCode = osvrClientGetViewerEyePose(displayConfig, 0, 1, &rightEye);
+    check(returnCode == OSVR_RETURN_SUCCESS);
+
+    double dx = leftEye.translation.data[0] - rightEye.translation.data[0];
+    double dy = leftEye.translation.data[1] - rightEye.translation.data[1];
+    double dz = leftEye.translation.data[2] - rightEye.translation.data[2];
+
+    m_ipd = std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+void OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
+    OSVR_ReturnCode returnCode;
+    //OSVR_DisplayDimension displayWidth, displayHeight;
+    //returnCode = osvrClientGetDisplayDimensions(displayConfig, 0, &displayWidth, &displayHeight);
+    //check(returnCode == OSVR_RETURN_SUCCESS);
+
+    // left eye surface (only one surface per eye supported)
+    OSVR_ViewportDimension leftViewportLeft, leftViewportBottom, leftViewportWidth, leftViewportHeight;
+    returnCode = osvrClientGetRelativeViewportForViewerEyeSurface(displayConfig, 0, 0, 0,
+        &leftViewportLeft, &leftViewportBottom, &leftViewportWidth, &leftViewportHeight);
+    check(returnCode == OSVR_RETURN_SUCCESS);
+
+    // right eye surface (only one surface per eye supported)
+    OSVR_ViewportDimension rightViewportLeft, rightViewportBottom, rightViewportWidth, rightViewportHeight;
+    returnCode = osvrClientGetRelativeViewportForViewerEyeSurface(displayConfig, 0, 1, 0,
+        &rightViewportLeft, &rightViewportBottom, &rightViewportWidth, &rightViewportHeight);
+    check(returnCode == OSVR_RETURN_SUCCESS);
+
+    auto data = GetData(Data);
+    data.DisplaySize[0] = FVector2D(leftViewportWidth, leftViewportHeight);
+    data.DisplaySize[1] = FVector2D(rightViewportWidth, rightViewportHeight);
+}
+
+bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig)
 {
 	Valid = false;
 
@@ -106,7 +146,11 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext)
 	if (osvrClientGetStringParameter(OSVRClientContext, Path, Buffer, Length) == OSVR_RETURN_FAILURE)
 		return false;
 
-	Valid = GetData(Data).InitFromJSON(Buffer);
+    auto data = GetData(Data);
+    Valid = data.InitFromJSON(Buffer);
+
+    InitIPD(displayConfig);
+    InitDisplaySize(displayConfig);
 
 	return Valid;
 }
@@ -116,10 +160,10 @@ FVector2D OSVRHMDDescription::GetDisplaySize(EEye Eye) const
 	return GetData(Data).DisplaySize[Eye];
 }
 
-FVector2D OSVRHMDDescription::GetDisplayOrigin(EEye Eye) const
-{
-	return GetData(Data).DisplayOrigin[Eye];
-}
+//FVector2D OSVRHMDDescription::GetDisplayOrigin(EEye Eye) const
+//{
+//	return GetData(Data).DisplayOrigin[Eye];
+//}
 
 FVector2D OSVRHMDDescription::GetFov(OSVR_EyeCount Eye) const
 {
@@ -129,15 +173,15 @@ FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
 {
     return GetData(Data).Fov[Eye];
 }
-FVector OSVRHMDDescription::GetLocation(EEye Eye) const
-{
-	return GetData(Data).Location[Eye];
-}
+//FVector OSVRHMDDescription::GetLocation(EEye Eye) const
+//{
+//	return GetData(Data).Location[Eye];
+//}
 
-FString OSVRHMDDescription::GetPositionalTrackerInterface(EEye Eye) const
-{
-	return GetData(Data).PositionalTrackerInterface[Eye];
-}
+//FString OSVRHMDDescription::GetPositionalTrackerInterface(EEye Eye) const
+//{
+//	return GetData(Data).PositionalTrackerInterface[Eye];
+//}
 
 FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye) const
 {
@@ -171,30 +215,29 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye) const
 		   FTranslationMatrix(FVector(PassProjectionOffset, 0, 0));
 }
 
-void OSVRHMDDescription::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const
-{
-	MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
-	MonitorDesc.MonitorId = 0;				  //@TODO
-	MonitorDesc.DesktopX = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).X;
-	MonitorDesc.DesktopY = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).Y;
-	MonitorDesc.ResolutionX = GetResolution().X;
-	MonitorDesc.ResolutionY = GetResolution().Y;
-}
+//void OSVRHMDDescription::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const
+//{
+//	MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
+//	MonitorDesc.MonitorId = 0;				  //@TODO
+//	MonitorDesc.DesktopX = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).X;
+//	MonitorDesc.DesktopY = GetDisplayOrigin(OSVRHMDDescription::LEFT_EYE).Y;
+//	MonitorDesc.ResolutionX = GetResolution().X;
+//	MonitorDesc.ResolutionY = GetResolution().Y;
+//}
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const
 {
-	FVector EyeDistance = GetLocation(LEFT_EYE) - GetLocation(RIGHT_EYE);
-	return FMath::Abs(EyeDistance.X);
+    return m_ipd;
 }
 
-FVector2D OSVRHMDDescription::GetResolution() const
-{
-	FVector2D LeftDisplay = GetDisplaySize(LEFT_EYE);
-	FVector2D RightDisplay = GetDisplaySize(RIGHT_EYE);
-
-	FVector2D Resolution;
-	Resolution.X = LeftDisplay.X + RightDisplay.X;
-	Resolution.Y = FMath::Max(LeftDisplay.Y, RightDisplay.Y);
-
-	return Resolution;
-}
+//FVector2D OSVRHMDDescription::GetResolution() const
+//{
+//	FVector2D LeftDisplay = GetDisplaySize(LEFT_EYE);
+//	FVector2D RightDisplay = GetDisplaySize(RIGHT_EYE);
+//
+//	FVector2D Resolution;
+//	Resolution.X = LeftDisplay.X + RightDisplay.X;
+//	Resolution.Y = FMath::Max(LeftDisplay.Y, RightDisplay.Y);
+//
+//	return Resolution;
+//}
