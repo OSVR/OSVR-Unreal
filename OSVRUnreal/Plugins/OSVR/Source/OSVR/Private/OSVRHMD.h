@@ -128,6 +128,7 @@ public:
 
 private:
   void GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const;
+  void UpdateHeadPose();
 
   /** Player's orientation tracking */
   mutable FQuat CurHmdOrientation;
