@@ -20,7 +20,6 @@
 
 #include <osvr/ClientKit/DisplayC.h>
 
-#include <cmath>
 
 class OSVRHMDDescription
 {

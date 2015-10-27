@@ -154,12 +154,7 @@ private:
   bool bStereoEnabled;
   bool bHmdEnabled;
   bool bHmdOverridesApplied;
-  //friend static void OSVRPoseCallback(void* Userdata, const OSVR_TimeValue* /*Timestamp*/, const OSVR_PoseReport* Report);
 
   OSVRHMDDescription HMDDescription;
   OSVR_DisplayConfig DisplayConfig;
-
-  //OSVR_ClientInterface OSVRClientInterface;
-
-  //FString OSVRInterfaceName;
 };

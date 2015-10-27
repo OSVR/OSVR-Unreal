@@ -19,6 +19,8 @@
 
 #include "Json.h"
 
+#include <cmath>
+
 struct DescriptionData
 {
 	FVector2D DisplaySize[2];
@@ -145,8 +147,8 @@ void OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig) {
         returnCode = osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(displayConfig, 0, 0, eye, &left, &right, &bottom, &top);
         check(returnCode == OSVR_RETURN_SUCCESS);
 
-        double horizontalFOV = FMath::RadiansToDegrees(atan(std::abs(left)) + atan(std::abs(right)));
-        double verticalFOV = FMath::RadiansToDegrees(atan(std::abs(top)) + atan(std::abs(bottom)));
+        double horizontalFOV = FMath::RadiansToDegrees(std::atan(std::abs(left)) + std::atan(std::abs(right)));
+        double verticalFOV = FMath::RadiansToDegrees(std::atan(std::abs(top)) + std::atan(std::abs(bottom)));
         auto data = GetData(Data);
         data.Fov[eye] = FVector2D(horizontalFOV, verticalFOV);
     }
