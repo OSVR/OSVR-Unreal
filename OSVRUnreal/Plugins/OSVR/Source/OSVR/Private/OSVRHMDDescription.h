@@ -45,10 +45,7 @@ public:
 	FVector2D GetFov(EEye Eye) const;
     FVector2D GetFov(OSVR_EyeCount Eye) const;
 	FVector GetLocation(EEye Eye) const;
-
 	FMatrix GetProjectionMatrix(EEye Eye) const;
-
-	//void GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const;
 
 	// Helper function
 	// IPD    = ABS(GetLocation(LEFT_EYE).X - GetLocation(RIGHT_EYE).X);
@@ -63,8 +60,10 @@ private:
 	OSVRHMDDescription(OSVRHMDDescription&);
 	OSVRHMDDescription& operator=(OSVRHMDDescription&);
 
+    bool OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayConfig);
     void InitIPD(OSVR_DisplayConfig displayConfig);
     void InitDisplaySize(OSVR_DisplayConfig displayConfig);
+    void InitFOV(OSVR_DisplayConfig displayConfig);
 
     float m_ipd;
 	bool Valid;
