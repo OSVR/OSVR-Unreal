@@ -7,6 +7,10 @@ Saved/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/include/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/lib/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/*.txt
+/OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/bin/
+/OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/include/
+/OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/lib/
+/OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/*.txt
 *.opensdf
 *.sdf
 *.sln
