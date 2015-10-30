@@ -63,6 +63,8 @@ set SRC=%1
 set DEST_ROOT=%2
 xcopy "%SRC%\include\osvr\ClientKit" "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
 xcopy "%SRC%\include\osvr\Util" "%DEST_ROOT%\include\osvr\Util" /S /I /y
+xcopy "%SRC%\include\osvr\Client" "%DEST_ROOT%\include\osvr\Client" /S /I /y
+xcopy "%SRC%\include\osvr\Common" "%DEST_ROOT%\include\osvr\Common" /S /I /y
 endlocal
 goto :eof
 

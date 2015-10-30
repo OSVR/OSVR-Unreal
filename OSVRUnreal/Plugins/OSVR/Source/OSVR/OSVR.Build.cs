@@ -15,6 +15,7 @@ public class OSVR : ModuleRules
             new string[]
 			{
 				"OSVRClientKit",
+                "OSVRRenderManager",
                 "Core",
 				"CoreUObject",      // Provides Actors and Structs
 				"Engine",           // Used by Actor

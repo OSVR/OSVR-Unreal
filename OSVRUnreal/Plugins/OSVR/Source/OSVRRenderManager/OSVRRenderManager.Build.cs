@@ -36,5 +36,13 @@ public class OSVRRenderManager : ModuleRules
                 RuntimeDependencies.Add(new RuntimeDependency(String.Format(DllFormat, ModuleDirectory, PlatformAbbrev, dll)));
             }
         }
+
+        PublicDependencyModuleNames.AddRange(
+            new string[]
+			{
+				"OSVRClientKit",
+				// ... add private dependencies that you statically link with here ...
+			}
+    );
     }
 }
