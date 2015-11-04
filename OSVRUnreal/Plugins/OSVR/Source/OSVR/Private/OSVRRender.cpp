@@ -24,7 +24,8 @@
 
 void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& Context, const FIntPoint& TextureSize)
 {
-	// @TODO
+    // shouldn't be called with a custom present
+    check(0);
 }
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
@@ -49,12 +50,14 @@ void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositeP
 
 void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingCompositePassContext& Context, FMatrix& EyeRotationStart, FMatrix& EyeRotationEnd) const
 {
-	// @TODO
+	// intentionally left blank
 }
 
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
-	// @TODO
+    check(IsInRenderingThread());
+    mCustomPresent->Initialize();
+    // steamVR updates the current pose here, should we?
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
@@ -64,5 +67,15 @@ void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, 
 
 void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& InViewport, class SViewport*)
 {
-	// @TODO
+    check(IsInGameThread());
+
+    auto viewportRHI = InViewport.GetViewportRHI();
+    if (!IsStereoEnabled()) {
+        if (!bUseSeparateRenderTarget) {
+            viewportRHI->SetCustomPresent(nullptr);
+        }
+    }
+
+    // forward UpdateViewport call to mCustomPresent?
+    //mCustomPresent->UpdateViewport(InViewport, viewportRHI);
 }

@@ -28,7 +28,11 @@ IF %3.==. (
 	set rm32bit=%~3
 )
 
-# @todo copy the 64-bit version
+IF %4.==. (
+	set /p boost=Type boost 1.57 root dir:
+) ELSE (
+	set boost=%~4
+)
 
 rem Get rid of the old
 RMDIR /S /Q "%DEST_ROOT%\include" > NUL
@@ -38,7 +42,7 @@ RMDIR /S /Q "%DEST_RM_DIR%\include" > NUL
 RMDIR /S /Q "%DEST_RM_DIR%\lib" > NUL
 del "%DEST_RM_DIR%\*.txt" > NUL
 
-call :copy_arch_indep %osvr32bit% %DEST_ROOT%
+call :copy_arch_indep %osvr32bit% %boost% %DEST_ROOT%
 call :copy_arch_indep_rm %rm32bit% %DEST_RM_ROOT%
 
 call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
@@ -60,11 +64,13 @@ goto :eof
 rem Architecture-independent files
 setlocal
 set SRC=%1
-set DEST_ROOT=%2
+set BOOST=%2
+set DEST_ROOT=%3
 xcopy "%SRC%\include\osvr\ClientKit" "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
 xcopy "%SRC%\include\osvr\Util" "%DEST_ROOT%\include\osvr\Util" /S /I /y
 xcopy "%SRC%\include\osvr\Client" "%DEST_ROOT%\include\osvr\Client" /S /I /y
 xcopy "%SRC%\include\osvr\Common" "%DEST_ROOT%\include\osvr\Common" /S /I /y
+xcopy "%BOOST%\boost" "%DEST_ROOT%\include\boost" /S /I /y
 endlocal
 goto :eof
 

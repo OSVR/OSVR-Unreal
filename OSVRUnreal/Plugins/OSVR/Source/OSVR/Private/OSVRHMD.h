@@ -25,6 +25,151 @@
 #include "ShowFlags.h"
 
 #include <osvr/ClientKit/DisplayC.h>
+#include <osvr/RenderKit/RenderManager.h>
+
+#if PLATFORM_WINDOWS
+#include <d3d11.h>
+#include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+#include "D3D11RHI.h"
+#else
+#include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
+#endif
+
+#include <memory>
+#include <iostream>
+
+//class ID3D11Device;
+//class ID3D11DeviceContext;
+
+template<class TGraphicsDevice>
+class FOSVRCustomPresent : public FRHICustomPresent
+{
+public:
+    FOSVRCustomPresent(OSVR_ClientContext clientContext) :
+        FRHICustomPresent(nullptr)
+    {}
+
+    virtual ~FOSVRCustomPresent() {}
+
+    // virtual methods from FRHICustomPresent
+
+    virtual void OnBackBufferResize() override {}
+
+    virtual bool Present(int32 &inOutSyncInterval) override {
+        check(IsInRenderingThread());
+        FinishRendering();
+        return true;
+    }
+
+    // implement this in the sub-class
+    virtual void Initialize() {
+        if (!IsInitialized()) {
+            auto graphicsLibrary = CreateGraphicsLibrary();
+            auto graphicsLibraryName = GetGraphicsLibraryName();
+
+            mRenderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
+
+            if (mRenderManager == nullptr || !mRenderManager->doingOkay()) {
+                // @todo error checking.
+            }
+            auto results = mRenderManager->OpenDisplay();
+            if (results.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
+                // @todo error checking
+            }
+
+            // @todo: create the textures
+
+            mInitialized = true;
+        }
+    }
+
+    virtual bool IsInitialized() {
+        return mInitialized;
+    }
+protected:
+    virtual TGraphicsDevice* GetGraphicsDevice() {
+        return reinterpret_cast<TGraphicsDevice*>(RHIGetNativeDevice());
+    }
+
+    virtual void FinishRendering()
+    {
+        // all of the render manager samples keep the flipY at the default false,
+        // for both OpenGL and DirectX. Is this even needed anymore?
+        mRenderManager->PresentRenderBuffers(mRenderBuffers, ShouldFlipY());
+    }
+
+    // abstract methods, implement in DirectX/OpenGL specific subclasses
+    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() = 0;
+    virtual const std::string& GetGraphicsLibraryName() = 0;
+    virtual bool ShouldFlipY() = 0;
+    virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
+
+    std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
+    bool mInitialized = false;
+    OSVR_ClientContext mClientContext = nullptr;
+    std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
+};
+
+#if PLATFORM_WINDOWS
+
+class FCurrentCustomPresent : public FOSVRCustomPresent<ID3D11Device>
+{
+public:
+    FCurrentCustomPresent(OSVR_ClientContext clientContext) :
+        FOSVRCustomPresent(clientContext)
+    {}
+
+protected:
+    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
+        osvr::renderkit::GraphicsLibrary ret;
+        // Put the device and context into a structure to let RenderManager
+        // know to use this one rather than creating its own.
+        ret.D3D11 = new osvr::renderkit::GraphicsLibraryD3D11;
+        ret.D3D11->device = GetGraphicsDevice();
+        ID3D11DeviceContext *ctx = NULL;
+        ret.D3D11->device->GetImmediateContext(&ctx);
+        ret.D3D11->context = ctx;
+
+        return ret;
+    }
+
+    virtual const std::string& GetGraphicsLibraryName() override {
+        return "DirectX11";
+    }
+
+    virtual bool ShouldFlipY() override {
+        return false;
+    }
+
+    virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) override {
+        auto D3D11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
+        ID3D11Device* D3DDevice = D3D11RHI->GetDevice();
+        const DXGI_FORMAT P
+    }
+};
+
+#else
+// @todo OpenGL implementation
+class FCurrentCustomPresent : public FOSVRCustomPresent< ? >
+{
+protected:
+    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
+        osvr::renderkit::GraphicsLibrary ret;
+        // OpenGL path not implemented yet
+        return ret;
+    }
+
+    virtual const std::string& GetGraphicsLibraryName() override {
+        return "OpenGL";
+    }
+    
+    virtual bool ShouldFlipY() override {
+        return false;
+    }
+
+};
+#endif
+
 
 /**
  * OSVR Head Mounted Display
@@ -95,12 +240,14 @@ public:
 
   virtual bool ShouldUseSeparateRenderTarget() const override
   {
-    return false;
+      check(IsInGameThread());
+      return IsStereoEnabled();
   }
 
   /** ISceneViewExtension interface */
   virtual void SetupViewFamily(FSceneViewFamily& InViewFamily) override;
   virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
+  virtual FRHICustomPresent* GetCustomPresent() override { return mCustomPresent.get(); }
   virtual void BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
   {
   }
@@ -157,4 +304,5 @@ private:
 
   OSVRHMDDescription HMDDescription;
   OSVR_DisplayConfig DisplayConfig;
+  std::shared_ptr<FCurrentCustomPresent> mCustomPresent = nullptr;
 };

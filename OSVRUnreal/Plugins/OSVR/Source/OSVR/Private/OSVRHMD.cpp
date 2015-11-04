@@ -20,11 +20,13 @@
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
 
+#include <osvr/RenderKit/RenderManager.h>
 #include <osvr/Util/MatrixConventionsC.h>
 #include <cmath>
 #include <vector>
 
 extern OSVR_ClientContext osvrClientContext;
+extern osvr::renderkit::RenderManager *gRenderManager;
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -518,6 +520,7 @@ FOSVRHMD::FOSVRHMD()
 {
     EnablePositionalTracking(true);
     HMDDescription.Init(osvrClientContext, DisplayConfig);
+    mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
