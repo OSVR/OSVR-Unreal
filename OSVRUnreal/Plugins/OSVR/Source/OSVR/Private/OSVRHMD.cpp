@@ -494,7 +494,7 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
     InView.BaseHmdOrientation = FQuat(FRotator(0.0f, 0.0f, 0.0f));
     InView.BaseHmdLocation = FVector(0.f);
     WorldToMetersScale = InView.WorldToMetersScale;
-    InViewFamily.bUseSeparateRenderTarget = false;
+    InViewFamily.bUseSeparateRenderTarget = true;
 }
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const

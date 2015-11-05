@@ -62,20 +62,49 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
 {
-	// @TODO
+    // @todo
+}
+
+void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)
+{
+    check(IsInGameThread());
+
+    if (!IsStereoEnabled()) {
+        return;
+    }
+
+    // @todo get the render target sizes from the render manager
+}
+
+
+bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport) {
+    check(IsInGameThread());
+    if (IsStereoEnabled()) {
+        const uint32 inSizeX = viewport.GetSizeXY().X;
+        const uint32 inSizeY = viewport.GetSizeXY().Y;
+        FIntPoint renderTargetSize;
+        renderTargetSize.X = viewport.GetRenderTargetTexture()->GetSizeX();
+        renderTargetSize.Y = viewport.GetRenderTargetTexture()->GetSizeY();
+
+        uint32 newSizeX = inSizeX, newSizeY = inSizeY;
+        CalculateRenderTargetSize(viewport, newSizeX, newSizeY);
+        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& InViewport, class SViewport*)
 {
     check(IsInGameThread());
 
-    auto viewportRHI = InViewport.GetViewportRHI();
+    auto viewportRHI = InViewport.GetViewportRHI().GetReference();
     if (!IsStereoEnabled()) {
         if (!bUseSeparateRenderTarget) {
             viewportRHI->SetCustomPresent(nullptr);
         }
     }
 
-    // forward UpdateViewport call to mCustomPresent?
-    //mCustomPresent->UpdateViewport(InViewport, viewportRHI);
+    mCustomPresent->UpdateViewport(InViewport, viewportRHI);
 }

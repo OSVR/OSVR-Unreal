@@ -30,7 +30,6 @@
 #if PLATFORM_WINDOWS
 #include <d3d11.h>
 #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
-#include "D3D11RHI.h"
 #else
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 #endif
@@ -86,6 +85,8 @@ public:
     virtual bool IsInitialized() {
         return mInitialized;
     }
+
+    virtual void UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& InViewport, class SViewport*) = 0;
 protected:
     virtual TGraphicsDevice* GetGraphicsDevice() {
         return reinterpret_cast<TGraphicsDevice*>(RHIGetNativeDevice());
@@ -142,9 +143,7 @@ protected:
     }
 
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) override {
-        auto D3D11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
-        ID3D11Device* D3DDevice = D3D11RHI->GetDevice();
-        const DXGI_FORMAT P
+
     }
 };
 
@@ -235,7 +234,8 @@ public:
   virtual void InitCanvasFromView(FSceneView* InView, UCanvas* Canvas) override;
   virtual void GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const override;
   virtual void GetTimewarpMatrices_RenderThread(const struct FRenderingCompositePassContext& Context, FMatrix& EyeRotationStart, FMatrix& EyeRotationEnd) const override;
-
+  virtual void CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY) override;
+  virtual bool NeedReAllocateViewportRenderTarget(const FViewport &viewport) override;
   virtual void UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& Viewport, class SViewport*) override;
 
   virtual bool ShouldUseSeparateRenderTarget() const override
