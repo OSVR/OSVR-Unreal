@@ -86,7 +86,23 @@ public:
         return mInitialized;
     }
 
-    virtual void UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& InViewport, class SViewport*) = 0;
+    virtual void UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
+
+    // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
+    // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
+    virtual void CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY) {
+        check(IsInGameThread());
+        // Should we create a RenderParams?
+        auto renderInfo = mRenderManager->GetRenderInfo();
+
+        // check some assumptions. Should all be the same height.
+        check(renderInfo.size() == 2);
+        check(renderInfo[0].viewport.height == renderInfo[1].viewport.height);
+        InOutSizeX = renderInfo[0].viewport.width + renderInfo[1].viewport.width;
+        InOutSizeY = renderInfo[0].viewport.height;
+        check(InOutSizeX != 0 && InOutSizeY != 0);
+    }
+
 protected:
     virtual TGraphicsDevice* GetGraphicsDevice() {
         return reinterpret_cast<TGraphicsDevice*>(RHIGetNativeDevice());
@@ -120,7 +136,24 @@ public:
         FOSVRCustomPresent(clientContext)
     {}
 
+    virtual void UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) override {
+        check(IsInGameThread());
+        check(InViewportRHI);
+        const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
+        check(IsValidRef(rt));
+        if (RenderTargetTexture != nullptr)
+        {
+            RenderTargetTexture->Release();
+        }
+
+        RenderTargetTexture = (ID3D11Texture2D*)rt->GetNativeResource();
+        RenderTargetTexture->AddRef();
+        InViewportRHI->SetCustomPresent(this);
+    }
+
 protected:
+    ID3D11Texture2D* RenderTargetTexture = NULL;
+
     virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
         osvr::renderkit::GraphicsLibrary ret;
         // Put the device and context into a structure to let RenderManager

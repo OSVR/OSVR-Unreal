@@ -73,7 +73,7 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         return;
     }
 
-    // @todo get the render target sizes from the render manager
+    mCustomPresent->CalculateRenderTargetSize(Viewport, InOutSizeX, InOutSizeY);
 }
 
 
