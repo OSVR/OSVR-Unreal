@@ -19,20 +19,11 @@
 #include "OSVRInterfaceCollection.h"
 #include "OSVREntryPoint.h"
 
-#include <osvr/renderkit/RenderManager.h>
-
 OSVR_ClientContext osvrClientContext(nullptr);
-osvr::renderkit::RenderManager* gRenderManager(nullptr);
 
 OSVREntryPoint::OSVREntryPoint()
 {
 	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
-
-#if PLATFORM_WINDOWS
-    gRenderManager = osvr::renderkit::createRenderManager(osvrClientContext, "DirectX11");
-#else
-    gRenderManager = osvr::renderkit::createRenderManager(osvrClientContext, "OpenGL");
-#endif
 
 	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
 		osvrClientContext
@@ -42,9 +33,6 @@ OSVREntryPoint::OSVREntryPoint()
 OSVREntryPoint::~OSVREntryPoint()
 {
 	InterfaceCollection = nullptr;
-    if (nullptr != gRenderManager) {
-        delete gRenderManager;
-    }
 	osvrClientShutdown(osvrClientContext);
 }
 

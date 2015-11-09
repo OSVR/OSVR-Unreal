@@ -25,17 +25,22 @@
 #include "ShowFlags.h"
 
 #include <osvr/ClientKit/DisplayC.h>
-#include <osvr/RenderKit/RenderManager.h>
+
 
 #if PLATFORM_WINDOWS
+#include "AllowWindowsPlatformTypes.h"
+#include <osvr/RenderKit/RenderManager.h>
 #include <d3d11.h>
 #include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+#include "HideWindowsPlatformTypes.h"
 #else
+#include <osvr/RenderKit/RenderManager.h>
 #include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
 #endif
 
 #include <memory>
 #include <iostream>
+#include <set>
 
 //class ID3D11Device;
 //class ID3D11DeviceContext;
@@ -66,7 +71,7 @@ public:
             auto graphicsLibrary = CreateGraphicsLibrary();
             auto graphicsLibraryName = GetGraphicsLibraryName();
 
-            mRenderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
+            mRenderManager.reset(osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary));
 
             if (mRenderManager == nullptr || !mRenderManager->doingOkay()) {
                 // @todo error checking.
@@ -112,16 +117,18 @@ protected:
     {
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        mRenderManager->PresentRenderBuffers(mRenderBuffers, ShouldFlipY());
+        mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
     }
 
     // abstract methods, implement in DirectX/OpenGL specific subclasses
     virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() = 0;
-    virtual const std::string& GetGraphicsLibraryName() = 0;
+    virtual std::string GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
 
     std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
+    std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
+
     bool mInitialized = false;
     OSVR_ClientContext mClientContext = nullptr;
     std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
@@ -145,14 +152,67 @@ public:
         {
             RenderTargetTexture->Release();
         }
-
         RenderTargetTexture = (ID3D11Texture2D*)rt->GetNativeResource();
         RenderTargetTexture->AddRef();
         InViewportRHI->SetCustomPresent(this);
+        UpdateRenderBuffers(InViewport);
     }
 
 protected:
     ID3D11Texture2D* RenderTargetTexture = NULL;
+
+    virtual void UpdateRenderBuffers(const FViewport& InViewport) {
+        check(RenderTargetTexture);
+
+        // get a set of unique RenderBufferD3D11* to delete
+        std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
+        for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+            if (mRenderBuffers[i].D3D11) {
+                deletedBuffers.insert(mRenderBuffers[i].D3D11);
+            }
+        }
+
+        // then delete them
+        for (auto i = deletedBuffers.begin(); i != deletedBuffers.end(); i++) {
+            osvr::renderkit::RenderBufferD3D11* current = *i;
+            delete current;
+        }
+
+        mRenderBuffers.clear();
+        osvr::renderkit::RenderBuffer buffer;
+        osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
+        bufferD3D11->colorBuffer = RenderTargetTexture;
+        //bufferD3D11->colorBufferView = ???;
+        //bufferD3D11->depthStencilBuffer = ???;
+        //bufferD3D11->depthStencilView = ???;
+        buffer.D3D11 = bufferD3D11;
+
+        // Now add the buffer, twice. We are re-using the buffer for both eyes.
+        mRenderBuffers.push_back(buffer);
+        mRenderBuffers.push_back(buffer);
+
+        // We need to register these new buffers.
+        mRenderManager->RegisterRenderBuffers(mRenderBuffers);
+
+        // Now specify the viewports for each.
+        mViewportDescriptions.clear();
+        int32 width = InViewport.GetSizeXY().X;
+        int32 height = InViewport.GetSizeXY().Y;
+
+        osvr::renderkit::OSVR_ViewportDescription leftEye, rightEye;
+
+        leftEye.left = 0;
+        leftEye.lower = 0;
+        leftEye.width = width / 2;
+        leftEye.height = height;
+        mViewportDescriptions.push_back(leftEye);
+
+        rightEye.left = leftEye.left + leftEye.width + 1;
+        rightEye.lower = 0;
+        rightEye.width = leftEye.width;
+        rightEye.height = leftEye.height;
+        mViewportDescriptions.push_back(rightEye);
+    }
 
     virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
         osvr::renderkit::GraphicsLibrary ret;
@@ -167,7 +227,7 @@ protected:
         return ret;
     }
 
-    virtual const std::string& GetGraphicsLibraryName() override {
+    virtual std::string GetGraphicsLibraryName() override {
         return "DirectX11";
     }
 
@@ -176,7 +236,7 @@ protected:
     }
 
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) override {
-
+        return false;
     }
 };
 

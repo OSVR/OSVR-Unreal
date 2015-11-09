@@ -20,13 +20,19 @@
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
 
+#if PLATFORM_WINDOWS
+#include "AllowWindowsPlatformTypes.h"
 #include <osvr/RenderKit/RenderManager.h>
+#include "HideWindowsPlatformTypes.h"
+#else
+#include <osvr/RenderKit/RenderManager.h>
+#endif
+
 #include <osvr/Util/MatrixConventionsC.h>
 #include <cmath>
 #include <vector>
 
 extern OSVR_ClientContext osvrClientContext;
-extern osvr::renderkit::RenderManager *gRenderManager;
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -520,7 +526,7 @@ FOSVRHMD::FOSVRHMD()
 {
     EnablePositionalTracking(true);
     HMDDescription.Init(osvrClientContext, DisplayConfig);
-    mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
+    mCustomPresent = std::make_shared<FCurrentCustomPresent>(osvrClientContext);
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
