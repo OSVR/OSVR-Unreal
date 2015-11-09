@@ -97,6 +97,7 @@ public:
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
     virtual void CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY) {
         check(IsInGameThread());
+        Initialize();
         // Should we create a RenderParams?
         auto renderInfo = mRenderManager->GetRenderInfo();
 
@@ -115,6 +116,7 @@ protected:
 
     virtual void FinishRendering()
     {
+        Initialize();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
         mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
@@ -148,6 +150,7 @@ public:
         check(InViewportRHI);
         const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
         check(IsValidRef(rt));
+        Initialize();
         if (RenderTargetTexture != nullptr)
         {
             RenderTargetTexture->Release();
@@ -163,7 +166,7 @@ protected:
 
     virtual void UpdateRenderBuffers(const FViewport& InViewport) {
         check(RenderTargetTexture);
-
+        Initialize();
         // get a set of unique RenderBufferD3D11* to delete
         std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
         for (size_t i = 0; i < mRenderBuffers.size(); i++) {
