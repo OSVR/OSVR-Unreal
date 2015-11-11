@@ -50,10 +50,17 @@ class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
-        FRHICustomPresent(nullptr)
-    {}
+        FRHICustomPresent(nullptr)//,
+        //mClientContext(clientContext)
+    {
+        mClientContext = osvrClientInit("com.osvr.unreal.plugin");
+    }
 
-    virtual ~FOSVRCustomPresent() {}
+    virtual ~FOSVRCustomPresent() {
+        if (mClientContext) {
+            osvrClientShutdown(mClientContext);
+        }
+    }
 
     // virtual methods from FRHICustomPresent
 
@@ -71,15 +78,16 @@ public:
             auto graphicsLibrary = CreateGraphicsLibrary();
             auto graphicsLibraryName = GetGraphicsLibraryName();
 
-            mRenderManager.reset(osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary));
+            check(mClientContext);
 
-            if (mRenderManager == nullptr || !mRenderManager->doingOkay()) {
-                // @todo error checking.
-            }
+            osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
+            //osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName);
+            check(renderManager && renderManager->doingOkay());
+
+            mRenderManager.reset(renderManager);
+            check(mRenderManager)
             auto results = mRenderManager->OpenDisplay();
-            if (results.status == osvr::renderkit::RenderManager::OpenStatus::FAILURE) {
-                // @todo error checking
-            }
+            check(results.status != osvr::renderkit::RenderManager::OpenStatus::FAILURE);
 
             // @todo: create the textures
 
@@ -111,7 +119,8 @@ public:
 
 protected:
     virtual TGraphicsDevice* GetGraphicsDevice() {
-        return reinterpret_cast<TGraphicsDevice*>(RHIGetNativeDevice());
+        auto ret = RHIGetNativeDevice();
+        return reinterpret_cast<TGraphicsDevice*>(ret);
     }
 
     virtual void FinishRendering()
@@ -231,7 +240,7 @@ protected:
     }
 
     virtual std::string GetGraphicsLibraryName() override {
-        return "DirectX11";
+        return "Direct3D11";
     }
 
     virtual bool ShouldFlipY() override {

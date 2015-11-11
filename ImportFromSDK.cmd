@@ -8,9 +8,6 @@ IF NOT EXIST "%PLUGIN_ROOT%" goto ERROR_WRONG_PROJ_DIR
 set DEST_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\Source\OSVRClientKit
 IF NOT EXIST "%DEST_ROOT%" goto ERROR_WRONG_PROJ_DIR
 
-set DEST_RM_ROOT=%~dp0OSVRUnreal\Plugins\OSVR\Source\OSVRRenderManager
-IF NOT EXIST "%DEST_RM_ROOT%" goto ERROR_WRONG_PROJ_DIR
-
 IF %1.==. (
 	set /p osvr32bit=Type OSVR 32bit SDK root dir:
 ) ELSE (
@@ -38,16 +35,13 @@ rem Get rid of the old
 RMDIR /S /Q "%DEST_ROOT%\include" > NUL
 RMDIR /S /Q "%DEST_ROOT%\lib" > NUL
 del "%DEST_ROOT%\*.txt" > NUL
-RMDIR /S /Q "%DEST_RM_DIR%\include" > NUL
-RMDIR /S /Q "%DEST_RM_DIR%\lib" > NUL
-del "%DEST_RM_DIR%\*.txt" > NUL
 
 call :copy_arch_indep %osvr32bit% %boost% %DEST_ROOT%
-call :copy_arch_indep_rm %rm32bit% %DEST_RM_ROOT%
+call :copy_arch_indep_rm %rm32bit% %DEST_ROOT%
 
 call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
-call :copy_arch_rm %rm32bit% %PLUGIN_ROOT% %DEST_RM_ROOT% 32
+call :copy_arch_rm %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 goto :eof
 
 
