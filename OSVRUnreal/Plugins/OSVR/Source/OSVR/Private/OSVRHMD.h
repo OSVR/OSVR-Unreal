@@ -68,6 +68,7 @@ public:
 
     virtual bool Present(int32 &inOutSyncInterval) override {
         check(IsInRenderingThread());
+        Initialize();
         FinishRendering();
         return true;
     }
@@ -103,9 +104,9 @@ public:
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
-    virtual void CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY) {
+    virtual void CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY) {
         check(IsInGameThread());
-        Initialize();
+        check(IsInitialized());
         // Should we create a RenderParams?
         auto renderInfo = mRenderManager->GetRenderInfo();
 
@@ -125,7 +126,8 @@ protected:
 
     virtual void FinishRendering()
     {
-        Initialize();
+        check(IsInitialized());
+        UpdateRenderBuffers();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
         mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
@@ -136,6 +138,7 @@ protected:
     virtual std::string GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
+    virtual void UpdateRenderBuffers() = 0;
 
     std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
     std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
@@ -159,7 +162,6 @@ public:
         check(InViewportRHI);
         const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
         check(IsValidRef(rt));
-        Initialize();
         if (RenderTargetTexture != nullptr)
         {
             RenderTargetTexture->Release();
@@ -167,63 +169,72 @@ public:
         RenderTargetTexture = (ID3D11Texture2D*)rt->GetNativeResource();
         RenderTargetTexture->AddRef();
         InViewportRHI->SetCustomPresent(this);
-        UpdateRenderBuffers(InViewport);
+
+        // UpdateViewport is called before we're initialized, so we have to
+        // defer updates to the render buffers until we're in the render thread.
+        mRenderBuffersNeedToUpdate = true;
     }
 
 protected:
     ID3D11Texture2D* RenderTargetTexture = NULL;
+    bool mRenderBuffersNeedToUpdate = true;
 
-    virtual void UpdateRenderBuffers(const FViewport& InViewport) {
+    virtual void UpdateRenderBuffers() override {
         check(RenderTargetTexture);
-        Initialize();
-        // get a set of unique RenderBufferD3D11* to delete
-        std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
-        for (size_t i = 0; i < mRenderBuffers.size(); i++) {
-            if (mRenderBuffers[i].D3D11) {
-                deletedBuffers.insert(mRenderBuffers[i].D3D11);
+        check(IsInitialized());
+        if (mRenderBuffersNeedToUpdate) {
+            // get a set of unique RenderBufferD3D11* to delete
+            std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
+            for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+                if (mRenderBuffers[i].D3D11) {
+                    deletedBuffers.insert(mRenderBuffers[i].D3D11);
+                }
             }
+
+            // then delete them
+            for (auto i = deletedBuffers.begin(); i != deletedBuffers.end(); i++) {
+                osvr::renderkit::RenderBufferD3D11* current = *i;
+                delete current;
+            }
+
+            mRenderBuffers.clear();
+            osvr::renderkit::RenderBuffer buffer;
+            osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
+            bufferD3D11->colorBuffer = RenderTargetTexture;
+            //bufferD3D11->colorBufferView = ???;
+            //bufferD3D11->depthStencilBuffer = ???;
+            //bufferD3D11->depthStencilView = ???;
+            buffer.D3D11 = bufferD3D11;
+
+            // Now add the buffer, twice. We are re-using the buffer for both eyes.
+            mRenderBuffers.push_back(buffer);
+            mRenderBuffers.push_back(buffer);
+
+            // We need to register these new buffers.
+            mRenderManager->RegisterRenderBuffers(mRenderBuffers);
+
+            // Now specify the viewports for each.
+            mViewportDescriptions.clear();
+            uint32 width = 0;
+            uint32 height = 0;
+            this->CalculateRenderTargetSize(width, height);
+
+            osvr::renderkit::OSVR_ViewportDescription leftEye, rightEye;
+
+            leftEye.left = 0;
+            leftEye.lower = 0;
+            leftEye.width = width / 2;
+            leftEye.height = height;
+            mViewportDescriptions.push_back(leftEye);
+
+            rightEye.left = leftEye.left + leftEye.width + 1;
+            rightEye.lower = 0;
+            rightEye.width = leftEye.width;
+            rightEye.height = leftEye.height;
+            mViewportDescriptions.push_back(rightEye);
+
+            mRenderBuffersNeedToUpdate = false;
         }
-
-        // then delete them
-        for (auto i = deletedBuffers.begin(); i != deletedBuffers.end(); i++) {
-            osvr::renderkit::RenderBufferD3D11* current = *i;
-            delete current;
-        }
-
-        mRenderBuffers.clear();
-        osvr::renderkit::RenderBuffer buffer;
-        osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
-        bufferD3D11->colorBuffer = RenderTargetTexture;
-        //bufferD3D11->colorBufferView = ???;
-        //bufferD3D11->depthStencilBuffer = ???;
-        //bufferD3D11->depthStencilView = ???;
-        buffer.D3D11 = bufferD3D11;
-
-        // Now add the buffer, twice. We are re-using the buffer for both eyes.
-        mRenderBuffers.push_back(buffer);
-        mRenderBuffers.push_back(buffer);
-
-        // We need to register these new buffers.
-        mRenderManager->RegisterRenderBuffers(mRenderBuffers);
-
-        // Now specify the viewports for each.
-        mViewportDescriptions.clear();
-        int32 width = InViewport.GetSizeXY().X;
-        int32 height = InViewport.GetSizeXY().Y;
-
-        osvr::renderkit::OSVR_ViewportDescription leftEye, rightEye;
-
-        leftEye.left = 0;
-        leftEye.lower = 0;
-        leftEye.width = width / 2;
-        leftEye.height = height;
-        mViewportDescriptions.push_back(leftEye);
-
-        rightEye.left = leftEye.left + leftEye.width + 1;
-        rightEye.lower = 0;
-        rightEye.width = leftEye.width;
-        rightEye.height = leftEye.height;
-        mViewportDescriptions.push_back(rightEye);
     }
 
     virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {

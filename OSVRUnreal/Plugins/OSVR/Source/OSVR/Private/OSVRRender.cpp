@@ -53,6 +53,7 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 	// intentionally left blank
 }
 
+// @todo: Why is this function never called?
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
@@ -73,7 +74,7 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         return;
     }
 
-    mCustomPresent->CalculateRenderTargetSize(Viewport, InOutSizeX, InOutSizeY);
+    mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
 }
 
 
