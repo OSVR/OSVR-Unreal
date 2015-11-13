@@ -68,32 +68,16 @@ public:
 
     virtual bool Present(int32 &inOutSyncInterval) override {
         check(IsInRenderingThread());
-        Initialize();
+        FScopeLock lock(&mOSVRMutex);
+        InitializeImpl();
         FinishRendering();
         return true;
     }
 
     // implement this in the sub-class
     virtual void Initialize() {
-        if (!IsInitialized()) {
-            auto graphicsLibrary = CreateGraphicsLibrary();
-            auto graphicsLibraryName = GetGraphicsLibraryName();
-
-            check(mClientContext);
-
-            osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
-            //osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName);
-            check(renderManager && renderManager->doingOkay());
-
-            mRenderManager.reset(renderManager);
-            check(mRenderManager)
-            auto results = mRenderManager->OpenDisplay();
-            check(results.status != osvr::renderkit::RenderManager::OpenStatus::FAILURE);
-
-            // @todo: create the textures
-
-            mInitialized = true;
-        }
+        FScopeLock lock(&mOSVRMutex);
+        InitializeImpl();
     }
 
     virtual bool IsInitialized() {
@@ -105,7 +89,19 @@ public:
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
     virtual void CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY) {
-        check(IsInGameThread());
+        FScopeLock lock(&mOSVRMutex);
+        CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
+    }
+
+protected:
+    FCriticalSection mOSVRMutex;
+    std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
+    std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
+    bool mInitialized = false;
+    OSVR_ClientContext mClientContext = nullptr;
+    std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
+
+    virtual void CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) {
         check(IsInitialized());
         // Should we create a RenderParams?
         auto renderInfo = mRenderManager->GetRenderInfo();
@@ -118,7 +114,28 @@ public:
         check(InOutSizeX != 0 && InOutSizeY != 0);
     }
 
-protected:
+    virtual void InitializeImpl() {
+        if (!IsInitialized()) {
+            auto graphicsLibrary = CreateGraphicsLibrary();
+            auto graphicsLibraryName = GetGraphicsLibraryName();
+
+            check(mClientContext);
+
+            osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
+            //osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName);
+            check(renderManager && renderManager->doingOkay());
+
+            mRenderManager.reset(renderManager);
+            check(mRenderManager)
+                auto results = mRenderManager->OpenDisplay();
+            check(results.status != osvr::renderkit::RenderManager::OpenStatus::FAILURE);
+
+            // @todo: create the textures
+
+            mInitialized = true;
+        }
+    }
+
     virtual TGraphicsDevice* GetGraphicsDevice() {
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
@@ -130,7 +147,8 @@ protected:
         UpdateRenderBuffers();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
+        bool presentedOK = mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
+        check(presentedOK);
     }
 
     // abstract methods, implement in DirectX/OpenGL specific subclasses
@@ -139,13 +157,6 @@ protected:
     virtual bool ShouldFlipY() = 0;
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
     virtual void UpdateRenderBuffers() = 0;
-
-    std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
-    std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
-
-    bool mInitialized = false;
-    OSVR_ClientContext mClientContext = nullptr;
-    std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
 };
 
 #if PLATFORM_WINDOWS
@@ -158,6 +169,8 @@ public:
     {}
 
     virtual void UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) override {
+        FScopeLock lock(&mOSVRMutex);
+
         check(IsInGameThread());
         check(InViewportRHI);
         const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
@@ -183,6 +196,12 @@ protected:
         check(RenderTargetTexture);
         check(IsInitialized());
         if (mRenderBuffersNeedToUpdate) {
+            uint32 width;
+            uint32 height;
+
+            // @todo: can't call this here, we're in the wrong thread.
+            CalculateRenderTargetSizeImpl(width, height);
+
             // get a set of unique RenderBufferD3D11* to delete
             std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
             for (size_t i = 0; i < mRenderBuffers.size(); i++) {
@@ -197,11 +216,52 @@ protected:
                 delete current;
             }
 
+            // Fill in the resource view for your render texture buffer here
+            D3D11_TEXTURE2D_DESC textureDesc;
+            memset(&textureDesc, 0, sizeof(textureDesc));
+            textureDesc.Width = width;
+            textureDesc.Height = height;
+            textureDesc.MipLevels = 1;
+            textureDesc.ArraySize = 1;
+            //textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+            textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            textureDesc.SampleDesc.Count = 1;
+            textureDesc.SampleDesc.Quality = 0;
+            textureDesc.Usage = D3D11_USAGE_DEFAULT;
+            // We need it to be both a render target and a shader resource
+            textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            textureDesc.CPUAccessFlags = 0;
+            textureDesc.MiscFlags = 0;
+
+            auto graphicsDevice = GetGraphicsDevice();
+
+            // Create a new render target texture to use.
+            ID3D11Texture2D *D3DTexture = nullptr;
+            HRESULT hr = graphicsDevice->CreateTexture2D(
+                &textureDesc, NULL, &D3DTexture);
+            check(!FAILED(hr));
+
+            D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+            memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+            // This must match what was created in the texture to be rendered
+            // @todo Figure this out by introspection on the texture?
+            //renderTargetViewDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+            renderTargetViewDesc.Format = textureDesc.Format;
+            renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+            renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+            // Create the render target view.
+            ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
+            hr = graphicsDevice->CreateRenderTargetView(
+                D3DTexture, &renderTargetViewDesc, &renderTargetView);
+            check(!FAILED(hr));
+
+            
             mRenderBuffers.clear();
             osvr::renderkit::RenderBuffer buffer;
             osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
             bufferD3D11->colorBuffer = RenderTargetTexture;
-            //bufferD3D11->colorBufferView = ???;
+            bufferD3D11->colorBufferView = renderTargetView;
             //bufferD3D11->depthStencilBuffer = ???;
             //bufferD3D11->depthStencilView = ???;
             buffer.D3D11 = bufferD3D11;
@@ -211,13 +271,14 @@ protected:
             mRenderBuffers.push_back(buffer);
 
             // We need to register these new buffers.
-            mRenderManager->RegisterRenderBuffers(mRenderBuffers);
+            // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
+            // if you pass it a non-empty vector here. Passing it a dummy array for now.
+            std::vector<osvr::renderkit::RenderBuffer> dummyBufferVector;
+            mRenderManager->RegisterRenderBuffers(dummyBufferVector);            
+            //mRenderManager->RegisterRenderBuffers(mRenderBuffers);
 
             // Now specify the viewports for each.
             mViewportDescriptions.clear();
-            uint32 width = 0;
-            uint32 height = 0;
-            this->CalculateRenderTargetSize(width, height);
 
             osvr::renderkit::OSVR_ViewportDescription leftEye, rightEye;
 
