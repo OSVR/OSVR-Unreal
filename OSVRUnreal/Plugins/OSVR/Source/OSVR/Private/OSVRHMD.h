@@ -97,6 +97,9 @@ protected:
     FCriticalSection mOSVRMutex;
     std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
     std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
+    std::vector<osvr::renderkit::RenderInfo> mRenderInfos;
+    osvr::renderkit::RenderManager::RenderParams mRenderParams;
+
     bool mInitialized = false;
     OSVR_ClientContext mClientContext = nullptr;
     std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
@@ -104,13 +107,13 @@ protected:
     virtual void CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) {
         check(IsInitialized());
         // Should we create a RenderParams?
-        auto renderInfo = mRenderManager->GetRenderInfo();
+        mRenderInfos = mRenderManager->GetRenderInfo();
 
         // check some assumptions. Should all be the same height.
-        check(renderInfo.size() == 2);
-        check(renderInfo[0].viewport.height == renderInfo[1].viewport.height);
-        InOutSizeX = renderInfo[0].viewport.width + renderInfo[1].viewport.width;
-        InOutSizeY = renderInfo[0].viewport.height;
+        check(mRenderInfos.size() == 2);
+        check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
+        InOutSizeX = mRenderInfos[0].viewport.width + mRenderInfos[1].viewport.width;
+        InOutSizeY = mRenderInfos[0].viewport.height;
         check(InOutSizeX != 0 && InOutSizeY != 0);
     }
 
@@ -147,7 +150,7 @@ protected:
         UpdateRenderBuffers();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        bool presentedOK = mRenderManager->PresentRenderBuffers(mRenderBuffers, mViewportDescriptions);// , ShouldFlipY());
+        bool presentedOK = mRenderManager->PresentRenderBuffers(mRenderBuffers, mRenderInfos, mRenderParams, mViewportDescriptions, ShouldFlipY());
         check(presentedOK);
     }
 
@@ -202,18 +205,12 @@ protected:
             // @todo: can't call this here, we're in the wrong thread.
             CalculateRenderTargetSizeImpl(width, height);
 
-            // get a set of unique RenderBufferD3D11* to delete
-            std::set<osvr::renderkit::RenderBufferD3D11*> deletedBuffers;
+            // delete any previous buffer containers.
             for (size_t i = 0; i < mRenderBuffers.size(); i++) {
                 if (mRenderBuffers[i].D3D11) {
-                    deletedBuffers.insert(mRenderBuffers[i].D3D11);
+                    delete mRenderBuffers[i].D3D11;
+                    mRenderBuffers[i].D3D11 = nullptr;
                 }
-            }
-
-            // then delete them
-            for (auto i = deletedBuffers.begin(); i != deletedBuffers.end(); i++) {
-                osvr::renderkit::RenderBufferD3D11* current = *i;
-                delete current;
             }
 
             // Fill in the resource view for your render texture buffer here
@@ -258,17 +255,18 @@ protected:
 
             
             mRenderBuffers.clear();
-            osvr::renderkit::RenderBuffer buffer;
-            osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
-            bufferD3D11->colorBuffer = RenderTargetTexture;
-            bufferD3D11->colorBufferView = renderTargetView;
-            //bufferD3D11->depthStencilBuffer = ???;
-            //bufferD3D11->depthStencilView = ???;
-            buffer.D3D11 = bufferD3D11;
 
-            // Now add the buffer, twice. We are re-using the buffer for both eyes.
-            mRenderBuffers.push_back(buffer);
-            mRenderBuffers.push_back(buffer);
+            // Adding two RenderBuffers, but they both point to the same D3D11 texture target
+            for (int i = 0; i < 2; i++) {
+                osvr::renderkit::RenderBuffer buffer;
+                osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
+                bufferD3D11->colorBuffer = RenderTargetTexture;
+                bufferD3D11->colorBufferView = renderTargetView;
+                //bufferD3D11->depthStencilBuffer = ???;
+                //bufferD3D11->depthStencilView = ???;
+                buffer.D3D11 = bufferD3D11;
+                mRenderBuffers.push_back(buffer);
+            }
 
             // We need to register these new buffers.
             // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
