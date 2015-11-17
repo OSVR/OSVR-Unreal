@@ -24,6 +24,11 @@ IF %3.==. (
 ) ELSE (
 	set rm32bit=%~3
 )
+IF %4.==. (
+	set /p rm64bit=Type DirectRender 64bit SDK root dir:
+) ELSE (
+	set rm64bit=%~4
+)
 
 IF %4.==. (
 	set /p boost=Type boost 1.57 root dir:
@@ -42,6 +47,7 @@ call :copy_arch_indep_rm %rm32bit% %DEST_ROOT%
 call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
 call :copy_arch_rm %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
+call :copy_arch_rm %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
 goto :eof
 
 
