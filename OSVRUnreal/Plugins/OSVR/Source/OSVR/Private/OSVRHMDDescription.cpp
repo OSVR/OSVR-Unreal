@@ -197,10 +197,10 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig dis
     check(rc == OSVR_RETURN_SUCCESS);
 
     // not sure if these are needed coming from OSVR. SteamVR does this, but no documentation as to why
-    bottom *= -1.0f;
-    top *= -1.0f;
-    right *= -1.0f;
-    left *= -1.0f;
+    //bottom *= -1.0f;
+    //top *= -1.0f;
+    //right *= -1.0f;
+    //left *= -1.0f;
 
     // sanity check: what is going on with this projection matrix?
     // no reference to far clipping plane. This looks nothing like glFrustum.

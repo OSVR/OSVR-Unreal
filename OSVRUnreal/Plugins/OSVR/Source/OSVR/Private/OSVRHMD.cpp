@@ -348,7 +348,7 @@ void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType,
     if (StereoPassType != eSSP_FULL)
     {
         float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
-        const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? EyeOffset : -EyeOffset;
+        const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? -EyeOffset : EyeOffset;
         ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
 
         const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
