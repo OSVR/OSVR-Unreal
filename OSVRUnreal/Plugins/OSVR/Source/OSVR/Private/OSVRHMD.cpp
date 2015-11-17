@@ -348,7 +348,7 @@ void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType,
     if (StereoPassType != eSSP_FULL)
     {
         float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
-        const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? EyeOffset : -EyeOffset;
+        const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? -EyeOffset : EyeOffset;
         ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
 
         const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
@@ -428,7 +428,8 @@ namespace {
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
     FMatrix original = HMDDescription.GetProjectionMatrix(
-        StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE);
+        StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
+        DisplayConfig);
 
     // @todo we should be getting a matrix from core, but this doesn't appear to be working.
     //OSVR_EyeCount eye = 0;

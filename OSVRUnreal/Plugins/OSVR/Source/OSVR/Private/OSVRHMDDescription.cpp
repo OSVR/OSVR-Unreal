@@ -187,36 +187,36 @@ FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
     return GetData(Data).Fov[Eye];
 }
 
-FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye) const
+// implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.
+FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const
 {
-	// @TODO: a proper stereo projection matrix should be calculated
+    OSVR_EyeCount eye = (Eye == LEFT_EYE ? 0 : 1);
+    double left, right, bottom, top;
+    OSVR_ReturnCode rc;
+    rc = osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(displayConfig, 0, eye, 0, &left, &right, &bottom, &top);
+    check(rc == OSVR_RETURN_SUCCESS);
 
-	const float ProjectionCenterOffset = 0.151976421f;
-	const float PassProjectionOffset = (Eye == LEFT_EYE) ? ProjectionCenterOffset : -ProjectionCenterOffset;
+    // not sure if these are needed coming from OSVR. SteamVR does this, but no documentation as to why
+    //bottom *= -1.0f;
+    //top *= -1.0f;
+    //right *= -1.0f;
+    //left *= -1.0f;
 
-#if 1
-	const float HalfFov = FMath::DegreesToRadians(GetFov(Eye).X) / 2.f;
-	const float InWidth = GetDisplaySize(Eye).X;
-	const float InHeight = GetDisplaySize(Eye).Y;
-	const float XS = 1.0f / tan(HalfFov);
-	const float YS = InWidth / tan(HalfFov) / InHeight;
-#else
-	const float HalfFov = 2.19686294f / 2.f;
-	const float InWidth = 640.f;
-	const float InHeight = 480.f;
-	const float XS = 1.0f / tan(HalfFov);
-	const float YS = InWidth / tan(HalfFov) / InHeight;
-#endif
-
-	const float InNearZ = GNearClippingPlane;
-	return FMatrix(
-			   FPlane(XS, 0.0f, 0.0f, 0.0f),
-			   FPlane(0.0f, YS, 0.0f, 0.0f),
-			   FPlane(0.0f, 0.0f, 0.0f, 1.0f),
-			   FPlane(0.0f, 0.0f, InNearZ, 0.0f))
-
-		   *
-		   FTranslationMatrix(FVector(PassProjectionOffset, 0, 0));
+    // sanity check: what is going on with this projection matrix?
+    // no reference to far clipping plane. This looks nothing like glFrustum.
+    // matches their occulus rift calculation in the parts that they correct for unreal though
+    // ([3][3] = 0, [2][3] = 1, [2][2] = 0, [3][3] = GNearClippingPlane)
+    float zNear = GNearClippingPlane;
+    float sumRightLeft = static_cast<float>(right + left);
+    float sumTopBottom = static_cast<float>(top + bottom);
+    float inverseRightLeft = 1.0f / static_cast<float>(right - left);
+    float inverseTopBottom = 1.0f / static_cast<float>(top - bottom);
+    FPlane row1(2.0f * inverseRightLeft, 0.0f, 0.0f, 0.0f);
+    FPlane row2(0.0f, 2.0f * inverseTopBottom, 0.0f, 0.0f);
+    FPlane row3(sumRightLeft * inverseRightLeft, sumTopBottom * inverseTopBottom, 0.0f, 1.0f);
+    FPlane row4(0.0f, 0.0f, zNear, 0.0f);
+    FMatrix ret = FMatrix(row1, row2, row3, row4);
+    return ret;
 }
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const
