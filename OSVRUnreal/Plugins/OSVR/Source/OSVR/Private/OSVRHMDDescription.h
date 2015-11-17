@@ -44,7 +44,7 @@ public:
 	FVector2D GetFov(EEye Eye) const;
     FVector2D GetFov(OSVR_EyeCount Eye) const;
 	FVector GetLocation(EEye Eye) const;
-	FMatrix GetProjectionMatrix(EEye Eye) const;
+	FMatrix GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const;
 
 	// Helper function
 	// IPD    = ABS(GetLocation(LEFT_EYE).X - GetLocation(RIGHT_EYE).X);

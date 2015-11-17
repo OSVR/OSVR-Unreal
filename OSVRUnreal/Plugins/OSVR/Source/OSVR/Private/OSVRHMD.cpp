@@ -428,7 +428,8 @@ namespace {
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
     FMatrix original = HMDDescription.GetProjectionMatrix(
-        StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE);
+        StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
+        DisplayConfig);
 
     // @todo we should be getting a matrix from core, but this doesn't appear to be working.
     //OSVR_EyeCount eye = 0;
