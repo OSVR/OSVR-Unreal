@@ -196,11 +196,8 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig dis
     rc = osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(displayConfig, 0, eye, 0, &left, &right, &bottom, &top);
     check(rc == OSVR_RETURN_SUCCESS);
 
-    // not sure if these are needed coming from OSVR. SteamVR does this, but no documentation as to why
-    //bottom *= -1.0f;
-    //top *= -1.0f;
-    //right *= -1.0f;
-    //left *= -1.0f;
+    // The steam plugin inverts the clipping planes here, but that doesn't appear to
+    // be necessary for the OSVR calculated planes.
 
     // sanity check: what is going on with this projection matrix?
     // no reference to far clipping plane. This looks nothing like glFrustum.
