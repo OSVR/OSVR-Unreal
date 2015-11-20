@@ -107,6 +107,10 @@ protected:
         check(IsInitialized());
         // Should we create a RenderParams?
         OSVR_ReturnCode rc;
+
+        rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         OSVR_RenderInfoCount numRenderInfo;
         rc = osvrRenderManagerGetNumRenderInfo(mRenderManager, mRenderParams, &numRenderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
@@ -273,7 +277,8 @@ protected:
             // Adding two RenderBuffers, but they both point to the same D3D11 texture target
             for (int i = 0; i < 2; i++) {
                 OSVR_RenderBufferD3D11 buffer;
-                buffer.colorBuffer = RenderTargetTexture;
+                buffer.colorBuffer = D3DTexture;
+                //buffer.colorBuffer = RenderTargetTexture;
                 buffer.colorBufferView = renderTargetView;
                 //buffer.depthStencilBuffer = ???;
                 //buffer.depthStencilView = ???;
