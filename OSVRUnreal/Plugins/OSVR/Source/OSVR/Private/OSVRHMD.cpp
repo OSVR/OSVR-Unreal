@@ -22,10 +22,11 @@
 
 #if PLATFORM_WINDOWS
 #include "AllowWindowsPlatformTypes.h"
-#include <osvr/RenderKit/RenderManager.h>
+#include <osvr/Util/ReturnCodesC.h>
+#include <osvr/RenderKit/RenderManagerD3D11C.h>
 #include "HideWindowsPlatformTypes.h"
 #else
-#include <osvr/RenderKit/RenderManager.h>
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #endif
 
 #include <osvr/Util/MatrixConventionsC.h>

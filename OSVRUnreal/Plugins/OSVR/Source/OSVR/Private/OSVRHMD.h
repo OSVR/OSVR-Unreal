@@ -29,18 +29,16 @@
 
 #if PLATFORM_WINDOWS
 #include "AllowWindowsPlatformTypes.h"
-#include <osvr/RenderKit/RenderManager.h>
-#include <d3d11.h>
-#include <osvr/RenderKit/GraphicsLibraryD3D11.h>
+#include <osvr/RenderKit/RenderManagerD3D11C.h>
 #include "HideWindowsPlatformTypes.h"
 #else
-#include <osvr/RenderKit/RenderManager.h>
-#include <osvr/RenderKit/GraphicsLibraryOpenGL.h>
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #endif
 
 #include <memory>
 #include <iostream>
 #include <set>
+#include <vector>
 
 //class ID3D11Device;
 //class ID3D11DeviceContext;
@@ -95,19 +93,32 @@ public:
 
 protected:
     FCriticalSection mOSVRMutex;
-    std::vector<osvr::renderkit::RenderBuffer> mRenderBuffers;
-    std::vector<osvr::renderkit::OSVR_ViewportDescription> mViewportDescriptions;
-    std::vector<osvr::renderkit::RenderInfo> mRenderInfos;
-    osvr::renderkit::RenderManager::RenderParams mRenderParams;
+    std::vector<OSVR_RenderBufferD3D11> mRenderBuffers;
+    std::vector<OSVR_ViewportDescription> mViewportDescriptions;
+    std::vector<OSVR_RenderInfoD3D11> mRenderInfos;
+    OSVR_RenderParams mRenderParams;
 
     bool mInitialized = false;
     OSVR_ClientContext mClientContext = nullptr;
-    std::shared_ptr<osvr::renderkit::RenderManager> mRenderManager = nullptr;
+    OSVR_RenderManager mRenderManager = nullptr;
+    OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
 
     virtual void CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) {
         check(IsInitialized());
         // Should we create a RenderParams?
-        mRenderInfos = mRenderManager->GetRenderInfo();
+        OSVR_ReturnCode rc;
+        OSVR_RenderInfoCount numRenderInfo;
+        rc = osvrRenderManagerGetNumRenderInfo(mRenderManager, mRenderParams, &numRenderInfo);
+        check(rc == OSVR_RETURN_SUCCESS);
+
+        mRenderInfos.clear();
+        for (size_t i = 0; i < numRenderInfo; i++) {
+            OSVR_RenderInfoD3D11 renderInfo;
+            rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, i, mRenderParams, &renderInfo);
+            check(rc == OSVR_RETURN_SUCCESS);
+
+            mRenderInfos.push_back(renderInfo);
+        }
 
         // check some assumptions. Should all be the same height.
         check(mRenderInfos.size() == 2);
@@ -121,19 +132,21 @@ protected:
         if (!IsInitialized()) {
             auto graphicsLibrary = CreateGraphicsLibrary();
             auto graphicsLibraryName = GetGraphicsLibraryName();
+            OSVR_ReturnCode rc;
 
             check(mClientContext);
 
-            osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName, graphicsLibrary);
-            //osvr::renderkit::RenderManager *renderManager = osvr::renderkit::createRenderManager(mClientContext, graphicsLibraryName);
-            check(renderManager && renderManager->doingOkay());
+            rc = osvrCreateRenderManagerD3D11(mClientContext, graphicsLibraryName.c_str(), graphicsLibrary, &mRenderManager, &mRenderManagerD3D11);
+            check(rc == OSVR_RETURN_SUCCESS && mRenderManager && mRenderManagerD3D11);
 
-            mRenderManager.reset(renderManager);
-            check(mRenderManager)
-                auto results = mRenderManager->OpenDisplay();
-            check(results.status != osvr::renderkit::RenderManager::OpenStatus::FAILURE);
+            rc = osvrRenderManagerGetDoingOkay(mRenderManager);
+            check(rc == OSVR_RETURN_SUCCESS);
 
-            // @todo: create the textures
+            OSVR_OpenResultsD3D11 results;
+            rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
+            check(results.status != OSVR_OPEN_STATUS_FAILURE);
+
+            // @todo: create the textures?
 
             mInitialized = true;
         }
@@ -150,12 +163,21 @@ protected:
         UpdateRenderBuffers();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        bool presentedOK = mRenderManager->PresentRenderBuffers(mRenderBuffers, mRenderInfos, mRenderParams, mViewportDescriptions, ShouldFlipY());
-        check(presentedOK);
+        OSVR_ReturnCode rc;
+        OSVR_RenderManagerPresentState presentState;
+        rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
+        check(rc == OSVR_RETURN_SUCCESS);
+        check(mRenderBuffers.size() == mRenderInfos.size() && mRenderBuffers.size() == mViewportDescriptions.size());
+        for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
+        check(rc == OSVR_RETURN_SUCCESS);
     }
 
     // abstract methods, implement in DirectX/OpenGL specific subclasses
-    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() = 0;
+    virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary() = 0;
     virtual std::string GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
     virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
@@ -205,14 +227,6 @@ protected:
             // @todo: can't call this here, we're in the wrong thread.
             CalculateRenderTargetSizeImpl(width, height);
 
-            // delete any previous buffer containers.
-            for (size_t i = 0; i < mRenderBuffers.size(); i++) {
-                if (mRenderBuffers[i].D3D11) {
-                    delete mRenderBuffers[i].D3D11;
-                    mRenderBuffers[i].D3D11 = nullptr;
-                }
-            }
-
             // Fill in the resource view for your render texture buffer here
             D3D11_TEXTURE2D_DESC textureDesc;
             memset(&textureDesc, 0, sizeof(textureDesc));
@@ -258,27 +272,36 @@ protected:
 
             // Adding two RenderBuffers, but they both point to the same D3D11 texture target
             for (int i = 0; i < 2; i++) {
-                osvr::renderkit::RenderBuffer buffer;
-                osvr::renderkit::RenderBufferD3D11 *bufferD3D11 = new osvr::renderkit::RenderBufferD3D11();
-                bufferD3D11->colorBuffer = RenderTargetTexture;
-                bufferD3D11->colorBufferView = renderTargetView;
-                //bufferD3D11->depthStencilBuffer = ???;
-                //bufferD3D11->depthStencilView = ???;
-                buffer.D3D11 = bufferD3D11;
+                OSVR_RenderBufferD3D11 buffer;
+                buffer.colorBuffer = RenderTargetTexture;
+                buffer.colorBufferView = renderTargetView;
+                //buffer.depthStencilBuffer = ???;
+                //buffer.depthStencilView = ???;
                 mRenderBuffers.push_back(buffer);
             }
 
             // We need to register these new buffers.
             // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
             // if you pass it a non-empty vector here. Passing it a dummy array for now.
-            std::vector<osvr::renderkit::RenderBuffer> dummyBufferVector;
-            mRenderManager->RegisterRenderBuffers(dummyBufferVector);            
-            //mRenderManager->RegisterRenderBuffers(mRenderBuffers);
+
+            {
+                OSVR_RenderManagerRegisterBufferState state;
+                hr = osvrRenderManagerStartRegisterRenderBuffers(&state);
+                check(hr == OSVR_RETURN_SUCCESS);
+
+                for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+                    hr = osvrRenderManagerRegisterRenderBufferD3D11(state, mRenderBuffers[i]);
+                    check(hr == OSVR_RETURN_SUCCESS);
+                }
+
+                hr = osvrRenderManagerFinishRegisterRenderBuffers(mRenderManager, state, false);
+                check(hr == OSVR_RETURN_SUCCESS);
+            }
 
             // Now specify the viewports for each.
             mViewportDescriptions.clear();
 
-            osvr::renderkit::OSVR_ViewportDescription leftEye, rightEye;
+            OSVR_ViewportDescription leftEye, rightEye;
 
             leftEye.left = 0;
             leftEye.lower = 0;
@@ -296,15 +319,15 @@ protected:
         }
     }
 
-    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
-        osvr::renderkit::GraphicsLibrary ret;
+    virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary() override {
+        OSVR_GraphicsLibraryD3D11 ret;
         // Put the device and context into a structure to let RenderManager
         // know to use this one rather than creating its own.
-        ret.D3D11 = new osvr::renderkit::GraphicsLibraryD3D11;
-        ret.D3D11->device = GetGraphicsDevice();
+        ret.device = GetGraphicsDevice();
         ID3D11DeviceContext *ctx = NULL;
-        ret.D3D11->device->GetImmediateContext(&ctx);
-        ret.D3D11->context = ctx;
+        ret.device->GetImmediateContext(&ctx);
+        check(ctx);
+        ret.context = ctx;
 
         return ret;
     }
