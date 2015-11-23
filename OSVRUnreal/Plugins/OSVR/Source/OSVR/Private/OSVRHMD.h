@@ -450,7 +450,14 @@ public:
   /** ISceneViewExtension interface */
   virtual void SetupViewFamily(FSceneViewFamily& InViewFamily) override;
   virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
-  virtual FRHICustomPresent* GetCustomPresent() override { return mCustomPresent.get(); }
+  virtual FRHICustomPresent* GetCustomPresent() override
+  {
+      if (GIsEditor) {
+          return nullptr;
+      }
+      return mCustomPresent.get();
+  }
+
   virtual void BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
   {
   }

@@ -7,6 +7,7 @@ public class OSVR : ModuleRules
         PrivateIncludePaths.AddRange(
             new string[] {
 				"OSVR/Private"
+                //"../../../../../Source/Runtime/Renderer/Private",
 				// ... add other private include paths required here ...
 			}
             );
@@ -30,5 +31,14 @@ public class OSVR : ModuleRules
 				// ... add private dependencies that you statically link with here ...
 			}
             );
+        if(UEBuildConfiguration.bBuildEditor == true)
+        {
+            PrivateDependencyModuleNames.Add("UnrealEd");
+        }
+
+        if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
+        }
     }
 }

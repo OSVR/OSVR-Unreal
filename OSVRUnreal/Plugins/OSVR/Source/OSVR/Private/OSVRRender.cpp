@@ -57,7 +57,9 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    mCustomPresent->Initialize();
+    if (mCustomPresent) {
+        mCustomPresent->Initialize();
+    }
     // steamVR updates the current pose here, should we?
 }
 
@@ -74,7 +76,9 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         return;
     }
 
-    mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
+    if (mCustomPresent) {
+        mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
+    }
 }
 
 
@@ -105,7 +109,10 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
         if (!bUseSeparateRenderTarget) {
             viewportRHI->SetCustomPresent(nullptr);
         }
+        return;
     }
 
-    mCustomPresent->UpdateViewport(InViewport, viewportRHI);
+    if (mCustomPresent) {
+        mCustomPresent->UpdateViewport(InViewport, viewportRHI);
+    }
 }

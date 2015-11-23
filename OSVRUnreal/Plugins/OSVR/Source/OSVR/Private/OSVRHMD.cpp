@@ -19,6 +19,11 @@
 #include "OSVRHMD.h"
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
+#include "SceneViewport.h"
+
+#if WITH_EDITOR
+#include "Editor/UnrealEd/Classes/Editor/EditorEngine.h"
+#endif
 
 #if PLATFORM_WINDOWS
 #include "AllowWindowsPlatformTypes.h"
@@ -340,6 +345,24 @@ bool FOSVRHMD::IsStereoEnabled() const
 bool FOSVRHMD::EnableStereo(bool stereo)
 {
     bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
+
+    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+
+    FSceneViewport* sceneViewport;
+    if (!GIsEditor) {
+        UGameEngine* gameEngine = Cast<UGameEngine>(GEngine);
+        sceneViewport = gameEngine->SceneViewport.Get();
+    }
+#if WITH_EDITOR
+    else {
+        UEditorEngine* editorEngine = Cast<UEditorEngine>(GEngine);
+        sceneViewport = (FSceneViewport*)(editorEngine->GetPIEViewport());
+    }
+#endif
+
+    if (sceneViewport) {
+        sceneViewport->SetViewportSize(1280, 720);
+    }
     return bStereoEnabled;
 }
 
@@ -492,7 +515,7 @@ void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
     InViewFamily.EngineShowFlags.MotionBlur = 0;
     InViewFamily.EngineShowFlags.HMDDistortion = false;
-    InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+    //InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
     InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
@@ -525,9 +548,15 @@ FOSVRHMD::FOSVRHMD()
     bHmdOverridesApplied(false),
     DisplayConfig(nullptr)
 {
+    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+
     EnablePositionalTracking(true);
     HMDDescription.Init(osvrClientContext, DisplayConfig);
-    mCustomPresent = std::make_shared<FCurrentCustomPresent>(osvrClientContext);
+#if PLATFORM_WINDOWS
+    if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
+        mCustomPresent = std::make_shared<FCurrentCustomPresent>(osvrClientContext);
+    }
+#endif
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
@@ -536,6 +565,7 @@ FOSVRHMD::FOSVRHMD()
 
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
+
 }
 
 FOSVRHMD::~FOSVRHMD()
