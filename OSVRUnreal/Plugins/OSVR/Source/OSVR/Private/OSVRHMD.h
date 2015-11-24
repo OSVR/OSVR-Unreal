@@ -91,6 +91,7 @@ public:
         CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
     }
 
+    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) = 0;
 protected:
     FCriticalSection mOSVRMutex;
     std::vector<OSVR_RenderBufferD3D11> mRenderBuffers;
@@ -184,7 +185,6 @@ protected:
     virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary() = 0;
     virtual std::string GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
-    virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) = 0;
     virtual void UpdateRenderBuffers() = 0;
 };
 
@@ -215,6 +215,10 @@ public:
         // UpdateViewport is called before we're initialized, so we have to
         // defer updates to the render buffers until we're in the render thread.
         mRenderBuffersNeedToUpdate = true;
+    }
+
+    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override {
+        return false;
     }
 
 protected:
@@ -344,10 +348,6 @@ protected:
     virtual bool ShouldFlipY() override {
         return false;
     }
-
-    virtual bool AllocateRenderTargetTexture(uint32 SizeX, uint32 SizeY, uint8 Format, uint32 NumMips, uint32 InFlags, uint32 TargetableTextureFlags, FTexture2DRHIRef& OutTargetableTexture, FTexture2DRHIRef& OutShaderResourceTexture, uint32 NumSamples) override {
-        return false;
-    }
 };
 
 #else
@@ -440,7 +440,8 @@ public:
   virtual void CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY) override;
   virtual bool NeedReAllocateViewportRenderTarget(const FViewport &viewport) override;
   virtual void UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& Viewport, class SViewport*) override;
-
+  virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override;
+  
   virtual bool ShouldUseSeparateRenderTarget() const override
   {
       check(IsInGameThread());

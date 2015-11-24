@@ -116,3 +116,12 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
         mCustomPresent->UpdateViewport(InViewport, viewportRHI);
     }
 }
+
+bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
+{
+    check(index == 0);
+    if (mCustomPresent) {
+        return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
+    }
+    return false;
+}
