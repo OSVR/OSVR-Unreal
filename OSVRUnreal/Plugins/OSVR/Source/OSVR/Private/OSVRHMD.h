@@ -31,6 +31,7 @@
 #include "AllowWindowsPlatformTypes.h"
 #include <osvr/RenderKit/RenderManagerD3D11C.h>
 #include "HideWindowsPlatformTypes.h"
+#include "Runtime/Windows/D3D11RHI/Private/D3D11RHIPrivate.h"
 #else
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #endif
@@ -91,15 +92,7 @@ public:
         CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
     }
 
-    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) {
-        FRHIResourceCreateInfo colorCreateInfo(FClearValueBinding::Black);
-        uint32 flagsOverride = TexCreate_RenderTargetable | TexCreate_ShaderResource;
-        outTargetableTexture = RHICreateTexture2D(sizeX, sizeY, format, numMips, numSamples, flagsOverride, colorCreateInfo);
-        outShaderResourceTexture = outTargetableTexture;
-        mRenderTexture = outTargetableTexture;
-        mRenderBuffersNeedToUpdate = true;
-        return true;
-    };
+    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) = 0;
 
 protected:
     FCriticalSection mOSVRMutex;
@@ -116,7 +109,7 @@ protected:
     OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
 
     virtual void CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) {
-        check(IsInitialized());
+        InitializeImpl();
         // Should we create a RenderParams?
         OSVR_ReturnCode rc;
 
@@ -215,25 +208,75 @@ public:
         check(InViewportRHI);
         const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
         check(IsValidRef(rt));
-        //if (RenderTargetTexture != nullptr)
-        //{
-        //    RenderTargetTexture->Release();
-        //}
-        //RenderTargetTexture = (ID3D11Texture2D*)rt->GetNativeResource();
-        //RenderTargetTexture->AddRef();
-        //SetRenderTargetTexture((ID3D11Texture2D*)rt->GetNativeResource()); // @todo: do we need to do this?
-        InViewportRHI->SetCustomPresent(this);
-
+        SetRenderTargetTexture((ID3D11Texture2D*)rt->GetNativeResource()); // @todo: do we need to do this?
+        auto oldCustomPresent = InViewportRHI->GetCustomPresent();
+        if (oldCustomPresent != this) {
+            InViewportRHI->SetCustomPresent(this);
+        }
         // UpdateViewport is called before we're initialized, so we have to
         // defer updates to the render buffers until we're in the render thread.
         mRenderBuffersNeedToUpdate = true;
+    }
+
+    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override {
+        FScopeLock lock(&mOSVRMutex);
+        auto d3d11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
+        auto graphicsDevice = GetGraphicsDevice();
+        HRESULT hr;
+        D3D11_TEXTURE2D_DESC textureDesc;
+        memset(&textureDesc, 0, sizeof(textureDesc));
+        textureDesc.Width = sizeX;
+        textureDesc.Height = sizeY;
+        textureDesc.MipLevels = 1;
+        textureDesc.ArraySize = 1;
+        //textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        textureDesc.SampleDesc.Count = 1;
+        textureDesc.SampleDesc.Quality = 0;
+        textureDesc.Usage = D3D11_USAGE_DEFAULT;
+        // We need it to be both a render target and a shader resource
+        textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        textureDesc.CPUAccessFlags = 0;
+        textureDesc.MiscFlags = 0;
+
+        ID3D11Texture2D *D3DTexture = nullptr;
+        hr = graphicsDevice->CreateTexture2D(
+            &textureDesc, NULL, &D3DTexture);
+        check(!FAILED(hr));
+
+        SetRenderTargetTexture(D3DTexture);
+
+        ID3D11ShaderResourceView* shaderResourceView = nullptr;
+        bool createdRTVsPerSlice = false;
+        int32 rtvArraySize = 1;
+        TArray<TRefCountPtr<ID3D11RenderTargetView>> renderTargetViews;
+        TRefCountPtr<ID3D11DepthStencilView>* depthStencilViews = nullptr;
+        uint32 sizeZ = 0;
+        EPixelFormat epFormat = EPixelFormat(format);
+        bool cubemap = false;
+        bool pooled = false;
+        // override flags
+        flags = TexCreate_RenderTargetable | TexCreate_ShaderResource;
+
+        auto targetableTexture = new FD3D11Texture2D(
+            d3d11RHI, D3DTexture, shaderResourceView, createdRTVsPerSlice,
+            rtvArraySize, renderTargetViews, depthStencilViews,
+            textureDesc.Width, textureDesc.Height, sizeZ, numMips, numSamples, epFormat,
+            cubemap, flags, pooled, FClearValueBinding::Black);
+
+        outTargetableTexture = targetableTexture->GetTexture2D();
+        outShaderResourceTexture = targetableTexture->GetTexture2D();
+        mRenderTexture = targetableTexture;
+        mRenderBuffersNeedToUpdate = true;
+        UpdateRenderBuffers();
+        return true;
     }
 
 protected:
     ID3D11Texture2D* RenderTargetTexture = NULL;
 
     void SetRenderTargetTexture(ID3D11Texture2D* renderTargetTexture) {
-        if (RenderTargetTexture != nullptr)
+        if (RenderTargetTexture != nullptr && RenderTargetTexture != renderTargetTexture)
         {
             RenderTargetTexture->Release();
         }
@@ -243,57 +286,33 @@ protected:
 
     virtual void UpdateRenderBuffers() override {
         HRESULT hr;
-        check(RenderTargetTexture);
+        
         check(IsInitialized());
         if (mRenderBuffersNeedToUpdate) {
             uint32 width;
             uint32 height;
-
             // @todo: can't call this here, we're in the wrong thread.
             CalculateRenderTargetSizeImpl(width, height);
 
-             SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));
-             check(RenderTargetTexture);
+            //check(mRenderTexture);
+            //SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));
+            check(RenderTargetTexture);
 
-             D3D11_TEXTURE2D_DESC renderTextureDesc;
-             RenderTargetTexture->GetDesc(&renderTextureDesc);
-            // Fill in the resource view for your render texture buffer here
-            //D3D11_TEXTURE2D_DESC textureDesc;
-            //memset(&textureDesc, 0, sizeof(textureDesc));
-            //textureDesc.Width = width;
-            //textureDesc.Height = height;
-            //textureDesc.MipLevels = 1;
-            //textureDesc.ArraySize = 1;
-            ////textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            //textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            //textureDesc.SampleDesc.Count = 1;
-            //textureDesc.SampleDesc.Quality = 0;
-            //textureDesc.Usage = D3D11_USAGE_DEFAULT;
-            //// We need it to be both a render target and a shader resource
-            //textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-            //textureDesc.CPUAccessFlags = 0;
-            //textureDesc.MiscFlags = 0;
+            D3D11_TEXTURE2D_DESC renderTextureDesc;
+            RenderTargetTexture->GetDesc(&renderTextureDesc);
 
             auto graphicsDevice = GetGraphicsDevice();
-
-            // Create a new render target texture to use.
-            //ID3D11Texture2D *D3DTexture = nullptr;
-            //hr = graphicsDevice->CreateTexture2D(
-            //    &textureDesc, NULL, &D3DTexture);
-            //check(!FAILED(hr));
 
             D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
             memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
             // This must match what was created in the texture to be rendered
-            //renderTargetViewDesc.Format = textureDesc.Format;
+            //renderTargetViewDesc.Format = renderTextureDesc.Format;
             renderTargetViewDesc.Format = renderTextureDesc.Format;
             renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
             renderTargetViewDesc.Texture2D.MipSlice = 0;
 
             // Create the render target view.
             ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
-            //hr = graphicsDevice->CreateRenderTargetView(
-            //    D3DTexture, &renderTargetViewDesc, &renderTargetView);
             hr = graphicsDevice->CreateRenderTargetView(
                 RenderTargetTexture, &renderTargetViewDesc, &renderTargetView);
             check(!FAILED(hr));
@@ -304,7 +323,6 @@ protected:
             // Adding two RenderBuffers, but they both point to the same D3D11 texture target
             for (int i = 0; i < 2; i++) {
                 OSVR_RenderBufferD3D11 buffer;
-                //buffer.colorBuffer = D3DTexture;
                 buffer.colorBuffer = RenderTargetTexture;
                 buffer.colorBufferView = renderTargetView;
                 //buffer.depthStencilBuffer = ???;
@@ -341,7 +359,7 @@ protected:
             leftEye.height = height;
             mViewportDescriptions.push_back(leftEye);
 
-            rightEye.left = leftEye.left + leftEye.width + 1;
+            rightEye.left = leftEye.left + leftEye.width;
             rightEye.lower = 0;
             rightEye.width = leftEye.width;
             rightEye.height = leftEye.height;
