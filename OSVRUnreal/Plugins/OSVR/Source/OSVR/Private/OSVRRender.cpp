@@ -29,110 +29,41 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
     check(0);
 }
 
-void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& RHICmdList, FTexture2DRHIParamRef BackBuffer, FTexture2DRHIParamRef SrcTexture) const
-//{
-//    check(IsInRenderingThread());
-//
-//    if (DstRect.IsEmpty())
-//    {
-//        DstRect = FIntRect(0, 0, DstTexture->GetSizeX(), DstTexture->GetSizeY());
-//    }
-//    const uint32 ViewportWidth = DstRect.Width();
-//    const uint32 ViewportHeight = DstRect.Height();
-//    const FIntPoint TargetSize(ViewportWidth, ViewportHeight);
-//
-//    const float SrcTextureWidth = SrcTexture->GetSizeX();
-//    const float SrcTextureHeight = SrcTexture->GetSizeY();
-//    float U = 0.f, V = 0.f, USize = 1.f, VSize = 1.f;
-//    if (!SrcRect.IsEmpty())
-//    {
-//        U = SrcRect.Min.X / SrcTextureWidth;
-//        V = SrcRect.Min.Y / SrcTextureHeight;
-//        USize = SrcRect.Width() / SrcTextureWidth;
-//        VSize = SrcRect.Height() / SrcTextureHeight;
-//    }
-//
-//    SetRenderTarget(RHICmdList, DstTexture, FTextureRHIRef());
-//    RHICmdList.SetViewport(DstRect.Min.X, DstRect.Min.Y, 0, DstRect.Max.X, DstRect.Max.Y, 1.0f);
-//
-//    RHICmdList.SetBlendState(TStaticBlendState<>::GetRHI());
-//    RHICmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
-//    RHICmdList.SetDepthStencilState(TStaticDepthStencilState<false, CF_Always>::GetRHI());
-//
-//    const auto FeatureLevel = GMaxRHIFeatureLevel;
-//    auto ShaderMap = GetGlobalShaderMap(FeatureLevel);
-//
-//    TShaderMapRef<FScreenVS> VertexShader(ShaderMap);
-//    TShaderMapRef<FScreenPS> PixelShader(ShaderMap);
-//
-//    static FGlobalBoundShaderState BoundShaderState;
-//    SetGlobalBoundShaderState(RHICmdList, FeatureLevel, BoundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *VertexShader, *PixelShader);
-//
-//    PixelShader->SetParameters(RHICmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), SrcTexture);
-//
-//    RendererModule->DrawRectangle(
-//        RHICmdList,
-//        0, 0,
-//        ViewportWidth, ViewportHeight,
-//        U, V,
-//        USize, VSize,
-//        TargetSize,
-//        FIntPoint(1, 1),
-//        *VertexShader,
-//        EDRF_Default);
-//}
+// Based off of the SteamVR Unreal Plugin implementation.
+void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
 
-    const uint32 ViewportWidth = BackBuffer->GetSizeX();
-    const uint32 ViewportHeight = BackBuffer->GetSizeY();
+    const uint32 viewportWidth = backBuffer->GetSizeX();
+    const uint32 viewportHeight = backBuffer->GetSizeY();
 
-    SetRenderTarget(RHICmdList, BackBuffer, FTextureRHIRef());
-    RHICmdList.SetViewport(0, 0, 0, ViewportWidth, ViewportHeight, 1.0f);
+    SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
+    rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
 
-    RHICmdList.SetBlendState(TStaticBlendState<>::GetRHI());
-    RHICmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
-    RHICmdList.SetDepthStencilState(TStaticDepthStencilState<false, CF_Always>::GetRHI());
+    rhiCmdList.SetBlendState(TStaticBlendState<>::GetRHI());
+    rhiCmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
+    rhiCmdList.SetDepthStencilState(TStaticDepthStencilState<false, CF_Always>::GetRHI());
 
-    const auto FeatureLevel = GMaxRHIFeatureLevel;
-    auto ShaderMap = GetGlobalShaderMap(FeatureLevel);
+    const auto featureLevel = GMaxRHIFeatureLevel;
+    auto shaderMap = GetGlobalShaderMap(featureLevel);
 
-    TShaderMapRef<FScreenVS> VertexShader(ShaderMap);
-    TShaderMapRef<FScreenPS> PixelShader(ShaderMap);
+    TShaderMapRef<FScreenVS> vertexShader(shaderMap);
+    TShaderMapRef<FScreenPS> pixelShader(shaderMap);
 
-    static FGlobalBoundShaderState BoundShaderState;
-    SetGlobalBoundShaderState(RHICmdList, FeatureLevel, BoundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *VertexShader, *PixelShader);
+    static FGlobalBoundShaderState boundShaderState;
+    SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
-    PixelShader->SetParameters(RHICmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), SrcTexture);
-    //if (WindowMirrorMode == 1)
-    //{
-    //    // need to clear when rendering only one eye since the borders won't be touched by the DrawRect below
-    //    RHICmdList.Clear(true, FLinearColor::Black, false, 0, false, 0, FIntRect());
-
-    //    RendererModule->DrawRectangle(
-    //        RHICmdList,
-    //        ViewportWidth / 4, 0,
-    //        ViewportWidth / 2, ViewportHeight,
-    //        0.1f, 0.2f,
-    //        0.3f, 0.6f,
-    //        FIntPoint(ViewportWidth, ViewportHeight),
-    //        FIntPoint(1, 1),
-    //        *VertexShader,
-    //        EDRF_Default);
-    //}
-    //else if (WindowMirrorMode == 2)
-    //{
-        RendererModule->DrawRectangle(
-            RHICmdList,
-            0, 0, // X, Y
-            ViewportWidth, ViewportHeight, // SizeX, SizeY
-            0.0f, 0.0f, // U, V
-            1.0f, 1.0f, // SizeU, SizeV
-            FIntPoint(ViewportWidth, ViewportHeight), // TargetSize
-            FIntPoint(1, 1), // TextureSize
-            *VertexShader,
-            EDRF_Default);
-    //}
+    pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+    RendererModule->DrawRectangle(
+        rhiCmdList,
+        0, 0, // X, Y
+        viewportWidth, viewportHeight, // SizeX, SizeY
+        0.0f, 0.0f, // U, V
+        1.0f, 1.0f, // SizeU, SizeV
+        FIntPoint(viewportWidth, viewportHeight), // TargetSize
+        FIntPoint(1, 1), // TextureSize
+        *vertexShader,
+        EDRF_Default);
 }
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
