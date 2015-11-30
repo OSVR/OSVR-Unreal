@@ -368,6 +368,10 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
+    // @todo get this from the custom present
+    SizeX = 3840;
+    SizeY = 2160;
+
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
     {
@@ -515,7 +519,7 @@ void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
     InViewFamily.EngineShowFlags.MotionBlur = 0;
     InViewFamily.EngineShowFlags.HMDDistortion = false;
-    //InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+    //InViewFamily.EngineShowFlags.ScreenPercentage = 2.0f;
     InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
@@ -548,6 +552,9 @@ FOSVRHMD::FOSVRHMD()
     bHmdOverridesApplied(false),
     DisplayConfig(nullptr)
 {
+    static const FName RendererModuleName("Renderer");
+    RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
+
     FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
 
     EnablePositionalTracking(true);
