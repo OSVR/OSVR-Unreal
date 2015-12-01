@@ -368,10 +368,9 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
-    // @todo get this from the custom present
-    SizeX = 3840;
-    SizeY = 2160;
-
+    if (mCustomPresent) {
+        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+    }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
     {
