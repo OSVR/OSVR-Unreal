@@ -177,6 +177,22 @@ public:
 
         SetRenderTargetTexture(D3DTexture);
 
+        D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+        memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+        // This must match what was created in the texture to be rendered
+        //renderTargetViewDesc.Format = renderTextureDesc.Format;
+        renderTargetViewDesc.Format = textureDesc.Format;
+        renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+        renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+        // Create the render target view.
+        ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
+        hr = graphicsDevice->CreateRenderTargetView(
+            RenderTargetTexture, &renderTargetViewDesc, &renderTargetView);
+        check(!FAILED(hr));
+
+        RenderTargetView = renderTargetView;
+
         ID3D11ShaderResourceView* shaderResourceView = nullptr;
         bool createdRTVsPerSlice = false;
         int32 rtvArraySize = 1;
@@ -189,22 +205,25 @@ public:
         // override flags
         flags = TexCreate_RenderTargetable | TexCreate_ShaderResource;
 
+        renderTargetViews.Add(renderTargetView);
         auto targetableTexture = new FD3D11Texture2D(
             d3d11RHI, D3DTexture, shaderResourceView, createdRTVsPerSlice,
             rtvArraySize, renderTargetViews, depthStencilViews,
             textureDesc.Width, textureDesc.Height, sizeZ, numMips, numSamples, epFormat,
             cubemap, flags, pooled, FClearValueBinding::Black);
 
-        //outTargetableTexture = targetableTexture->GetTexture2D();
-        //outShaderResourceTexture = targetableTexture->GetTexture2D();
+        outTargetableTexture = targetableTexture->GetTexture2D();
+        outShaderResourceTexture = targetableTexture->GetTexture2D();
         mRenderTexture = targetableTexture;
         mRenderBuffersNeedToUpdate = true;
         UpdateRenderBuffers();
-        return false;
+        return true;
     }
 
 protected:
     ID3D11Texture2D* RenderTargetTexture = NULL;
+    ID3D11RenderTargetView * RenderTargetView = NULL;
+
     std::vector<OSVR_RenderBufferD3D11> mRenderBuffers;
     std::vector<OSVR_RenderInfoD3D11> mRenderInfos;
     OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
@@ -310,19 +329,19 @@ protected:
 
             auto graphicsDevice = GetGraphicsDevice();
 
-            D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-            memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
-            // This must match what was created in the texture to be rendered
+            //D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+            //memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
+            //// This must match what was created in the texture to be rendered
+            ////renderTargetViewDesc.Format = renderTextureDesc.Format;
             //renderTargetViewDesc.Format = renderTextureDesc.Format;
-            renderTargetViewDesc.Format = renderTextureDesc.Format;
-            renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-            renderTargetViewDesc.Texture2D.MipSlice = 0;
+            //renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+            //renderTargetViewDesc.Texture2D.MipSlice = 0;
 
-            // Create the render target view.
-            ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
-            hr = graphicsDevice->CreateRenderTargetView(
-                RenderTargetTexture, &renderTargetViewDesc, &renderTargetView);
-            check(!FAILED(hr));
+            //// Create the render target view.
+            //ID3D11RenderTargetView *renderTargetView; //< Pointer to our render target view
+            //hr = graphicsDevice->CreateRenderTargetView(
+            //    RenderTargetTexture, &renderTargetViewDesc, &renderTargetView);
+            //check(!FAILED(hr));
 
             
             mRenderBuffers.clear();
@@ -331,7 +350,8 @@ protected:
             for (int i = 0; i < 2; i++) {
                 OSVR_RenderBufferD3D11 buffer;
                 buffer.colorBuffer = RenderTargetTexture;
-                buffer.colorBufferView = renderTargetView;
+                //buffer.colorBufferView = renderTargetView;
+                buffer.colorBufferView = RenderTargetView;
                 //buffer.depthStencilBuffer = ???;
                 //buffer.depthStencilView = ???;
                 mRenderBuffers.push_back(buffer);
