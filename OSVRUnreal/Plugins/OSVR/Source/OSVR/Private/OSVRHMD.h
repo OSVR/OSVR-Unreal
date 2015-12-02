@@ -206,6 +206,17 @@ public:
         flags = TexCreate_RenderTargetable | TexCreate_ShaderResource;
 
         renderTargetViews.Add(renderTargetView);
+        D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+        memset(&shaderResourceViewDesc, 0, sizeof(shaderResourceViewDesc));
+        shaderResourceViewDesc.Format = textureDesc.Format;
+        shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        shaderResourceViewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
+        shaderResourceViewDesc.Texture2D.MostDetailedMip = textureDesc.MipLevels - 1;
+
+        hr = graphicsDevice->CreateShaderResourceView(
+            RenderTargetTexture, &shaderResourceViewDesc, &shaderResourceView);
+        check(!FAILED(hr));
+
         auto targetableTexture = new FD3D11Texture2D(
             d3d11RHI, D3DTexture, shaderResourceView, createdRTVsPerSlice,
             rtvArraySize, renderTargetViews, depthStencilViews,
