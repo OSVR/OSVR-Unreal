@@ -393,14 +393,14 @@ protected:
 
             leftEye.left = 0;
             leftEye.lower = 0;
-            leftEye.width = width / 2;
-            leftEye.height = height;
+            leftEye.width = 0.5;
+            leftEye.height = 1.0;
             mViewportDescriptions.push_back(leftEye);
 
-            rightEye.left = leftEye.left + leftEye.width;
+            rightEye.left = 0.5;
             rightEye.lower = 0;
-            rightEye.width = leftEye.width;
-            rightEye.height = leftEye.height;
+            rightEye.width = 0.5;
+            rightEye.height = 1.0;
             mViewportDescriptions.push_back(rightEye);
 
             mRenderBuffersNeedToUpdate = false;

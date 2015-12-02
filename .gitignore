@@ -11,6 +11,7 @@ Saved/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/include/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/lib/
 /OSVRUnreal/Plugins/OSVR/Source/OSVRRenderManager/*.txt
+/OSVRUnreal/DerivedDataCache/
 *.opensdf
 *.sdf
 *.sln
