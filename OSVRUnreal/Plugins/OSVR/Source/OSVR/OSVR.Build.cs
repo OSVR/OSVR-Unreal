@@ -40,8 +40,8 @@ public class OSVR : ModuleRules
             PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
             PrivateIncludePaths.AddRange(
                 new string[] {
- 					        @"C:\Program Files\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private",
- 					        @"C:\Program Files\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
+ 					        @"D:\unreal\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private",
+ 					        @"D:\unreal\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
     				        });
         //}
     }

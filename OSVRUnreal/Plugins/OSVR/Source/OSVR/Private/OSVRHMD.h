@@ -315,7 +315,7 @@ protected:
         if (RenderTargetTexture != nullptr && RenderTargetTexture != renderTargetTexture)
         {
             // @todo: testing if this is causing problems later on.
-            //RenderTargetTexture->Release();
+            RenderTargetTexture->Release();
         }
         RenderTargetTexture = renderTargetTexture;
         RenderTargetTexture->AddRef();
@@ -536,7 +536,7 @@ public:
       if (GIsEditor) {
           return nullptr;
       }
-      return mCustomPresent.get();
+      return mCustomPresent;
   }
 
   virtual void BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
@@ -597,5 +597,5 @@ private:
   
   OSVRHMDDescription HMDDescription;
   OSVR_DisplayConfig DisplayConfig;
-  std::shared_ptr<FCurrentCustomPresent> mCustomPresent = nullptr;
+  FCurrentCustomPresent* mCustomPresent = nullptr;
 };
