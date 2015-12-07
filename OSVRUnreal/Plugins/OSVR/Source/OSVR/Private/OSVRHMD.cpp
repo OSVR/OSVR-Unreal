@@ -560,7 +560,7 @@ FOSVRHMD::FOSVRHMD()
     HMDDescription.Init(osvrClientContext, DisplayConfig);
 #if PLATFORM_WINDOWS
     if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
-        mCustomPresent = std::make_shared<FCurrentCustomPresent>(osvrClientContext);
+        mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
     }
 #endif
 
