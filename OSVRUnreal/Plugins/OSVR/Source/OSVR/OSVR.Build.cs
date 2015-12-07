@@ -6,7 +6,7 @@ public class OSVR : ModuleRules
     {
         PrivateIncludePaths.AddRange(
             new string[] {
-				"OSVR/Private"
+				"OSVR/Private",
 				// ... add other private include paths required here ...
 			}
             );
@@ -30,5 +30,19 @@ public class OSVR : ModuleRules
 				// ... add private dependencies that you statically link with here ...
 			}
             );
+        if(UEBuildConfiguration.bBuildEditor == true)
+        {
+            PrivateDependencyModuleNames.Add("UnrealEd");
+        }
+
+        //if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        //{
+            PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
+            PrivateIncludePaths.AddRange(
+                new string[] {
+ 					        @"C:\Program Files\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private",
+ 					        @"C:\Program Files\Epic Games\4.9\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
+    				        });
+        //}
     }
 }

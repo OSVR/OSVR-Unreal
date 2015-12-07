@@ -33,7 +33,6 @@ OSVREntryPoint::OSVREntryPoint()
 OSVREntryPoint::~OSVREntryPoint()
 {
 	InterfaceCollection = nullptr;
-
 	osvrClientShutdown(osvrClientContext);
 }
 

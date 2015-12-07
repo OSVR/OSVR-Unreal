@@ -24,12 +24,14 @@ public class OSVRClientKit : ModuleRules
 
             PublicLibraryPaths.Add(String.Format("{0}/lib/{1}", ModuleDirectory, PlatformAbbrev));
             PublicAdditionalLibraries.Add("osvrClientKit.lib");
+            PublicAdditionalLibraries.Add("osvrRenderManager.lib");
             PublicDelayLoadDLLs.AddRange(
                     new string[] {
                 "osvrClientKit.dll",
                 "osvrClient.dll",
                 "osvrCommon.dll",
-                "osvrUtil.dll"
+                "osvrUtil.dll",
+                "osvrRenderManager.dll"
               });
 
 

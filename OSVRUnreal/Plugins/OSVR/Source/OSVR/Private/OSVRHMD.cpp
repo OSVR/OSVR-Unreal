@@ -19,6 +19,20 @@
 #include "OSVRHMD.h"
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
+#include "SceneViewport.h"
+
+#if WITH_EDITOR
+#include "Editor/UnrealEd/Classes/Editor/EditorEngine.h"
+#endif
+
+#if PLATFORM_WINDOWS
+#include "AllowWindowsPlatformTypes.h"
+#include <osvr/Util/ReturnCodesC.h>
+#include <osvr/RenderKit/RenderManagerD3D11C.h>
+#include "HideWindowsPlatformTypes.h"
+#else
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+#endif
 
 #include <osvr/Util/MatrixConventionsC.h>
 #include <cmath>
@@ -331,11 +345,32 @@ bool FOSVRHMD::IsStereoEnabled() const
 bool FOSVRHMD::EnableStereo(bool stereo)
 {
     bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
+
+    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+
+    FSceneViewport* sceneViewport;
+    if (!GIsEditor) {
+        UGameEngine* gameEngine = Cast<UGameEngine>(GEngine);
+        sceneViewport = gameEngine->SceneViewport.Get();
+    }
+#if WITH_EDITOR
+    else {
+        UEditorEngine* editorEngine = Cast<UEditorEngine>(GEngine);
+        sceneViewport = (FSceneViewport*)(editorEngine->GetPIEViewport());
+    }
+#endif
+
+    if (sceneViewport) {
+        sceneViewport->SetViewportSize(1280, 720);
+    }
     return bStereoEnabled;
 }
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
+    if (mCustomPresent) {
+        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+    }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
     {
@@ -484,7 +519,7 @@ void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
     InViewFamily.EngineShowFlags.MotionBlur = 0;
     InViewFamily.EngineShowFlags.HMDDistortion = false;
-    InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
+    //InViewFamily.EngineShowFlags.ScreenPercentage = 2.0f;
     InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
@@ -493,7 +528,7 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
     InView.BaseHmdOrientation = FQuat(FRotator(0.0f, 0.0f, 0.0f));
     InView.BaseHmdLocation = FVector(0.f);
     WorldToMetersScale = InView.WorldToMetersScale;
-    InViewFamily.bUseSeparateRenderTarget = false;
+    InViewFamily.bUseSeparateRenderTarget = true;
 }
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const
@@ -517,8 +552,18 @@ FOSVRHMD::FOSVRHMD()
     bHmdOverridesApplied(false),
     DisplayConfig(nullptr)
 {
+    static const FName RendererModuleName("Renderer");
+    RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
+
+    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+
     EnablePositionalTracking(true);
     HMDDescription.Init(osvrClientContext, DisplayConfig);
+#if PLATFORM_WINDOWS
+    if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
+        mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
+    }
+#endif
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
@@ -527,6 +572,7 @@ FOSVRHMD::FOSVRHMD()
 
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
+
 }
 
 FOSVRHMD::~FOSVRHMD()

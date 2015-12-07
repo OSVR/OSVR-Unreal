@@ -19,25 +19,58 @@ IF %2.==. (
 	set osvr64bit=%~2
 )
 
+IF %3.==. (
+	set /p rm32bit=Type DirectRender 32bit SDK root dir:
+) ELSE (
+	set rm32bit=%~3
+)
+IF %4.==. (
+	set /p rm64bit=Type DirectRender 64bit SDK root dir:
+) ELSE (
+	set rm64bit=%~4
+)
+
+IF %4.==. (
+	set /p boost=Type boost 1.57 root dir:
+) ELSE (
+	set boost=%~4
+)
+
 rem Get rid of the old
 RMDIR /S /Q "%DEST_ROOT%\include" > NUL
 RMDIR /S /Q "%DEST_ROOT%\lib" > NUL
 del "%DEST_ROOT%\*.txt" > NUL
 
-call :copy_arch_indep %osvr32bit% %DEST_ROOT%
+call :copy_arch_indep %osvr32bit% %boost% %DEST_ROOT%
+call :copy_arch_indep_rm %rm32bit% %DEST_ROOT%
 
 call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
+call :copy_arch_rm %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
+call :copy_arch_rm %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
 goto :eof
 
+
+:copy_arch_indep_rm
+rem Architecture-independent files
+setlocal
+set SRC=%1
+set DEST_ROOT=%2
+xcopy "%SRC%\include\osvr\RenderKit" "%DEST_ROOT%\include\osvr\RenderKit" /S /I /y
+endlocal
+goto :eof
 
 :copy_arch_indep
 rem Architecture-independent files
 setlocal
 set SRC=%1
-set DEST_ROOT=%2
+set BOOST=%2
+set DEST_ROOT=%3
 xcopy "%SRC%\include\osvr\ClientKit" "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
 xcopy "%SRC%\include\osvr\Util" "%DEST_ROOT%\include\osvr\Util" /S /I /y
+xcopy "%SRC%\include\osvr\Client" "%DEST_ROOT%\include\osvr\Client" /S /I /y
+xcopy "%SRC%\include\osvr\Common" "%DEST_ROOT%\include\osvr\Common" /S /I /y
+xcopy "%BOOST%\boost" "%DEST_ROOT%\include\boost" /S /I /y
 endlocal
 goto :eof
 
@@ -71,6 +104,39 @@ set SRC=%1
 set DEST=%2
 set BITS=%3
 for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
+  xcopy %%F "%DEST%\Win%BITS%\" /Y
+)
+endlocal
+goto :eof
+
+:copy_arch_rm
+rem Architecture-dependent files
+setlocal
+set SRC=%1
+set PLUGIN_ROOT=%2
+set DEST_ROOT=%3
+set BITS=%4
+
+rem One copy to the bin directory, for use in deployment.
+call :copy_dll_rm %SRC% %DEST_ROOT%\bin %BITS%
+
+rem One copy to the plugin Binaries directory, for editor support.
+call :copy_dll_rm %SRC% %PLUGIN_ROOT%\Binaries %BITS%
+
+rem libs
+for %%F in (%SRC%\lib\osvrRenderManager.lib) do (
+  xcopy %%F "%DEST_ROOT%\lib\Win%BITS%\" /Y
+)
+endlocal
+goto :eof
+
+:copy_dll_rm
+rem Copy DLL files
+setlocal
+set SRC=%1
+set DEST=%2
+set BITS=%3
+for %%F in (%SRC%\bin\osvrRenderManager.dll) do (
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
 endlocal
