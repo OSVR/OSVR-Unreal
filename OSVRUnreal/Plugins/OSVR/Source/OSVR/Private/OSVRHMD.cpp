@@ -518,7 +518,7 @@ void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
     InViewFamily.EngineShowFlags.MotionBlur = 0;
     InViewFamily.EngineShowFlags.HMDDistortion = false;
-    //InViewFamily.EngineShowFlags.ScreenPercentage = 2.0f;
+    InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
     InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
