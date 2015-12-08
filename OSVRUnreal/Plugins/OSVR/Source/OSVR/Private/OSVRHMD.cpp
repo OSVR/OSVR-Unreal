@@ -570,6 +570,10 @@ FOSVRHMD::FOSVRHMD()
     if (CVSyncVar)
         CVSyncVar->Set(true);
 
+    IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
+    if (CVScreenPercentage) {
+        CVScreenPercentage->Set(100);
+    }
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
 
