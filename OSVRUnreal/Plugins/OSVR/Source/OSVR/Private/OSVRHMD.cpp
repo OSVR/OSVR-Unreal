@@ -117,10 +117,10 @@ void FOSVRHMD::UpdateHeadPose() {
     check(returnCode == OSVR_RETURN_SUCCESS);
 
     returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-    check(returnCode == OSVR_RETURN_SUCCESS);
-
-    CurHmdPosition = BaseOrientation.Inverse().RotateVector((OSVR2FVector(pose.translation) * WorldToMetersScale) - BasePosition);
-    CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
+    if (returnCode == OSVR_RETURN_SUCCESS) {
+        CurHmdPosition = BaseOrientation.Inverse().RotateVector((OSVR2FVector(pose.translation) * WorldToMetersScale) - BasePosition);
+        CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
+    }
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -568,7 +568,7 @@ FOSVRHMD::FOSVRHMD()
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
     if (CVSyncVar)
-        CVSyncVar->Set(true);
+        CVSyncVar->Set(false);
 
     IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
     if (CVScreenPercentage) {
