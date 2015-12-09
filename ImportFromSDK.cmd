@@ -123,7 +123,7 @@ setlocal
 set SRC=%1
 set DEST=%2
 set BITS=%3
-for %%F in (%SRC%\osvrRenderManager.dll) do (
+for %%F in (%SRC%\osvrRenderManager.dll,%SRC%\d3dcompiler_47.dll,%SRC%\glew32.dll,%SRC%\SDL2.dll) do (
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
 endlocal
