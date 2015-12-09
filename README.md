@@ -18,7 +18,7 @@ Currently works with Unreal Engine 4.9.x.
 You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:
  > http://osvr.github.io/using/
 
-### Integrating the plugin from with an existing project
+### Integrating the plugin from source with an existing project
 The current recommended way to integrate the OSVR Unreal plugin with an existing project is directly from source.
 
  1. Clone the OSVR-Unreal source code, or download a zip from github.
