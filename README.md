@@ -29,6 +29,9 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  5. Open the existing project in the Unreal editor.
  6. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
  7. Open the generated or refreshed Visual Studio project and rebuild.
+ 8. You will need to copy binaries from YourProject/Plugins/OSVR/Binaries/Win64 (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries/Win64.
+
+ > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
 
 ## License
 
