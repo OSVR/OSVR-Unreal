@@ -20,33 +20,22 @@ IF %2.==. (
 )
 
 IF %3.==. (
-	set /p rm32bit=Type DirectRender 32bit SDK root dir:
-) ELSE (
-	set rm32bit=%~3
-)
-IF %4.==. (
 	set /p rm64bit=Type DirectRender 64bit SDK root dir:
 ) ELSE (
 	set rm64bit=%~4
 )
 
-IF %4.==. (
-	set /p boost=Type boost 1.57 root dir:
-) ELSE (
-	set boost=%~4
-)
 
 rem Get rid of the old
 RMDIR /S /Q "%DEST_ROOT%\include" > NUL
 RMDIR /S /Q "%DEST_ROOT%\lib" > NUL
 del "%DEST_ROOT%\*.txt" > NUL
 
-call :copy_arch_indep %osvr32bit% %boost% %DEST_ROOT%
-call :copy_arch_indep_rm %rm32bit% %DEST_ROOT%
+call :copy_arch_indep %osvr32bit% %DEST_ROOT%
+call :copy_arch_indep_rm %rm64bit% %DEST_ROOT%
 
 call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
-call :copy_arch_rm %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch_rm %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
 goto :eof
 
@@ -64,13 +53,11 @@ goto :eof
 rem Architecture-independent files
 setlocal
 set SRC=%1
-set BOOST=%2
-set DEST_ROOT=%3
+set DEST_ROOT=%2
 xcopy "%SRC%\include\osvr\ClientKit" "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
 xcopy "%SRC%\include\osvr\Util" "%DEST_ROOT%\include\osvr\Util" /S /I /y
 xcopy "%SRC%\include\osvr\Client" "%DEST_ROOT%\include\osvr\Client" /S /I /y
 xcopy "%SRC%\include\osvr\Common" "%DEST_ROOT%\include\osvr\Common" /S /I /y
-xcopy "%BOOST%\boost" "%DEST_ROOT%\include\boost" /S /I /y
 endlocal
 goto :eof
 
