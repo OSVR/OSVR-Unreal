@@ -32,36 +32,17 @@ Note: Make sure the version of the osvrRenderManager you download is osvrRenderM
 Note 2: The installer defaults to C:\Program Files\Sensics\osvrRenderManager0.6.25 as the path to install the osvrRenderManager. There is no way to change it during the install so you'll have to go to that default directory and copy and paste it if you want it else where.
 Note 3: A restart is required after the install so make sure to save everything!
 
-After installing the osverRenderManager0.6.25 and restart your machine you'll have to start the 'ImportFromSDK' script and follow the steps that you originally did in step 1 again but this time you can fill out four of the paths the script asks for.
-
-IMPORTANT NOTE: The ImportFromSDK script will ask you for a x32 and x64 path to the DirectRender SDK just like in step 1 with the OSVR-Core SDKs. The .msi installer installs only one package and all of the files for both x32 and 
-x64 are in the same folder. When entering the DirectRender root directory paths (which will be the osvrRenderManger0.6.25 path) make sure to use the same path for both the x32 and x64 paths the script asks for.
+After installing the osverRenderManager0.6.25 (or newer) and restart your machine you'll have to start the 'ImportFromSDK' script and follow the steps that you originally did in step 1 again but this time you can fill out all of the steps the script will ask you for.
 
 Below is an example of what the 'ImportFromSDK' command window should look like:
 
 EXAMPLE:
 Type OSVR 32bit SDK root dir:H:\OSVR\OSVR-Core-Snapshot-v0.6-428-gf10d9cb-build202-vs12-32bit
 Type OSVR 64bit SDK root dir:H:\OSVR\OSVR-Core-Snapshot-v0.6-428-gf10d9cb-build202-vs12-64bit
-Type DirectRender 32bit SDK root dir:H:\OSVR\osvrRenderManager0.6.25
 Type DirectRender 64bit SDK root dir:H:\OSVR\osvrRenderManager0.6.25
 
-
-3) You will then be asked for the 'boost 1.57 root directory.' Boost.org is a website that provides free and peer-viewed C++ libraries that helps with extending support to software and devices like the OSVR.
-The newest version of 'boost' at the time of this writing is 1.59 but the script asks for 1.57 so to download the 1.57 version you will find it here (http://www.boost.org/users/history/version_1_57_0.html) 
-There is no installer or anything special you have to so place it where ever you want and you can move on with filling out the last path required for the script to start importing the required SDK files.
-
-You should have something in the command window that looks like this:
-
-EXAMPLE:
-Type OSVR 32bit SDK root dir:H:\OSVR\OSVR-Core-Snapshot-v0.6-428-gf10d9cb-build202-vs12-32bit
-Type OSVR 64bit SDK root dir:H:\OSVR\OSVR-Core-Snapshot-v0.6-428-gf10d9cb-build202-vs12-64bit
-Type DirectRender 32bit SDK root dir:H:\OSVR\osvrRenderManager0.6.25
-Type DirectRender 64bit SDK root dir:H:\OSVR\osvrRenderManager0.6.25
-Type boost 1.57 root dir:H:\OSVR\boost_1_57_0
-
-Hit return and you'll see the command window start listing all the files its importing from the dictories you just typed in. This will take a moment mainly because of there being quite a few of the boost C++ libraries but afterwards the command
-window will close automatically. Once the command window runs through all the files it needs to copy then then your finished; you can open the example project or continue of follow the directions below on how to migrate the plugin
-to your own project.
+Hit return and you'll see the command window start listing all the files its importing from three dictories you just typed in. This will take only a moment because there isn't many files to copy over. Once the script is done running
+the command window will close on its own and your done. From there you will open the example map and let the plugin compile when it prompts you to do so. After compiling you the example map 'basic' should open. Nothing else you need to do.
 
 Note: In the very beginning after you start the import you may notice that the script can't find a text file called: *.txt    If you do see this just ignore it, its the .ignore file from GitHub which is not needed.
 
