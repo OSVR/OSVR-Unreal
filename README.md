@@ -14,7 +14,24 @@ The plugin itself is inside `OSVRUnreal/Plugins/OSVR`.
 
 Currently works with Unreal Engine 4.9.x.
 
-Additional branches (soon to be merged) such as https://github.com/OSVR/OSVR-Unreal/tree/ue4_8 work with Unreal Engine 4.8 and other versions.
+### Dependencies
+You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:
+ > http://osvr.github.io/using/
+
+### Integrating the plugin from source with an existing project
+The current recommended way to integrate the OSVR Unreal plugin with an existing project is directly from source.
+
+ 1. Clone the OSVR-Unreal source code, or download a zip from github.
+ 2. Run the ImportFromSDK.cmd script and specify the SDK paths as it prompts you.   
+  * NOTE: this script currently has a known issue with SDK paths with spaces in them. For now, please specify SDK paths without spaces to proceed.
+ 3. Check that the OSVR-Core and Render Manager binaries have been copied to the correct place in OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin, include, and lib.
+ 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins directory to your existing project's directory.
+ 5. Open the existing project in the Unreal editor.
+ 6. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
+ 7. Open the generated or refreshed Visual Studio project and rebuild.
+ 8. You will need to copy binaries from YourProject/Plugins/OSVR/Binaries/Win64 (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries/Win64.
+
+ > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
 
 ## License
 
