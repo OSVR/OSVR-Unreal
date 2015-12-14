@@ -593,6 +593,7 @@ private:
 
   bool bStereoEnabled;
   bool bHmdEnabled;
+  bool bHmdConnected;
   bool bHmdOverridesApplied;
   bool bWaitedForClientStatus = false;
   

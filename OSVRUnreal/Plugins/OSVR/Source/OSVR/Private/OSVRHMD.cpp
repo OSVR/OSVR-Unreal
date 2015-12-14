@@ -39,6 +39,8 @@
 #include <vector>
 
 extern OSVR_ClientContext osvrClientContext;
+DECLARE_LOG_CATEGORY_EXTERN(OSVRHMD, Log, All);
+DEFINE_LOG_CATEGORY(OSVRHMD);
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -46,26 +48,12 @@ extern OSVR_ClientContext osvrClientContext;
 
 bool FOSVRHMD::IsHMDConnected()
 {
-    // @TODO: we need a hook in OSVR
-    return true;
+    return bHmdConnected;
 }
 
 bool FOSVRHMD::IsHMDEnabled() const
 {
-    bool ret = false;
-    if (bHmdEnabled) {
-        size_t numTries = bWaitedForClientStatus ? 0 : 10000;
-        bool failure = false;
-        while (numTries-- > 0 && !ret && !failure) {
-            ret = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
-            if (!ret) {
-                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-            }
-        }
-        ret = ret && !failure;
-    }
-    // TODO: we also need to check that there actually is an interface at /me/head
-    return ret;
+    return bHmdConnected && bHmdEnabled;
 }
 
 void FOSVRHMD::EnableHMD(bool enable)
@@ -317,32 +305,7 @@ bool FOSVRHMD::IsPositionalTrackingEnabled() const
 
 bool FOSVRHMD::EnablePositionalTracking(bool enable)
 {
-    if (enable && !IsPositionalTrackingEnabled())
-    {
-        OSVR_ReturnCode ReturnCode = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
-        if (ReturnCode == OSVR_RETURN_SUCCESS)
-        {
-            int numTries = 0;
-            while (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_FAILURE && numTries++ < 10000) {
-                osvrClientUpdate(osvrClientContext);
-            }
-            if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
-                bHmdPosTracking = true;
-            }
-        }
-    }
-    else
-    {
-        if (DisplayConfig != nullptr)
-        {
-            OSVR_ReturnCode ReturnCode = osvrClientFreeDisplay(DisplayConfig);
-            check(ReturnCode == OSVR_RETURN_SUCCESS);
-            DisplayConfig = nullptr;
-        }
-
-        bHmdPosTracking = false;
-    }
-
+    bHmdPosTracking = enable;
     return IsPositionalTrackingEnabled();
 }
 
@@ -590,11 +553,65 @@ FOSVRHMD::FOSVRHMD()
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
 
+    // check if the client context is ok.
+    bool clientContextOK = false;
+    {
+        size_t numTries = 0;
+        bool failure = false;
+        while (numTries++ < 10000 && !clientContextOK && !failure) {
+            clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
+            if (!clientContextOK) {
+                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                if (failure) {
+                    UE_LOG(OSVRHMD, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                    break;
+                }
+            }
+        }
+        if (!clientContextOK) {
+            UE_LOG(OSVRHMD, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
+        }
+        clientContextOK = clientContextOK && !failure;
+    }
+
+    // get the display context
+    bool displayConfigOK = false;
+    if (clientContextOK)
+    {
+        bool failure = false;
+        auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
+        if (rc == OSVR_RETURN_FAILURE) {
+            UE_LOG(OSVRHMD, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
+        } else {
+            int numTries = 0;
+            while (!displayConfigOK && numTries++ < 10000) {
+                displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_FAILURE;
+                if (!displayConfigOK) {
+                    failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                    if (failure) {
+                        UE_LOG(OSVRHMD, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                        break;
+                    }
+                }
+            }
+            displayConfigOK = displayConfigOK && !failure;
+            if (!displayConfigOK) {
+                UE_LOG(OSVRHMD, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
+            }
+        }
+    }
+
+    // our version of connected is that the client context is ok (server is running)
+    // and the display config is ok (/me/head exists and received a pose)
+    bHmdConnected = clientContextOK && displayConfigOK;
 }
 
 FOSVRHMD::~FOSVRHMD()
 {
     EnablePositionalTracking(false);
+    if (DisplayConfig) {
+        osvrClientFreeDisplay(DisplayConfig);
+    }
 }
 
 bool FOSVRHMD::IsInitialized() const
