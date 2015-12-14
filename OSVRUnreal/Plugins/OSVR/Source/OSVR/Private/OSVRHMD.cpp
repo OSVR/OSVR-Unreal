@@ -64,6 +64,7 @@ bool FOSVRHMD::IsHMDEnabled() const
         }
         ret = ret && !failure;
     }
+    // TODO: we also need to check that there actually is an interface at /me/head
     return ret;
 }
 
