@@ -83,9 +83,9 @@ public:
     }
 
     // implement this in the sub-class
-    virtual void Initialize() {
+    virtual bool Initialize() {
         FScopeLock lock(&mOSVRMutex);
-        InitializeImpl();
+        return InitializeImpl();
     }
 
     virtual bool IsInitialized() {
@@ -115,7 +115,7 @@ protected:
 
     virtual void CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) = 0;
 
-    virtual void InitializeImpl() = 0;
+    virtual bool InitializeImpl() = 0;
 
     virtual TGraphicsDevice* GetGraphicsDevice() {
         auto ret = RHIGetNativeDevice();
@@ -275,28 +275,42 @@ protected:
         check(InOutSizeX != 0 && InOutSizeY != 0);
     }
 
-    virtual void InitializeImpl() override {
+    virtual bool InitializeImpl() override {
         if (!IsInitialized()) {
             auto graphicsLibrary = CreateGraphicsLibrary();
             auto graphicsLibraryName = GetGraphicsLibraryName();
             OSVR_ReturnCode rc;
 
-            check(mClientContext);
+            if (!mClientContext) {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("Can't initialize FOSVRCustomPresent without a valid client context"));
+                return false;
+            }
 
             rc = osvrCreateRenderManagerD3D11(mClientContext, graphicsLibraryName.c_str(), graphicsLibrary, &mRenderManager, &mRenderManagerD3D11);
-            check(rc == OSVR_RETURN_SUCCESS && mRenderManager && mRenderManagerD3D11);
+            if (rc == OSVR_RETURN_FAILURE || !mRenderManager || !mRenderManagerD3D11) {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("osvrCreateRenderManagerD3D11 call failed, or returned numm renderManager/renderManagerD3D11 instances"));
+                return false;
+            }
 
             rc = osvrRenderManagerGetDoingOkay(mRenderManager);
-            check(rc == OSVR_RETURN_SUCCESS);
+            if (rc == OSVR_RETURN_FAILURE) {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("osvrRenderManagerGetDoingOkay call failed. Perhaps there was an error during initialization?"));
+                return false;
+            }
 
             OSVR_OpenResultsD3D11 results;
             rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
-            check(results.status != OSVR_OPEN_STATUS_FAILURE);
+            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE) {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
+                return false;
+            }
 
             // @todo: create the textures?
 
             mInitialized = true;
         }
+        return true;
     }
 
     virtual void FinishRendering() override
