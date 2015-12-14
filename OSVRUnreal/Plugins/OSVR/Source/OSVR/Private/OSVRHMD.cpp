@@ -52,7 +52,19 @@ bool FOSVRHMD::IsHMDConnected()
 
 bool FOSVRHMD::IsHMDEnabled() const
 {
-    return bHmdEnabled;
+    bool ret = false;
+    if (bHmdEnabled) {
+        size_t numTries = bWaitedForClientStatus ? 0 : 10000;
+        bool failure = false;
+        while (numTries-- > 0 && !ret && !failure) {
+            ret = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
+            if (!ret) {
+                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+            }
+        }
+        ret = ret && !failure;
+    }
+    return ret;
 }
 
 void FOSVRHMD::EnableHMD(bool enable)

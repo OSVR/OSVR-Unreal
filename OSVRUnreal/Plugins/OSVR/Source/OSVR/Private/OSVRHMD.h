@@ -594,6 +594,7 @@ private:
   bool bStereoEnabled;
   bool bHmdEnabled;
   bool bHmdOverridesApplied;
+  bool bWaitedForClientStatus = false;
   
   OSVRHMDDescription HMDDescription;
   OSVR_DisplayConfig DisplayConfig;
