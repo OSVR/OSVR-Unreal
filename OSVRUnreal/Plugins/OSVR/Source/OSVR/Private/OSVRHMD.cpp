@@ -39,8 +39,9 @@
 #include <vector>
 
 extern OSVR_ClientContext osvrClientContext;
-DECLARE_LOG_CATEGORY_EXTERN(OSVRHMD, Log, All);
-DEFINE_LOG_CATEGORY(OSVRHMD);
+
+DEFINE_LOG_CATEGORY(OSVRHMDLog);
+DEFINE_LOG_CATEGORY(FOSVRCustomPresentLog);
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -534,7 +535,7 @@ FOSVRHMD::FOSVRHMD()
     FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
 
     EnablePositionalTracking(true);
-    HMDDescription.Init(osvrClientContext, DisplayConfig);
+
 #if PLATFORM_WINDOWS
     if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
         mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
@@ -563,13 +564,13 @@ FOSVRHMD::FOSVRHMD()
             if (!clientContextOK) {
                 failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
                 if (failure) {
-                    UE_LOG(OSVRHMD, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                    UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                     break;
                 }
             }
         }
         if (!clientContextOK) {
-            UE_LOG(OSVRHMD, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
+            UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
         }
         clientContextOK = clientContextOK && !failure;
     }
@@ -581,29 +582,42 @@ FOSVRHMD::FOSVRHMD()
         bool failure = false;
         auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
         if (rc == OSVR_RETURN_FAILURE) {
-            UE_LOG(OSVRHMD, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
+            UE_LOG(OSVRHMDLog, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
         } else {
             int numTries = 0;
             while (!displayConfigOK && numTries++ < 10000) {
-                displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_FAILURE;
+                displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
                 if (!displayConfigOK) {
                     failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
                     if (failure) {
-                        UE_LOG(OSVRHMD, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                        UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                         break;
                     }
                 }
             }
             displayConfigOK = displayConfigOK && !failure;
             if (!displayConfigOK) {
-                UE_LOG(OSVRHMD, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
+                UE_LOG(OSVRHMDLog, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
             }
+        }
+    }
+
+    bool displayConfigMatchesUnrealExpectations = false;
+    if (displayConfigOK) {
+        bool success = HMDDescription.Init(osvrClientContext, DisplayConfig);
+        if (success) {
+            displayConfigMatchesUnrealExpectations = HMDDescription.OSVRViewerFitsUnrealModel(DisplayConfig);
+            if (!displayConfigMatchesUnrealExpectations) {
+                UE_LOG(OSVRHMDLog, Warning, TEXT("The OSVR display config does not match the expectations of Unreal. Possibly incompatible HMD configuration."));
+            }
+        } else {
+            UE_LOG(OSVRHMDLog, Warning, TEXT("Unable to initialize the HMDDescription. Possible failures during initialization."));
         }
     }
 
     // our version of connected is that the client context is ok (server is running)
     // and the display config is ok (/me/head exists and received a pose)
-    bHmdConnected = clientContextOK && displayConfigOK;
+    bHmdConnected = clientContextOK && displayConfigOK && displayConfigMatchesUnrealExpectations;
 }
 
 FOSVRHMD::~FOSVRHMD()

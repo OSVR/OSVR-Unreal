@@ -41,6 +41,9 @@
 #include <set>
 #include <vector>
 
+DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDLog, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
+
 //class ID3D11Device;
 //class ID3D11DeviceContext;
 
@@ -60,6 +63,10 @@ public:
     virtual ~FOSVRCustomPresent() {
         if (mClientContext) {
             osvrClientShutdown(mClientContext);
+        }
+
+        if (mRenderManager) {
+            osvrDestroyRenderManager(mRenderManager);
         }
     }
 
