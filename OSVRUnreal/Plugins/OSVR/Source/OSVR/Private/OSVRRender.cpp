@@ -33,7 +33,7 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
-    if (GIsEditor) {
+    if (GIsEditor || !mCustomPresent || !mCustomPresent->IsInitialized()) {
         const uint32 viewportWidth = backBuffer->GetSizeX();
         const uint32 viewportHeight = backBuffer->GetSizeY();
 
@@ -111,13 +111,19 @@ void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, 
 void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)
 {
     check(IsInGameThread());
-
+    
     if (!IsStereoEnabled()) {
         return;
     }
 
     if (mCustomPresent) {
-        mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
+        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize()) {
+            delete mCustomPresent;
+            mCustomPresent = nullptr;
+        }
+        if (mCustomPresent && mCustomPresent->IsInitialized()) {
+            mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
+        }
     }
 }
 
@@ -152,15 +158,18 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
         return;
     }
 
-    if (mCustomPresent) {
-        mCustomPresent->UpdateViewport(InViewport, viewportRHI);
+    if (mCustomPresent && mCustomPresent->IsInitialized()) {
+        if (!mCustomPresent->UpdateViewport(InViewport, viewportRHI)) {
+            delete mCustomPresent;
+            mCustomPresent = nullptr;
+        }
     }
 }
 
 bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
 {
     check(index == 0);
-    if (mCustomPresent) {
+    if (mCustomPresent && mCustomPresent->IsInitialized()) {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
     return false;

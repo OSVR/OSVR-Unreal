@@ -345,7 +345,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
-    if (mCustomPresent) {
+    if (mCustomPresent && mCustomPresent->IsInitialized()) {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
     }
     SizeX = SizeX / 2;
@@ -625,6 +625,10 @@ FOSVRHMD::~FOSVRHMD()
     EnablePositionalTracking(false);
     if (DisplayConfig) {
         osvrClientFreeDisplay(DisplayConfig);
+    }
+
+    if (mCustomPresent) {
+        delete mCustomPresent;
     }
 }
 
