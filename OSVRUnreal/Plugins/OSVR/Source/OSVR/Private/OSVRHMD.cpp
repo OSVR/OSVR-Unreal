@@ -40,19 +40,21 @@
 
 extern OSVR_ClientContext osvrClientContext;
 
+DEFINE_LOG_CATEGORY(OSVRHMDLog);
+DEFINE_LOG_CATEGORY(FOSVRCustomPresentLog);
+
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
 //---------------------------------------------------
 
 bool FOSVRHMD::IsHMDConnected()
 {
-    // @TODO: we need a hook in OSVR
-    return true;
+    return bHmdConnected;
 }
 
 bool FOSVRHMD::IsHMDEnabled() const
 {
-    return bHmdEnabled;
+    return bHmdConnected && bHmdEnabled;
 }
 
 void FOSVRHMD::EnableHMD(bool enable)
@@ -304,32 +306,7 @@ bool FOSVRHMD::IsPositionalTrackingEnabled() const
 
 bool FOSVRHMD::EnablePositionalTracking(bool enable)
 {
-    if (enable && !IsPositionalTrackingEnabled())
-    {
-        OSVR_ReturnCode ReturnCode = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
-        if (ReturnCode == OSVR_RETURN_SUCCESS)
-        {
-            int numTries = 0;
-            while (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_FAILURE && numTries++ < 10000) {
-                osvrClientUpdate(osvrClientContext);
-            }
-            if (osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS) {
-                bHmdPosTracking = true;
-            }
-        }
-    }
-    else
-    {
-        if (DisplayConfig != nullptr)
-        {
-            OSVR_ReturnCode ReturnCode = osvrClientFreeDisplay(DisplayConfig);
-            check(ReturnCode == OSVR_RETURN_SUCCESS);
-            DisplayConfig = nullptr;
-        }
-
-        bHmdPosTracking = false;
-    }
-
+    bHmdPosTracking = enable;
     return IsPositionalTrackingEnabled();
 }
 
@@ -368,7 +345,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
-    if (mCustomPresent) {
+    if (mCustomPresent && mCustomPresent->IsInitialized()) {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
     }
     SizeX = SizeX / 2;
@@ -558,7 +535,7 @@ FOSVRHMD::FOSVRHMD()
     FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
 
     EnablePositionalTracking(true);
-    HMDDescription.Init(osvrClientContext, DisplayConfig);
+
 #if PLATFORM_WINDOWS
     if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
         mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
@@ -577,11 +554,82 @@ FOSVRHMD::FOSVRHMD()
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
 
+    // check if the client context is ok.
+    bool clientContextOK = false;
+    {
+        size_t numTries = 0;
+        bool failure = false;
+        while (numTries++ < 10000 && !clientContextOK && !failure) {
+            clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
+            if (!clientContextOK) {
+                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                if (failure) {
+                    UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                    break;
+                }
+            }
+        }
+        if (!clientContextOK) {
+            UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
+        }
+        clientContextOK = clientContextOK && !failure;
+    }
+
+    // get the display context
+    bool displayConfigOK = false;
+    if (clientContextOK)
+    {
+        bool failure = false;
+        auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
+        if (rc == OSVR_RETURN_FAILURE) {
+            UE_LOG(OSVRHMDLog, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
+        } else {
+            int numTries = 0;
+            while (!displayConfigOK && numTries++ < 10000) {
+                displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
+                if (!displayConfigOK) {
+                    failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                    if (failure) {
+                        UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                        break;
+                    }
+                }
+            }
+            displayConfigOK = displayConfigOK && !failure;
+            if (!displayConfigOK) {
+                UE_LOG(OSVRHMDLog, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
+            }
+        }
+    }
+
+    bool displayConfigMatchesUnrealExpectations = false;
+    if (displayConfigOK) {
+        bool success = HMDDescription.Init(osvrClientContext, DisplayConfig);
+        if (success) {
+            displayConfigMatchesUnrealExpectations = HMDDescription.OSVRViewerFitsUnrealModel(DisplayConfig);
+            if (!displayConfigMatchesUnrealExpectations) {
+                UE_LOG(OSVRHMDLog, Warning, TEXT("The OSVR display config does not match the expectations of Unreal. Possibly incompatible HMD configuration."));
+            }
+        } else {
+            UE_LOG(OSVRHMDLog, Warning, TEXT("Unable to initialize the HMDDescription. Possible failures during initialization."));
+        }
+    }
+
+    // our version of connected is that the client context is ok (server is running)
+    // and the display config is ok (/me/head exists and received a pose)
+    bHmdConnected = clientContextOK && displayConfigOK && displayConfigMatchesUnrealExpectations;
 }
 
 FOSVRHMD::~FOSVRHMD()
 {
     EnablePositionalTracking(false);
+    if (DisplayConfig) {
+        osvrClientFreeDisplay(DisplayConfig);
+    }
+
+    if (mCustomPresent) {
+        delete mCustomPresent;
+    }
 }
 
 bool FOSVRHMD::IsInitialized() const

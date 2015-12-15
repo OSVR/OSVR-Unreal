@@ -20,6 +20,7 @@
 
 #include <osvr/ClientKit/DisplayC.h>
 
+DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDDescriptionLog, Log, All);
 
 class OSVRHMDDescription
 {
@@ -45,6 +46,7 @@ public:
     FVector2D GetFov(OSVR_EyeCount Eye) const;
 	FVector GetLocation(EEye Eye) const;
 	FMatrix GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const;
+    bool OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayConfig);
 
 	// Helper function
 	// IPD    = ABS(GetLocation(LEFT_EYE).X - GetLocation(RIGHT_EYE).X);
@@ -59,10 +61,9 @@ private:
 	OSVRHMDDescription(OSVRHMDDescription&);
 	OSVRHMDDescription& operator=(OSVRHMDDescription&);
 
-    bool OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayConfig);
-    void InitIPD(OSVR_DisplayConfig displayConfig);
-    void InitDisplaySize(OSVR_DisplayConfig displayConfig);
-    void InitFOV(OSVR_DisplayConfig displayConfig);
+    bool InitIPD(OSVR_DisplayConfig displayConfig);
+    bool InitDisplaySize(OSVR_DisplayConfig displayConfig);
+    bool InitFOV(OSVR_DisplayConfig displayConfig);
 
     float m_ipd;
 	bool Valid;
