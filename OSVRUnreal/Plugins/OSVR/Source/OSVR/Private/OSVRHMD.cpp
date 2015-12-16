@@ -626,10 +626,6 @@ FOSVRHMD::~FOSVRHMD()
     if (DisplayConfig) {
         osvrClientFreeDisplay(DisplayConfig);
     }
-
-    if (mCustomPresent) {
-        delete mCustomPresent;
-    }
 }
 
 bool FOSVRHMD::IsInitialized() const
