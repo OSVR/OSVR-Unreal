@@ -188,6 +188,11 @@ void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVect
     CurrentPosition = CurHmdPosition;
 }
 
+void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orientation) const
+{
+
+}
+
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
     ViewRotation.Normalize();

@@ -12,7 +12,7 @@ The `OSVRUnreal` folder contains a sample application using the plugin from sour
 
 The plugin itself is inside `OSVRUnreal/Plugins/OSVR`.
 
-Currently works with Unreal Engine 4.9.x.
+Currently works with Unreal Engine 4.10.x. If you are still on 4.9.x, there is a ue4_9 branch, but it is recommended that you move to 4.10.x as soon as possible. Changes from master may not be merged into that branch on a regular basis except by request.
 
 ### Dependencies
 You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:
