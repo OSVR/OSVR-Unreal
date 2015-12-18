@@ -508,6 +508,12 @@ public:
   virtual float GetInterpupillaryDistance() const override;
 
   virtual void GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition) override;
+  
+  /**
+  * Rebase the input position and orientation to that of the HMD's base
+  */
+  virtual void RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orientation) const override;
+
   virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
   virtual void ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation) override;
   virtual void UpdatePlayerCameraRotation(class APlayerCameraManager* Camera, struct FMinimalViewInfo& POV) override;
