@@ -22,42 +22,37 @@ IF %2.==. (
 IF %3.==. (
 	set /p rm64bit=Type DirectRender 64bit SDK root dir:
 ) ELSE (
-	set rm64bit=%~4
+	set rm64bit=%~3
 )
 
+set rm32bit=%rm64bit%
 
 rem Get rid of the old
 RMDIR /S /Q "%DEST_ROOT%\include" > NUL
 RMDIR /S /Q "%DEST_ROOT%\lib" > NUL
 del "%DEST_ROOT%\*.txt" > NUL
 
-call :copy_arch_indep %osvr32bit% %DEST_ROOT%
-call :copy_arch_indep_rm %rm64bit% %DEST_ROOT%
+call :copy_arch_indep %osvr32bit% %rm32bit% %DEST_ROOT%
 
-call :copy_arch %osvr32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
-call :copy_arch %osvr64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
-call :copy_arch_rm %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
+call :copy_arch %osvr32bit% %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
+call :copy_arch %osvr64bit% %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
+
+echo Note: The 32-bit target is not yet supported. Please use the 64-bit target only for now.
+
 goto :eof
 
-
-:copy_arch_indep_rm
-rem Architecture-independent files
-setlocal
-set SRC=%1
-set DEST_ROOT=%2
-xcopy "%SRC%\include\osvr\RenderKit" "%DEST_ROOT%\include\osvr\RenderKit" /S /I /y
-endlocal
-goto :eof
 
 :copy_arch_indep
 rem Architecture-independent files
 setlocal
 set SRC=%1
-set DEST_ROOT=%2
-xcopy "%SRC%\include\osvr\ClientKit" "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
-xcopy "%SRC%\include\osvr\Util" "%DEST_ROOT%\include\osvr\Util" /S /I /y
-xcopy "%SRC%\include\osvr\Client" "%DEST_ROOT%\include\osvr\Client" /S /I /y
-xcopy "%SRC%\include\osvr\Common" "%DEST_ROOT%\include\osvr\Common" /S /I /y
+set SRC_RM=%2
+set DEST_ROOT=%3
+xcopy %SRC%\include\osvr\ClientKit "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
+xcopy %SRC%\include\osvr\Util "%DEST_ROOT%\include\osvr\Util" /S /I /y
+xcopy %SRC%\include\osvr\Client "%DEST_ROOT%\include\osvr\Client" /S /I /y
+xcopy %SRC%\include\osvr\Common "%DEST_ROOT%\include\osvr\Common" /S /I /y
+xcopy %SRC_RM%\include\osvr\RenderKit "%DEST_ROOT%\include\osvr\RenderKit" /S /I /y
 endlocal
 goto :eof
 
@@ -65,22 +60,28 @@ goto :eof
 rem Architecture-dependent files
 setlocal
 set SRC=%1
-set PLUGIN_ROOT=%2
-set DEST_ROOT=%3
-set BITS=%4
+set SRC_RM=%2
+set PLUGIN_ROOT=%3
+set DEST_ROOT=%4
+set BITS=%5
 
 copy "%SRC%\osvr-ver.txt" "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /y
 
 rem One copy to the bin directory, for use in deployment.
-call :copy_dll %SRC% %DEST_ROOT%\bin %BITS%
+call :copy_dll %SRC% %SRC_RM% %DEST_ROOT%\bin %BITS%
 
 rem One copy to the plugin Binaries directory, for editor support.
-call :copy_dll %SRC% %PLUGIN_ROOT%\Binaries %BITS%
+call :copy_dll %SRC% %SRC_RM% %PLUGIN_ROOT%\Binaries %BITS%
 
 rem libs
 for %%F in (%SRC%\lib\osvrClientKit.lib) do (
   xcopy %%F "%DEST_ROOT%\lib\Win%BITS%\" /Y
 )
+
+for %%F in (%SRC_RM%\lib\osvrRenderManager.lib) do (
+  xcopy %%F "%DEST_ROOT%\lib\Win%BITS%\" /Y
+)
+
 endlocal
 goto :eof
 
@@ -88,46 +89,20 @@ goto :eof
 rem Copy DLL files
 setlocal
 set SRC=%1
-set DEST=%2
-set BITS=%3
+set SRC_RM=%2
+set DEST=%3
+set BITS=%4
 for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
-endlocal
-goto :eof
-
-:copy_arch_rm
-rem Architecture-dependent files
-setlocal
-set SRC=%1
-set PLUGIN_ROOT=%2
-set DEST_ROOT=%3
-set BITS=%4
-
-rem One copy to the bin directory, for use in deployment.
-call :copy_dll_rm %SRC% %DEST_ROOT%\bin %BITS%
-
-rem One copy to the plugin Binaries directory, for editor support.
-call :copy_dll_rm %SRC% %PLUGIN_ROOT%\Binaries %BITS%
-
-rem libs
-for %%F in (%SRC%\lib\osvrRenderManager.lib) do (
-  xcopy %%F "%DEST_ROOT%\lib\Win%BITS%\" /Y
-)
-endlocal
-goto :eof
-
-:copy_dll_rm
-rem Copy DLL files
-setlocal
-set SRC=%1
-set DEST=%2
-set BITS=%3
-for %%F in (%SRC%\osvrRenderManager.dll,%SRC%\d3dcompiler_47.dll,%SRC%\glew32.dll,%SRC%\SDL2.dll) do (
+for %%F in (%SRC_RM%\osvrRenderManager.dll,%SRC_RM%\d3dcompiler_47.dll,%SRC_RM%\glew32.dll,%SRC_RM%\SDL2.dll) do (
+  echo xcopy %%F "%DEST%\Win%BITS%\" /Y
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
 endlocal
 goto :eof
+
+
 
 :ERROR_WRONG_PROJ_DIR
 echo Error: '%PRJ_ROOT%' is not the root project directory
