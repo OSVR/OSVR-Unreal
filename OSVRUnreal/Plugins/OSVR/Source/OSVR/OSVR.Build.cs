@@ -35,8 +35,8 @@ public class OSVR : ModuleRules
             PrivateDependencyModuleNames.Add("UnrealEd");
         }
 
-        //if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
-        //{
+        if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
             PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
             PrivateIncludePaths.AddRange(
                 new string[] {
@@ -45,6 +45,6 @@ public class OSVR : ModuleRules
                             @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private",
  					        @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
     				        });
-        //}
+        }
     }
 }
