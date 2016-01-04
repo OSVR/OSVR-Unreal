@@ -30,7 +30,7 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  6. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
   * NOTE: if your project is a pure blueprint project, you may need to add a dummy C++ game module to your project to get Unreal to generate a Visual Studio project for you. Otherwise it may complain about there not being any code to compile (having local plugins isn't enough).
  7. Open the generated or refreshed Visual Studio project and rebuild.
- 8. You will need to copy binaries from YourProject/Plugins/OSVR/Binaries/Win64 (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries/Win64.
+ 8. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries/Win64 (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries/Win64.
 
  > Note: If you installed Unreal to a non-standard location, or you are running a custom build of the engine, you may need to make a slight modification to /Plugins/OSVR/Source/OSVR/OSVR.Build.cs. There are some hard-coded paths to the engine at the bottom which are added to the default include directories list. Please adjust these as necessary for your custom install location.
 

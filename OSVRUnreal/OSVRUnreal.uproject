@@ -5,5 +5,23 @@
   "Description": "",
   "TargetPlatforms": [
     "WindowsNoEditor"
+  ],
+  "Plugins": [
+    {
+      "Name": "OculusRift",
+      "Enabled": false
+    },
+    {
+      "Name": "GearVR",
+      "Enabled": false
+    },
+    {
+      "Name": "OculusLibrary",
+      "Enabled": false
+    },
+    {
+      "Name": "OculusInput",
+      "Enabled": false
+    }
   ]
 }
