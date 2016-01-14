@@ -1,4 +1,6 @@
 # OSVR-Unreal
+
+[![Join the chat at https://gitter.im/OSVR/OSVR-Unreal](https://badges.gitter.im/OSVR/OSVR-Unreal.svg)](https://gitter.im/OSVR/OSVR-Unreal?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 > Maintained at <https://github.com/OSVR/OSVR-Unreal>
 >
 > For details, see <http://osvr.github.io>
