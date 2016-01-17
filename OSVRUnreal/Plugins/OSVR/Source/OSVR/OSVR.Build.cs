@@ -44,7 +44,9 @@ public class OSVR : ModuleRules
  					        @"C:\Program Files\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
                             @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private",
  					        @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
-    				        });
+                            @"D:\unreal2\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private",
+                            @"D:\unreal2\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
+                            });
         }
     }
 }
