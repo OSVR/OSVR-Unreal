@@ -1,4 +1,5 @@
 using UnrealBuildTool;
+using System.IO;
 
 public class OSVR : ModuleRules
 {
@@ -38,13 +39,14 @@ public class OSVR : ModuleRules
         if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
             PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
+
+            // Required for some private headers needed for the rendering support.
+            var EngineDir = Path.GetFullPath(BuildConfiguration.RelativeEnginePath);
             PrivateIncludePaths.AddRange(
                 new string[] {
- 					        @"C:\Program Files\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private",
- 					        @"C:\Program Files\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
-                            @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private",
- 					        @"D:\unreal\Epic Games\4.10\Engine\Source\Runtime\Windows\D3D11RHI\Private\Windows",
-    				        });
+                            Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private"),
+                            Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private\Windows")
+                            });
         }
     }
 }
