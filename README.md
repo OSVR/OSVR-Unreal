@@ -1,4 +1,6 @@
 # OSVR-Unreal
+
+[![Join the chat at https://gitter.im/OSVR/OSVR-Unreal](https://badges.gitter.im/OSVR/OSVR-Unreal.svg)](https://gitter.im/OSVR/OSVR-Unreal?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 > Maintained at <https://github.com/OSVR/OSVR-Unreal>
 >
 > For details, see <http://osvr.github.io>
@@ -38,6 +40,9 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
 
  > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
 
+## Demonstration video
+
+Video showing how to integrate OSVR into an Unreal project is here: <http://youtu.be/jLCkuJb--7w>
 
 ## License
 
