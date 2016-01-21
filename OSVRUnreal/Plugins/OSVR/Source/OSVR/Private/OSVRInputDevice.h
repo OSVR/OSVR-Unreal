@@ -16,20 +16,33 @@
 
 #pragma once
 
-#if OSVR_INPUTDEVICE_ENABLED
-
 #include "IForceFeedbackSystem.h"
 #include "IInputDevice.h"
+#include "IMotionController.h"
+#include "IOSVR.h"
 
 /**
 *
 */
-class FOSVRInputDevice : public IInputDevice
+class FOSVRInputDevice : public IInputDevice, public IMotionController
 {
 public:
 	FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler);
 
 	static void RegisterNewKeys();
+
+    /* IMotionController interface*/
+
+    /**
+     * Returns the calibration-space orientation of the requested controller's hand.
+     *
+     * @param ControllerIndex	The Unreal controller (player) index of the contoller set
+     * @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
+     * @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
+     * @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
+     * @return					True if the device requested is valid and tracked, false otherwise
+     */
+    virtual bool GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const override;
 
 	/** Tick the interface (e.g. check for new controllers) */
 	virtual void Tick(float DeltaTime) override;
@@ -51,6 +64,11 @@ public:
 
 private:
 	TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
+    IOSVR* osvr = nullptr;
+    inline IOSVR* GetOSVR() {
+        if (osvr == nullptr) {
+            osvr = &IOSVR::Get();
+        }
+        return osvr;
+    }
 };
-
-#endif // OSVR_INPUTDEVICE_ENABLED

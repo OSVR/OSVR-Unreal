@@ -59,15 +59,15 @@ TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMo
 	return nullptr;
 }
 
-#if OSVR_INPUTDEVICE_ENABLED
-TSharedPtr< class IInputDevice > FOSVR::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
-{
-	FOSVRInputDevice::RegisterNewKeys();
-
-	InputDevice = MakeShareable(new FOSVRInputDevice(InMessageHandler));
-	return InputDevice;
-}
-#endif // OSVR_INPUTDEVICE_ENABLED
+//#if OSVR_INPUTDEVICE_ENABLED
+//TSharedPtr< class IInputDevice > FOSVR::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
+//{
+//	FOSVRInputDevice::RegisterNewKeys();
+//
+//	InputDevice = MakeShareable(new FOSVRInputDevice(InMessageHandler));
+//	return InputDevice;
+//}
+//#endif // OSVR_INPUTDEVICE_ENABLED
 
 void FOSVR::StartupModule()
 {

@@ -16,13 +16,11 @@
 
 #include "OSVRPrivatePCH.h"
 
-#if OSVR_INPUTDEVICE_ENABLED
-
 #include "GenericPlatformMath.h"
 
 #include "OSVRInputDevice.h"
 
-#include "Slate.h"
+#include "SlateBasics.h"
 
 #include "WindowsApplication.h"
 #include "WindowsWindow.h"
@@ -46,6 +44,30 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 
 void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation)
 {
+}
+
+/**
+ * Returns the calibration-space orientation of the requested controller's hand.
+ *
+ * @param ControllerIndex	The Unreal controller (player) index of the contoller set
+ * @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
+ * @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
+ * @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
+ * @return					True if the device requested is valid and tracked, false otherwise
+ */
+bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
+{
+    bool RetVal = false;
+
+    //FSteamVRHMD* SteamVRHMD = GetSteamVRHMD();
+    //if (SteamVRHMD)
+    //{
+    //    FQuat DeviceOrientation = FQuat::Identity;
+    //    RetVal = SteamVRHMD->GetControllerHandPositionAndOrientation(ControllerIndex, DeviceHand, OutPosition, DeviceOrientation);
+    //    OutOrientation = DeviceOrientation.Rotator();
+    //}
+
+    return RetVal;
 }
 
 void FOSVRInputDevice::Tick(float DeltaTime)
@@ -79,5 +101,3 @@ void FOSVRInputDevice::SetChannelValue(int32 ControllerId, FForceFeedbackChannel
 void FOSVRInputDevice::SetChannelValues(int32 ControllerId, const FForceFeedbackValues& values)
 {
 }
-
-#endif // OSVR_INPUTDEVICE_ENABLED
