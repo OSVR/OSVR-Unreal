@@ -20,6 +20,9 @@
 #include "IInputDevice.h"
 #include "IMotionController.h"
 #include "IOSVR.h"
+#include "OSVRTypes.h"
+
+#include <osvr/ClientKit/InterfaceC.h>
 
 /**
 *
@@ -28,7 +31,7 @@ class FOSVRInputDevice : public IInputDevice, public IMotionController
 {
 public:
 	FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler);
-
+    virtual ~FOSVRInputDevice();
 	static void RegisterNewKeys();
 
     /* IMotionController interface*/
@@ -64,11 +67,6 @@ public:
 
 private:
 	TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
-    IOSVR* osvr = nullptr;
-    inline IOSVR* GetOSVR() {
-        if (osvr == nullptr) {
-            osvr = &IOSVR::Get();
-        }
-        return osvr;
-    }
+    OSVR_ClientInterface leftHand;
+    OSVR_ClientInterface rightHand;
 };

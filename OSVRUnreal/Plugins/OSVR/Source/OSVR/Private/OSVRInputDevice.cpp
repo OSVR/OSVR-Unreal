@@ -29,9 +29,20 @@
 
 #include "OSVRTypes.h"
 
+#include <osvr/ClientKit/InterfaceStateC.h>
+
 extern OSVR_ClientContext osvrClientContext;
 
 DEFINE_LOG_CATEGORY_STATIC(LogOSVRInputDevice, Log, All);
+
+namespace {
+    inline void CheckOSVR(OSVR_ReturnCode rc, const char* msg)
+    {
+        if (rc == OSVR_RETURN_FAILURE) {
+            // error checking
+        }
+    }
+}
 
 void FOSVRInputDevice::RegisterNewKeys()
 {
@@ -40,6 +51,38 @@ void FOSVRInputDevice::RegisterNewKeys()
 FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 	: MessageHandler(InMessageHandler)
 {
+    // make sure OSVR module is loaded.
+    IOSVR::Get().GetEntryPoint();
+
+    // @todo fill in buttons
+    //Buttons[(int32)EControllerHand::Left][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
+    //Buttons[(int32]EControllerHand::Right][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
+    // etc...
+    
+
+
+    CheckOSVR(osvrClientGetInterface(osvrClientContext, "/me/hands/left", &leftHand),
+        "Couldn't get left hand interface.");
+
+    CheckOSVR(osvrClientGetInterface(osvrClientContext, "/me/hands/right", &rightHand),
+        "Couldn't get right hand interface.");
+
+    IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
+
+    // This may need to be removed in a future version of the engine.
+    // From the SteamVR plugin: "construction of the controller happens after InitializeMotionControllers(), so we manually add this to the array here"
+    GEngine->MotionControllerDevices.AddUnique(this);
+}
+
+FOSVRInputDevice::~FOSVRInputDevice()
+{
+    GEngine->MotionControllerDevices.Remove(this);
+    if (leftHand) {
+        osvrClientFreeInterface(osvrClientContext, leftHand);
+    }
+    if (rightHand) {
+        osvrClientFreeInterface(osvrClientContext, rightHand);
+    }
 }
 
 void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation)
@@ -58,15 +101,18 @@ void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, 
 bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
     bool RetVal = false;
-
-    //FSteamVRHMD* SteamVRHMD = GetSteamVRHMD();
-    //if (SteamVRHMD)
-    //{
-    //    FQuat DeviceOrientation = FQuat::Identity;
-    //    RetVal = SteamVRHMD->GetControllerHandPositionAndOrientation(ControllerIndex, DeviceHand, OutPosition, DeviceOrientation);
-    //    OutOrientation = DeviceOrientation.Rotator();
-    //}
-
+    if (ControllerIndex == 0) {
+        if (osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS) {
+            auto iface = DeviceHand == EControllerHand::Left ? leftHand : rightHand;
+            OSVR_PoseState state;
+            OSVR_TimeValue tvalue;
+            if (osvrGetPoseState(iface, &tvalue, &state) == OSVR_RETURN_SUCCESS) {
+                OutPosition = OSVR2FVector(state.translation);
+                OutOrientation = OSVR2FQuat(state.rotation).Rotator();
+                RetVal = true;
+            }
+        }
+    }
     return RetVal;
 }
 
