@@ -1,4 +1,5 @@
 using UnrealBuildTool;
+using System.IO;
 
 public class OSVRInput : ModuleRules
 {
@@ -34,6 +35,20 @@ public class OSVRInput : ModuleRules
         if(UEBuildConfiguration.bBuildEditor == true)
         {
             PrivateDependencyModuleNames.Add("UnrealEd");
+        }
+
+
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
+
+            // Required for some private headers needed for the rendering support.
+            var EngineDir = Path.GetFullPath(BuildConfiguration.RelativeEnginePath);
+            PrivateIncludePaths.AddRange(
+                new string[] {
+                            Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private"),
+                            Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private\Windows")
+                            });
         }
     }
 }

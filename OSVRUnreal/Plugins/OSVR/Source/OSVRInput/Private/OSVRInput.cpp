@@ -1,15 +1,11 @@
 // Copyright 1998-2014 Epic Games, Inc. All Rights Reserved.
 
-#include "OSVRPrivatePCH.h"
-
+#include "OSVRInputPrivatePCH.h"
+#include "IOSVRInput.h"
 #include "OSVRInputDevice.h"
 
 #include "InputCoreTypes.h"
 #include "GameFramework/InputSettings.h"
-
-#include "OSVREntryPoint.h"
-
-#include "OSVRHMD.h"
 
 class FOSVRInput : public IOSVRInput
 {
@@ -40,11 +36,6 @@ class FOSVRInput : public IOSVRInput
 // };
 
 IMPLEMENT_MODULE(FOSVRInput, OSVRInput)
-
-OSVREntryPoint* FOSVRInput::GetEntryPoint()
-{
-	return EntryPoint.Get();
-}
 
 TSharedPtr< class IInputDevice > FOSVRInput::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 {

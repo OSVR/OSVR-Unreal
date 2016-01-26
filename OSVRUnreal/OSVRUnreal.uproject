@@ -1,27 +1,35 @@
 {
-  "FileVersion": 3,
-  "EngineAssociation": "4.10",
-  "Category": "",
-  "Description": "",
-  "TargetPlatforms": [
-    "WindowsNoEditor"
-  ],
-  "Plugins": [
-    {
-      "Name": "OculusRift",
-      "Enabled": false
-    },
-    {
-      "Name": "GearVR",
-      "Enabled": false
-    },
-    {
-      "Name": "OculusLibrary",
-      "Enabled": false
-    },
-    {
-      "Name": "OculusInput",
-      "Enabled": false
-    }
-  ]
+	"FileVersion": 3,
+	"EngineAssociation": "4.10",
+	"Category": "",
+	"Description": "",
+	"Plugins": [
+		{
+			"Name": "OculusRift",
+			"Enabled": false
+		},
+		{
+			"Name": "GearVR",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusLibrary",
+			"Enabled": false
+		},
+		{
+			"Name": "OculusInput",
+			"Enabled": false
+		},
+		{
+			"Name": "SteamVR",
+			"Enabled": false
+		},
+		{
+			"Name": "LeapMotionController",
+			"Enabled": false
+		}
+	],
+	"TargetPlatforms": [
+		"WindowsNoEditor"
+	]
 }

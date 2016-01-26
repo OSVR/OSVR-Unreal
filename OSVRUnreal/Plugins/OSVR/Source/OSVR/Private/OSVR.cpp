@@ -2,8 +2,6 @@
 
 #include "OSVRPrivatePCH.h"
 
-#include "OSVRInputDevice.h"
-
 #include "InputCoreTypes.h"
 #include "GameFramework/InputSettings.h"
 
