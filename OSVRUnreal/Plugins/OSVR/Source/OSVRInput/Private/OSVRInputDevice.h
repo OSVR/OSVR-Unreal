@@ -24,6 +24,13 @@
 
 #include <osvr/ClientKit/InterfaceC.h>
 
+#include <string>
+#include <vector>
+#include <queue>
+#include <functional>
+
+class OSVRButton;
+
 /**
 *
 */
@@ -66,6 +73,9 @@ public:
 	void EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation);
 
 private:
+
+    std::vector<OSVRButton> osvrButtons;
+
 	TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;

@@ -36,6 +36,41 @@
 OSVR_ClientContext context;
 
 //DEFINE_LOG_CATEGORY(LogOSVRInputDevice);
+enum OSVRButtonType {
+    OSVR_BUTTON_TYPE_DIGITAL,
+    OSVR_BUTTON_TYPE_ANALOG
+};
+
+class OSVRButton {
+private:
+    OSVR_ClientContext context;
+
+public:
+    OSVRButton() {}
+    OSVRButton(OSVRButtonType _type, FName _key, const std::string& _ifacePath) :
+        type(_type), key(_key), ifacePath(_ifacePath) {}
+
+    virtual ~OSVRButton() {
+        if (iface && context) {
+            osvrClientFreeInterface(context, iface);
+        }
+    }
+
+    inline void init(OSVR_ClientContext _context) {
+        context = _context;
+        if (osvrClientGetInterface(context, ifacePath.c_str(), &iface) != OSVR_RETURN_SUCCESS) {
+            isValid = false;
+        }
+    }
+
+    bool isValid;
+    FName key;
+    std::string ifacePath;
+    OSVR_ClientInterface iface = nullptr;
+    OSVRButtonType type;
+    std::queue<bool> digitalStateQueue;
+    std::queue<float> analogStateQueue;
+};
 
 namespace {
     inline void CheckOSVR(OSVR_ReturnCode rc, const char* msg)
@@ -44,6 +79,16 @@ namespace {
             // error checking
             //UE_LOG(LogOSVRInputDevice, Warning, TEXT(msg));
         }
+    }
+
+    void buttonCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_ButtonReport *report) {
+        OSVRButton* button = static_cast<OSVRButton*>(userdata);
+        button->digitalStateQueue.push(report->state == OSVR_BUTTON_PRESSED);
+    }
+
+    void analogCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_AnalogReport *report) {
+        OSVRButton* button = static_cast<OSVRButton*>(userdata);
+        button->analogStateQueue.push(report->state);
     }
 }
 
@@ -57,12 +102,76 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     // make sure OSVR module is loaded.
     context = osvrClientInit("com.osvr.unreal.plugin.input");
 
+    auto key = FGamepadKeyNames::SpecialLeft;
     // @todo fill in buttons
     //Buttons[(int32)EControllerHand::Left][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
     //Buttons[(int32]EControllerHand::Right][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
     // etc...
     
+    auto lh = (int32)EControllerHand::Left;
+    auto rh = (int32)EControllerHand::Right;
 
+    osvrButtons = {
+        // left hand
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Shoulder, "/controller/left/bumper"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Thumbstick, "/controller/left/joystick/button"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton1, "/controller/left/1"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton2, "/controller/left/2"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton3, "/controller/left/3"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton4, "/controller/left/4"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger"),
+
+        // right hand
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialRight, "/controller/right/middle"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Shoulder, "/controller/right/bumper"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Thumbstick, "/controller/right/joystick/button"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton1, "/controller/right/1"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton2, "/controller/right/2"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton3, "/controller/right/3"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton4, "/controller/right/4"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger"),
+
+        // "controller" (like xbox360)
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightShoulder, "/controller/right/bumper"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightThumb, "/controller/right/joystick/button"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonBottom, "/controller/right/1"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonRight, "/controller/right/2"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonLeft, "/controller/right/3"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonTop, "/controller/right/4"),
+
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftShoulder, "/controller/left/bumper"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftThumb, "/controller/left/joystick/button"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadDown, "/controller/left/1"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadRight, "/controller/left/2"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadLeft, "/controller/left/3"),
+        OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadUp, "/controller/left/4"),
+
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogX, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogY, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogX, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogY, "/controller/right/joystick/y"),
+
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger"),
+    };
+
+    for (size_t i = 0; i < osvrButtons.size(); i++) {
+        osvrButtons[i].init(context);
+
+        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_DIGITAL) {
+            using namespace std::placeholders;
+            osvrRegisterButtonCallback(osvrButtons[i].iface, buttonCallback, &osvrButtons[i]);
+        }
+
+        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG) {
+            osvrRegisterAnalogCallback(osvrButtons[i].iface, analogCallback, &osvrButtons[i]);
+        }
+    }
 
     CheckOSVR(osvrClientGetInterface(context, "/me/hands/left", &leftHand),
         "Couldn't get left hand interface.");
@@ -128,11 +237,24 @@ void FOSVRInputDevice::Tick(float DeltaTime)
 
 void FOSVRInputDevice::SendControllerEvents()
 {
-#if 0
-	MessageHandler->OnControllerButtonPressed(...);
-	MessageHandler->OnControllerButtonReleased(...);
-	MessageHandler->OnControllerAnalog(...);
-#endif
+    const int32 controllerId = 0;
+    for (size_t i = 0; i < osvrButtons.size(); i++) {
+        auto& button = osvrButtons[i];
+        while (!button.digitalStateQueue.empty()) {
+            auto state = button.digitalStateQueue.front();
+            button.digitalStateQueue.pop();
+            if (state) {
+                MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
+            } else {
+                MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
+            }
+        }
+        while (!button.analogStateQueue.empty()) {
+            auto state = button.analogStateQueue.front();
+            button.analogStateQueue.pop();
+            MessageHandler->OnControllerAnalog(button.key, controllerId, state);
+        }
+    }
 }
 
 void FOSVRInputDevice::SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
