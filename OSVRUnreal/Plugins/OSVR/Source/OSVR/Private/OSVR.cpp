@@ -24,6 +24,9 @@ class FOSVR : public IOSVR
 
 class FOSVR : public IOSVR
 {
+private:
+    TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> hmd;
+public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -35,7 +38,9 @@ class FOSVR : public IOSVR
 	//virtual void PreInit() override;
 
 	virtual OSVREntryPoint* GetEntryPoint() override;
+    virtual TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> GetHMD() override;
 
+    // @todo: why is this public?
 	TSharedPtr< class OSVREntryPoint > EntryPoint;
 };
 
@@ -46,11 +51,17 @@ OSVREntryPoint* FOSVR::GetEntryPoint()
 	return EntryPoint.Get();
 }
 
+TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> FOSVR::GetHMD()
+{
+    return hmd;
+}
+
 TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMountedDisplay()
 {
 	TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
 	if (OSVRHMD->IsInitialized())
 	{
+        hmd = OSVRHMD;
 		return OSVRHMD;
 	}
 

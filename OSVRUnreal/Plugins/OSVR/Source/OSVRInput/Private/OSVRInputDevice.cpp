@@ -28,6 +28,8 @@
 #include "GenericApplicationMessageHandler.h"
 
 #include "OSVRTypes.h"
+#include "IOSVR.h"
+#include "OSVRHMD.h"
 
 #include <osvr/ClientKit/InterfaceStateC.h>
 
@@ -109,7 +111,8 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
             OSVR_PoseState state;
             OSVR_TimeValue tvalue;
             if (osvrGetPoseState(iface, &tvalue, &state) == OSVR_RETURN_SUCCESS) {
-                OutPosition = OSVR2FVector(state.translation);
+                float worldToMetersScale = IOSVR::Get().GetHMD()->GetWorldToMetersScale();
+                OutPosition = OSVR2FVector(state.translation) * worldToMetersScale;
                 OutOrientation = OSVR2FQuat(state.rotation).Rotator();
                 RetVal = true;
             }

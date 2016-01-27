@@ -40,14 +40,14 @@
 //#endif // OSVR_INPUTDEVICE_ENABLED
 
 class OSVREntryPoint;
+class FOSVRHMD;
 
 /**
 * The public interface to this module.  In most cases, this interface is only public to sibling modules
 * within this plugin.
 */
-class IOSVR : public IHeadMountedDisplayModule
+OSVR_API class IOSVR : public IHeadMountedDisplayModule
 {
-
 public:
 	/** Returns the key into the HMDPluginPriority section of the config file for this module */
 	virtual FString GetModulePriorityKeyName() const
@@ -77,4 +77,5 @@ public:
 	}
 
 	virtual OSVREntryPoint* GetEntryPoint() = 0;
+    virtual TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> GetHMD() = 0;
 };
