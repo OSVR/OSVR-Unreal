@@ -38,7 +38,8 @@ OSVR_ClientContext context;
 //DEFINE_LOG_CATEGORY(LogOSVRInputDevice);
 enum OSVRButtonType {
     OSVR_BUTTON_TYPE_DIGITAL,
-    OSVR_BUTTON_TYPE_ANALOG
+    OSVR_BUTTON_TYPE_ANALOG,
+    OSVR_BUTTON_TYPE_ANALOG_THRESHOLD
 };
 
 class OSVRButton {
@@ -63,7 +64,9 @@ public:
         }
     }
 
-    bool isValid;
+    bool oldState = false;
+    bool isValid = false;
+    float threshold = 0.75f;
     FName key;
     std::string ifacePath;
     OSVR_ClientInterface iface = nullptr;
@@ -88,7 +91,16 @@ namespace {
 
     void analogCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_AnalogReport *report) {
         OSVRButton* button = static_cast<OSVRButton*>(userdata);
-        button->analogStateQueue.push(report->state);
+        if (button->type == OSVR_BUTTON_TYPE_ANALOG_THRESHOLD) {
+            bool newState = report->state > threshold;
+            if (newState != button->oldState) {
+                button->digitalStateQueue.push(newState);
+            }
+            button->oldState = newState;
+        }
+        else {
+            button->analogStateQueue.push(report->state);
+        }
     }
 }
 
@@ -97,7 +109,7 @@ void FOSVRInputDevice::RegisterNewKeys()
 }
 
 FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
-	: MessageHandler(InMessageHandler)
+    : MessageHandler(InMessageHandler)
 {
     // make sure OSVR module is loaded.
     context = osvrClientInit("com.osvr.unreal.plugin.input");
@@ -107,7 +119,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     //Buttons[(int32)EControllerHand::Left][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
     //Buttons[(int32]EControllerHand::Right][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
     // etc...
-    
+
     auto lh = (int32)EControllerHand::Left;
     auto rh = (int32)EControllerHand::Right;
 
@@ -123,6 +135,8 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger"),
+
 
         // right hand
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialRight, "/controller/right/middle"),
@@ -135,6 +149,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger"),
 
         // "controller" (like xbox360)
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightShoulder, "/controller/right/bumper"),
@@ -158,6 +173,8 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger"),
     };
 
     for (size_t i = 0; i < osvrButtons.size(); i++) {
@@ -168,7 +185,8 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
             osvrRegisterButtonCallback(osvrButtons[i].iface, buttonCallback, &osvrButtons[i]);
         }
 
-        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG) {
+        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG ||
+            osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG_THRESHOLD) {
             osvrRegisterAnalogCallback(osvrButtons[i].iface, analogCallback, &osvrButtons[i]);
         }
     }
@@ -203,14 +221,14 @@ void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, 
 }
 
 /**
- * Returns the calibration-space orientation of the requested controller's hand.
- *
- * @param ControllerIndex	The Unreal controller (player) index of the contoller set
- * @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
- * @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
- * @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
- * @return					True if the device requested is valid and tracked, false otherwise
- */
+* Returns the calibration-space orientation of the requested controller's hand.
+*
+* @param ControllerIndex	The Unreal controller (player) index of the contoller set
+* @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
+* @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
+* @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
+* @return					True if the device requested is valid and tracked, false otherwise
+*/
 bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
     bool RetVal = false;
@@ -232,7 +250,7 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
 
 void FOSVRInputDevice::Tick(float DeltaTime)
 {
-	osvrClientUpdate(context);
+    osvrClientUpdate(context);
 }
 
 void FOSVRInputDevice::SendControllerEvents()
@@ -245,7 +263,8 @@ void FOSVRInputDevice::SendControllerEvents()
             button.digitalStateQueue.pop();
             if (state) {
                 MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
-            } else {
+            }
+            else {
                 MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
             }
         }
@@ -259,12 +278,12 @@ void FOSVRInputDevice::SendControllerEvents()
 
 void FOSVRInputDevice::SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 {
-	MessageHandler = InMessageHandler;
+    MessageHandler = InMessageHandler;
 }
 
 bool FOSVRInputDevice::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
-	return true;
+    return true;
 }
 
 void FOSVRInputDevice::SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value)
