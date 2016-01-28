@@ -35,11 +35,18 @@
 
 DEFINE_LOG_CATEGORY(LogOSVRInputDevice);
 
-enum OSVRButtonType {
-    OSVR_BUTTON_TYPE_DIGITAL,
-    OSVR_BUTTON_TYPE_ANALOG,
-    OSVR_BUTTON_TYPE_THRESHOLD
-};
+namespace {
+    enum OSVRButtonType {
+        OSVR_BUTTON_TYPE_DIGITAL,
+        OSVR_BUTTON_TYPE_ANALOG,
+        OSVR_BUTTON_TYPE_THRESHOLD
+    };
+
+    enum OSVRThresholdType {
+        OSVR_THRESHOLD_TYPE_GT,
+        OSVR_THRESHOLD_TYPE_LT
+    };
+}
 
 class OSVRButton {
 private:
@@ -49,6 +56,8 @@ public:
     OSVRButton() {}
     OSVRButton(OSVRButtonType _type, FName _key, const std::string& _ifacePath) :
         type(_type), key(_key), ifacePath(_ifacePath) {}
+    OSVRButton(OSVRButtonType _type, OSVRThresholdType _thresholdType, float _threshold, FName _key, const std::string& _ifacePath) :
+        type(_type), thresholdType(_thresholdType), threshold(_threshold), key(_key), ifacePath(_ifacePath) {}
 
     bool oldState = false;
     bool isValid = true;
@@ -56,6 +65,7 @@ public:
     FName key;
     std::string ifacePath;
     OSVRButtonType type;
+    OSVRThresholdType thresholdType = OSVR_THRESHOLD_TYPE_GT;
     std::queue<bool> digitalStateQueue;
     std::queue<float> analogStateQueue;
 };
@@ -76,7 +86,9 @@ namespace {
     void analogCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_AnalogReport *report) {
         OSVRButton* button = static_cast<OSVRButton*>(userdata);
         if (button->type == OSVR_BUTTON_TYPE_THRESHOLD) {
-            bool newState = report->state > button->threshold;
+            bool newState = (button->thresholdType == OSVR_THRESHOLD_TYPE_GT && report->state > button->threshold) ||
+                (button->thresholdType == OSVR_THRESHOLD_TYPE_LT && report->state < button->threshold);
+
             if (newState != button->oldState) {
                 button->digitalStateQueue.push(newState);
             }
@@ -98,6 +110,8 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     // make sure OSVR module is loaded.
     context = osvrClientInit("com.osvr.unreal.plugin.input");
 
+    const float defaultThreshold = 0.25f;
+
     osvrButtons = {
         // left hand
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle"),
@@ -108,7 +122,11 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton3, "/controller/left/3"),
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton4, "/controller/left/4"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Right, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Left, "/controller/left/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Up, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Down, "/controller/left/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger"),
         OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger"),
 
@@ -122,7 +140,11 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton3, "/controller/right/3"),
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton4, "/controller/right/4"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Right, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Left, "/controller/right/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Up, "/controller/right/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Down, "/controller/right/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger"),
         OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger"),
 
@@ -142,9 +164,19 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadUp, "/controller/left/4"),
 
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogX, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickRight, "/controller/left/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickLeft, "/controller/left/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogY, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickUp, "/controller/left/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickDown, "/controller/left/joystick/y"),
+
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogX, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickRight, "/controller/right/joystick/x"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickLeft, "/controller/right/joystick/x"),
+
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogY, "/controller/right/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickUp, "/controller/right/joystick/y"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickDown, "/controller/right/joystick/y"),
 
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger"),
