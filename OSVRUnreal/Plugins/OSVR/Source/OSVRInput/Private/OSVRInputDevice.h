@@ -27,7 +27,10 @@
 #include <string>
 #include <vector>
 #include <queue>
+#include <map>
 #include <functional>
+
+DECLARE_LOG_CATEGORY_EXTERN(LogOSVRInputDevice, Log, All);
 
 class OSVRButton;
 
@@ -73,9 +76,9 @@ public:
 	void EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation);
 
 private:
-
+    std::map<std::string, OSVR_ClientInterface> interfaces;
     std::vector<OSVRButton> osvrButtons;
-
+    OSVR_ClientContext context;
 	TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;

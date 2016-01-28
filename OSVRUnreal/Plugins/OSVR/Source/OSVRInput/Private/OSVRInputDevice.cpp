@@ -33,13 +33,12 @@
 
 #include <osvr/ClientKit/InterfaceStateC.h>
 
-OSVR_ClientContext context;
+DEFINE_LOG_CATEGORY(LogOSVRInputDevice);
 
-//DEFINE_LOG_CATEGORY(LogOSVRInputDevice);
 enum OSVRButtonType {
     OSVR_BUTTON_TYPE_DIGITAL,
     OSVR_BUTTON_TYPE_ANALOG,
-    OSVR_BUTTON_TYPE_ANALOG_THRESHOLD
+    OSVR_BUTTON_TYPE_THRESHOLD
 };
 
 class OSVRButton {
@@ -51,25 +50,11 @@ public:
     OSVRButton(OSVRButtonType _type, FName _key, const std::string& _ifacePath) :
         type(_type), key(_key), ifacePath(_ifacePath) {}
 
-    virtual ~OSVRButton() {
-        if (iface && context) {
-            osvrClientFreeInterface(context, iface);
-        }
-    }
-
-    inline void init(OSVR_ClientContext _context) {
-        context = _context;
-        if (osvrClientGetInterface(context, ifacePath.c_str(), &iface) != OSVR_RETURN_SUCCESS) {
-            isValid = false;
-        }
-    }
-
     bool oldState = false;
-    bool isValid = false;
+    bool isValid = true;
     float threshold = 0.75f;
     FName key;
     std::string ifacePath;
-    OSVR_ClientInterface iface = nullptr;
     OSVRButtonType type;
     std::queue<bool> digitalStateQueue;
     std::queue<float> analogStateQueue;
@@ -79,8 +64,7 @@ namespace {
     inline void CheckOSVR(OSVR_ReturnCode rc, const char* msg)
     {
         if (rc == OSVR_RETURN_FAILURE) {
-            // error checking
-            //UE_LOG(LogOSVRInputDevice, Warning, TEXT(msg));
+            UE_LOG(LogOSVRInputDevice, Warning, TEXT("%s"), msg);
         }
     }
 
@@ -91,8 +75,8 @@ namespace {
 
     void analogCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_AnalogReport *report) {
         OSVRButton* button = static_cast<OSVRButton*>(userdata);
-        if (button->type == OSVR_BUTTON_TYPE_ANALOG_THRESHOLD) {
-            bool newState = report->state > threshold;
+        if (button->type == OSVR_BUTTON_TYPE_THRESHOLD) {
+            bool newState = report->state > button->threshold;
             if (newState != button->oldState) {
                 button->digitalStateQueue.push(newState);
             }
@@ -114,15 +98,6 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     // make sure OSVR module is loaded.
     context = osvrClientInit("com.osvr.unreal.plugin.input");
 
-    auto key = FGamepadKeyNames::SpecialLeft;
-    // @todo fill in buttons
-    //Buttons[(int32)EControllerHand::Left][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
-    //Buttons[(int32]EControllerHand::Right][buttonIndex] = FGamepadKeyNames::UnrealButtonKeyName;
-    // etc...
-
-    auto lh = (int32)EControllerHand::Left;
-    auto rh = (int32)EControllerHand::Right;
-
     osvrButtons = {
         // left hand
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle"),
@@ -135,7 +110,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger"),
-        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger"),
 
 
         // right hand
@@ -149,7 +124,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger"),
-        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger"),
 
         // "controller" (like xbox360)
         OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightShoulder, "/controller/right/bumper"),
@@ -173,21 +148,38 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger"),
         OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger"),
-        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger"),
-        OSVRButton(OSVR_BUTTON_TYPE_ANALOG_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger"),
+        OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger"),
     };
 
     for (size_t i = 0; i < osvrButtons.size(); i++) {
-        osvrButtons[i].init(context);
+        auto& button = osvrButtons[i];
 
-        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_DIGITAL) {
-            using namespace std::placeholders;
-            osvrRegisterButtonCallback(osvrButtons[i].iface, buttonCallback, &osvrButtons[i]);
+        auto ifaceItr = interfaces.find(button.ifacePath);
+        OSVR_ClientInterface iface = nullptr;
+        if (ifaceItr == interfaces.end()) {
+            if (osvrClientGetInterface(context, button.ifacePath.c_str(), &iface) != OSVR_RETURN_SUCCESS) {
+                button.isValid = false;
+            } else {
+                interfaces[button.ifacePath] = iface;
+            }
+        } else {
+            iface = ifaceItr->second;
         }
 
-        if (osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG ||
-            osvrButtons[i].type == OSVR_BUTTON_TYPE_ANALOG_THRESHOLD) {
-            osvrRegisterAnalogCallback(osvrButtons[i].iface, analogCallback, &osvrButtons[i]);
+        if (button.isValid) {
+            if (button.type == OSVR_BUTTON_TYPE_DIGITAL) {
+                if (osvrRegisterButtonCallback(iface, buttonCallback, &button) == OSVR_RETURN_FAILURE) {
+                    button.isValid = false;
+                }
+            }
+
+            if (button.type == OSVR_BUTTON_TYPE_ANALOG ||
+                button.type == OSVR_BUTTON_TYPE_THRESHOLD) {
+                if (osvrRegisterAnalogCallback(iface, analogCallback, &button) == OSVR_RETURN_FAILURE) {
+                    button.isValid = false;
+                }
+            }
         }
     }
 
@@ -207,13 +199,21 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 FOSVRInputDevice::~FOSVRInputDevice()
 {
     //GEngine->MotionControllerDevices.Remove(this); // This crashes. Maybe they changed something in the engine since the steamvr plugin was written?
-    if (leftHand) {
-        osvrClientFreeInterface(context, leftHand);
+    if (context) {
+        if (leftHand) {
+            osvrClientFreeInterface(context, leftHand);
+        }
+        if (rightHand) {
+            osvrClientFreeInterface(context, rightHand);
+        }
+        for (auto iface : interfaces)
+        {
+            if (iface.second) {
+                osvrClientFreeInterface(context, iface.second);
+            }
+        }
+        osvrClientShutdown(context);
     }
-    if (rightHand) {
-        osvrClientFreeInterface(context, rightHand);
-    }
-    osvrClientShutdown(context);
 }
 
 void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation)
@@ -258,20 +258,22 @@ void FOSVRInputDevice::SendControllerEvents()
     const int32 controllerId = 0;
     for (size_t i = 0; i < osvrButtons.size(); i++) {
         auto& button = osvrButtons[i];
-        while (!button.digitalStateQueue.empty()) {
-            auto state = button.digitalStateQueue.front();
-            button.digitalStateQueue.pop();
-            if (state) {
-                MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
+        if (button.isValid) {
+            while (!button.digitalStateQueue.empty()) {
+                auto state = button.digitalStateQueue.front();
+                button.digitalStateQueue.pop();
+                if (state) {
+                    MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
+                }
+                else {
+                    MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
+                }
             }
-            else {
-                MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
+            while (!button.analogStateQueue.empty()) {
+                auto state = button.analogStateQueue.front();
+                button.analogStateQueue.pop();
+                MessageHandler->OnControllerAnalog(button.key, controllerId, state);
             }
-        }
-        while (!button.analogStateQueue.empty()) {
-            auto state = button.analogStateQueue.front();
-            button.analogStateQueue.pop();
-            MessageHandler->OnControllerAnalog(button.key, controllerId, state);
         }
     }
 }
