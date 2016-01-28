@@ -13,11 +13,17 @@
 
 	"Modules" :
 	[
-		{
-			"Name" : "OSVR",
-			"Type" : "Runtime",
-			"LoadingPhase" : "PreDefault",
-			"WhitelistPlatforms" : [ "Win64" ]
-		}
+    {
+      "Name": "OSVR",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win64" ]
+    },
+    {
+      "Name": "OSVRInput",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win64" ]
+    }
 	]
 }

@@ -10,7 +10,7 @@
 
 #include "Engine.h"
 
-#define OSVR_INPUTDEVICE_ENABLED 0
+#define OSVR_INPUTDEVICE_ENABLED 1
 
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>

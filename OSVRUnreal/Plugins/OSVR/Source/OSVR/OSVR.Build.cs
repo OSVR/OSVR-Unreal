@@ -46,7 +46,7 @@ public class OSVR : ModuleRules
                 new string[] {
                             Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private"),
                             Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private\Windows")
-                            });
+    				        });
         }
     }
 }

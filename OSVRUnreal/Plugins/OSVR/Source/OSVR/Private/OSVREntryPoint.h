@@ -18,7 +18,7 @@
 
 #include "OSVRInterfaceCollection.h"
 
-class OSVREntryPoint : public FTickableGameObject
+OSVR_API class OSVREntryPoint : public FTickableGameObject
 {
 public:
 	OSVREntryPoint();

@@ -593,6 +593,10 @@ public:
   virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
   void SetCurrentHmdOrientationAndPositionAsBase();
 
+  inline float GetWorldToMetersScale() {
+      return WorldToMetersScale;
+  }
+
 public:
   /** Constructor */
   FOSVRHMD();
@@ -625,7 +629,7 @@ private:
   FVector BasePosition;
 
   /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
-  float WorldToMetersScale;
+  float WorldToMetersScale; // @todo: isn't this meters to world units scale?
 
   bool bHmdPosTracking;
   bool bHaveVisionTracking;
