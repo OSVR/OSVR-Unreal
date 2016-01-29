@@ -2,7 +2,7 @@
 
 ## Installation from Source
 
-Follow the steps to integrate OSVR into your UE4 project as described in README.md.
+Follow the steps to integrate OSVR into your UE4 project as described in [README.md](README.md).
 
 ## Controller and Motion Controller support
 

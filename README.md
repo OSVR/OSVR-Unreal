@@ -39,6 +39,9 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
 
  > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
 
+## More documentation
+
+More detailed documentation, including documentation for blueprint and controller/motion-controller support is included in [Documentation.md](Documentation.md).
 ## Demonstration video
 
 Video showing how to integrate OSVR into an Unreal project is here: <http://youtu.be/jLCkuJb--7w>
