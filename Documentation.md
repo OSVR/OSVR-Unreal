@@ -6,9 +6,9 @@ Follow the steps to integrate OSVR into your UE4 project as described in [README
 
 ## Controller and Motion Controller support
 
-OSVR-Unreal supports the Unreal controller and motion controller interfaces. This means you can use the standard built-in OSVR-Unreal blueprint events for either the standard controller type or the motion controller style.
+OSVR-Unreal supports the standard Unreal controller and motion controller interfaces. This means you can use the standard built-in Unreal blueprint events for either the standard controller type or the motion controller style. OSVR already supports a very wide variety of motion tracking devices and controllers that can now be used easily in any Unreal game. To see the full list of devices that OSVR supports, see this list (and don't forget to look at the large list of additional devices supported by VRPN, which can be used by OSVR with some additional configuration): [OSVR Device Compatibility List](http://osvr.github.io/compatibility/)
 
-See the following tutorial on Unreal's site to learn how to integrate motion controls and controller buttons into your Unreal game:
+Also take a look at the following tutorial on Unreal's site to learn how to integrate motion controls and controller buttons into your Unreal game:
 https://docs.unrealengine.com/latest/INT/Platforms/VR/MotionController/index.html
 
 The OSVR-Unreal plugin looks at the following interface paths and maps them to the appropriate standard Unreal interface:
