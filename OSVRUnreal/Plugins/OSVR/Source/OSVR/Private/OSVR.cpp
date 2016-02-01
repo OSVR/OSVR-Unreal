@@ -27,6 +27,8 @@ class FOSVR : public IOSVR
 {
 private:
     TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> hmd;
+    FCriticalSection mModuleMutex;
+    bool mModulesLoaded = false;
 public:
     /** IModuleInterface implementation */
     virtual void StartupModule() override;
@@ -60,33 +62,48 @@ TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> FOSVR::GetHMD()
 
 void FOSVR::LoadOSVRClientKitModule()
 {
-
+    FScopeLock lock(&mModuleMutex);
+    if (!mModulesLoaded) {
 #if PLATFORM_WINDOWS
-    const std::vector<std::string> osvrDlls = {
-        "osvrClientKit.dll",
-        "osvrClient.dll",
-        "osvrCommon.dll",
-        "osvrUtil.dll",
-        "osvrRenderManager.dll",
-        "d3dcompiler_47.dll",
-        "glew32.dll",
-        "SDL2.dll"
-    };
+        const std::vector<std::string> osvrDlls = {
+            "osvrClientKit.dll",
+            "osvrClient.dll",
+            "osvrCommon.dll",
+            "osvrUtil.dll",
+            "osvrRenderManager.dll",
+            "d3dcompiler_47.dll",
+            "glew32.dll",
+            "SDL2.dll"
+        };
 #if PLATFORM_64BITS
-    FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Binaries/Win64";
-#else
-    FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Binaries/Win32";
-#endif
-#endif
-    FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
-    for (size_t i = 0; i < osvrDlls.size(); i++) {
-        void* libHandle = nullptr;
-        auto path = osvrClientKitLibPath + osvrDlls[i].c_str();
-        libHandle = FPlatformProcess::GetDllHandle(*path);
-        FPlatformProcess::PopDllDirectory(*osvrClientKitLibPath);
-        if (!libHandle) {
-            UE_LOG(OSVRLog, Warning, TEXT("FAILED to load %s"), path)
+        //FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/";
+        FString osvrClientKitLibPath = FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/";
+        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
+            osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/";
         }
+#else
+        //FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/";
+        FString osvrClientKitLibPath = FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/";
+        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
+            osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/";
+        }
+#endif
+        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
+            UE_LOG(OSVRLog, Warning, TEXT("Could not find OSVRClientKit module binaries in either the engine plugins or game plugins folder."));
+            return;
+        }
+#endif
+        FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
+        for (size_t i = 0; i < osvrDlls.size(); i++) {
+            void* libHandle = nullptr;
+            auto path = osvrClientKitLibPath + osvrDlls[i].c_str();
+            libHandle = FPlatformProcess::GetDllHandle(*path);
+            if (!libHandle) {
+                UE_LOG(OSVRLog, Warning, TEXT("FAILED to load %s"), *path);
+            }
+        }
+        FPlatformProcess::PopDllDirectory(*osvrClientKitLibPath);
+        mModulesLoaded = true;
     }
 }
 
@@ -114,6 +131,7 @@ TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMo
 
 void FOSVR::StartupModule()
 {
+    LoadOSVRClientKitModule();
     IHeadMountedDisplayModule::StartupModule();
 
     EntryPoint = MakeShareable(new OSVREntryPoint());
