@@ -46,20 +46,11 @@ public class OSVRClientKit : ModuleRules
             // @todo: can we do multiple copies from the same source file? If so,
             // include the RuntimeDependencies code below inside this loop and copy the binaries
             // into each game folder.
-            var gameFolders = UEBuildTarget.DiscoverAllGameFolders();
-            string gameName = "";
-            if (gameFolders.Count > 0)
-            {
-                string gameFolder = gameFolders[0];
-                var lastSlash = gameFolder.LastIndexOf('\\');
-                gameName = String.Format("/{0}", System.IO.Path.GetFileName(gameFolder));
-            }
             string DllFormat = "{0}/bin/{1}/{2}";
             foreach (var dll in osvrDlls)
             {
                 var src = String.Format(DllFormat, ModuleDirectory, PlatformAbbrev, dll);
-                var dst = String.Format("{0}/Binaries/{1}/{2}", gameName, PlatformAbbrev, dll);
-                RuntimeDependencies.Add(new RuntimeDependency(src, dst));
+                RuntimeDependencies.Add(new RuntimeDependency(src));
             }
         }
     }

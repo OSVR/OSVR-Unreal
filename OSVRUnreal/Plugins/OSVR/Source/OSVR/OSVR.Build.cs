@@ -5,6 +5,8 @@ public class OSVR : ModuleRules
 {
     public OSVR(TargetInfo Target)
     {
+        PrivateIncludePathModuleNames.Add("TargetPlatform");
+
         PrivateIncludePaths.AddRange(
             new string[] {
 				"OSVR/Private",
