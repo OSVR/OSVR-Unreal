@@ -76,23 +76,31 @@ void FOSVR::LoadOSVRClientKitModule()
             "SDL2.dll"
         };
 #if PLATFORM_64BITS
-        //FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/";
-        FString osvrClientKitLibPath = FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/";
-        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
-            osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/";
-        }
+        std::vector<FString> pathsToTry = {
+            FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/",
+            FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/",
+            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/"
+        };
+
 #else
-        //FString osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/";
-        FString osvrClientKitLibPath = FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/";
-        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
-            osvrClientKitLibPath = FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/";
-        }
+        std::vector<FString> pathsToTry = {
+            FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/",
+            FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/",
+            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/"
+        };
 #endif
-        if (!FPaths::DirectoryExists(osvrClientKitLibPath)) {
+#endif
+        FString osvrClientKitLibPath;
+        for (size_t i = 0; i < pathsToTry.size(); i++) {
+            if (FPaths::DirectoryExists(pathsToTry[i])) {
+                osvrClientKitLibPath = pathsToTry[i];
+                break;
+            }
+        }
+        if (osvrClientKitLibPath.Len() == 0) {
             UE_LOG(OSVRLog, Warning, TEXT("Could not find OSVRClientKit module binaries in either the engine plugins or game plugins folder."));
             return;
         }
-#endif
         FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
         for (size_t i = 0; i < osvrDlls.size(); i++) {
             void* libHandle = nullptr;
