@@ -79,14 +79,16 @@ void FOSVR::LoadOSVRClientKitModule()
         std::vector<FString> pathsToTry = {
             FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/",
             FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/",
-            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/"
+            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/",
+            FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win64/"
         };
 
 #else
         std::vector<FString> pathsToTry = {
             FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/",
             FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/",
-            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/"
+            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/",
+            FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win32/"
         };
 #endif
 #endif

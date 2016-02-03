@@ -8,7 +8,6 @@ public class OSVRClientKit : ModuleRules
     public OSVRClientKit(TargetInfo Target)
     {
         Type = ModuleType.External;
-
         PublicIncludePaths.Add(ModuleDirectory + "/include");
 
         if ((Target.Platform == UnrealTargetPlatform.Win64)
@@ -39,6 +38,12 @@ public class OSVRClientKit : ModuleRules
 
             PublicDelayLoadDLLs.AddRange(osvrDlls);
 
+            string baseBinaryDirectory = ModuleDirectory + "/bin";
+            if (!System.IO.Directory.Exists(baseBinaryDirectory))
+            {
+                baseBinaryDirectory = "$(EngineDir)/Binaries/ThirdParty/OSVRClientKit/bin";
+            }
+
             // There are convenient methods to get the name of the current game,
             // as well as the binary folder. But apparently not if you're a plugin?
             // @todo see if there is a more robust way to accomplish getting the "binaries" folder
@@ -46,10 +51,10 @@ public class OSVRClientKit : ModuleRules
             // @todo: can we do multiple copies from the same source file? If so,
             // include the RuntimeDependencies code below inside this loop and copy the binaries
             // into each game folder.
-            string DllFormat = "{0}/bin/{1}/{2}";
+            string DllFormat = "{0}/{1}/{2}";
             foreach (var dll in osvrDlls)
             {
-                var src = String.Format(DllFormat, ModuleDirectory, PlatformAbbrev, dll);
+                var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
                 RuntimeDependencies.Add(new RuntimeDependency(src));
             }
         }
