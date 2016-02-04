@@ -114,7 +114,7 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 void FOSVRHMD::UpdateHeadPose() {
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
-    
+
     returnCode = osvrClientUpdate(osvrClientContext);
     check(returnCode == OSVR_RETURN_SUCCESS);
 
@@ -213,6 +213,20 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
 }
 
+#if OSVR_UNREAL_3_11
+bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
+{
+    UpdateHeadPose();
+
+    LastHmdOrientation = CurHmdOrientation;
+    //LastHmdPosition = CurHmdPosition; // @todo: why aren't we doing this?
+
+    CurrentOrientation = CurHmdOrientation;
+    CurrentPosition = CurHmdPosition;
+
+    return true;
+}
+#else
 void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct FMinimalViewInfo& POV)
 {
     UpdateHeadPose();
@@ -225,6 +239,7 @@ void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct F
     // Apply HMD orientation to camera rotation.
     POV.Rotation = FRotator(POV.Rotation.Quaternion() * CurHmdOrientation);
 }
+#endif
 
 bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 {
