@@ -280,6 +280,13 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
     return RetVal;
 }
 
+#if OSVR_UNREAL_3_11
+ETrackingStatus FOSVRInputDevice::GetControllerTrackingStatus(const int32, const EControllerHand) const
+{
+    return ETrackingStatus::Tracked;
+}
+#endif
+
 void FOSVRInputDevice::Tick(float DeltaTime)
 {
     osvrClientUpdate(context);

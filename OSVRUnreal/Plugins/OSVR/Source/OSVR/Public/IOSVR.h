@@ -5,6 +5,8 @@
 #include "ModuleManager.h"
 #include "IHeadMountedDisplayModule.h"
 
+#define OSVR_UNREAL_3_11 0
+
 //#if OSVR_INPUTDEVICE_ENABLED
 //#include "IInputDeviceModule.h"
 //

@@ -40,46 +40,50 @@ class OSVRButton;
 class FOSVRInputDevice : public IInputDevice, public IMotionController
 {
 public:
-	FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler);
+    FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler);
     virtual ~FOSVRInputDevice();
-	static void RegisterNewKeys();
+    static void RegisterNewKeys();
 
     /* IMotionController interface*/
 
     /**
-     * Returns the calibration-space orientation of the requested controller's hand.
-     *
-     * @param ControllerIndex	The Unreal controller (player) index of the contoller set
-     * @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
-     * @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
-     * @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
-     * @return					True if the device requested is valid and tracked, false otherwise
-     */
+    * Returns the calibration-space orientation of the requested controller's hand.
+    *
+    * @param ControllerIndex	The Unreal controller (player) index of the contoller set
+    * @param DeviceHand		Which hand, within the controller set for the player, to get the orientation and position for
+    * @param OutOrientation	(out) If tracked, the orientation (in calibrated-space) of the controller in the specified hand
+    * @param OutPosition		(out) If tracked, the position (in calibrated-space) of the controller in the specified hand
+    * @return					True if the device requested is valid and tracked, false otherwise
+    */
     virtual bool GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const override;
 
-	/** Tick the interface (e.g. check for new controllers) */
-	virtual void Tick(float DeltaTime) override;
+#if OSVR_UNREAL_3_11
+    virtual ETrackingStatus GetControllerTrackingStatus(const int32, const EControllerHand) const override;
+#endif
 
-	/** Poll for controller state and send events if needed */
-	virtual void SendControllerEvents() override;
+    /** Tick the interface (e.g. check for new controllers) */
+    virtual void Tick(float DeltaTime) override;
 
-	/** Set which MessageHandler will get the events from SendControllerEvents. */
-	virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
+    /** Poll for controller state and send events if needed */
+    virtual void SendControllerEvents() override;
 
-	/** Exec handler to allow console commands to be passed through for debugging */
-	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
+    /** Set which MessageHandler will get the events from SendControllerEvents. */
+    virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
-	// IForceFeedbackSystem pass through functions
-	virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override;
-	virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues& values) override;
+    /** Exec handler to allow console commands to be passed through for debugging */
+    virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
 
-	void EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation);
+    // IForceFeedbackSystem pass through functions
+    virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override;
+    virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues& values) override;
+
+    void EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation);
 
 private:
     std::map<std::string, OSVR_ClientInterface> interfaces;
     std::vector<OSVRButton> osvrButtons;
     OSVR_ClientContext context;
-	TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
+    TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;
 };
