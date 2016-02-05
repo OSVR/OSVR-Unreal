@@ -23,6 +23,7 @@
 OSVR_API class OSVREntryPoint : public FTickableGameObject
 {
 public:
+
 	OSVREntryPoint();
 	virtual ~OSVREntryPoint();
 
@@ -44,10 +45,20 @@ public:
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(OSVREntryPoint, STATGROUP_Tickables);
 	}
+
+    virtual OSVR_ClientContext GetClientContext()
+    {
+        return osvrClientContext;
+    }
+
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	OSVRInterfaceCollection* GetInterfaceCollection();
+#endif
 
 private:
+    OSVR_ClientContext osvrClientContext = nullptr;
+
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
 #endif
 };
