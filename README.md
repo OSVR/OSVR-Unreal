@@ -41,7 +41,8 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
 
 ## More documentation
 
-More detailed documentation, including documentation for blueprint and controller/motion-controller support is included in [Documentation.md](Documentation.md).
+More detailed documentation, including documentation for the controller/motion-controller support is included in [Documentation.md](Documentation.md).
+
 ## Demonstration video
 
 Video showing how to integrate OSVR into an Unreal project is here: <http://youtu.be/jLCkuJb--7w>
