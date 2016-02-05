@@ -42,4 +42,4 @@ The OSVR-Unreal plugin looks at the following interface paths and maps them to t
         - `/controller/left/middle` and `/controller/right/middle` are mapped to special left and special right, respectively.
 
 ## Blueprint API
-The original OSVR Blueprint API is being redesigned. The original OSVR Blueprint API should be considered deprecated. It has been archived in /Archive if you need it. 
+The original OSVR Blueprint API is being redesigned. The original OSVR Blueprint API should be considered deprecated. It has been archived in /Archive if you need it. To use the original blueprint API, copy the contents of the /Archive/Plugins directory to the OSVRUnreal/Plugins directory, and set `OSVR_DEPRECATED_BLUEPRINT_API_ENABLED` to 1 in `/OSVRUnreal/Plugins/OSVR/Source/Private/OSVRPrivatePCH.h`.

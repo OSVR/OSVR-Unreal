@@ -16,7 +16,9 @@
 
 #pragma once
 
-//#include "OSVRInterfaceCollection.h"
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+#include "OSVRInterfaceCollection.h"
+#endif
 
 OSVR_API class OSVREntryPoint : public FTickableGameObject
 {
@@ -42,9 +44,10 @@ public:
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(OSVREntryPoint, STATGROUP_Tickables);
 	}
-
-	//OSVRInterfaceCollection* GetInterfaceCollection();
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+	OSVRInterfaceCollection* GetInterfaceCollection();
 
 private:
-	//TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
+	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
+#endif
 };

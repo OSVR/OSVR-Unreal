@@ -16,7 +16,10 @@
 
 #include "OSVRPrivatePCH.h"
 
-//#include "OSVRInterfaceCollection.h"
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+#include "OSVRInterfaceCollection.h"
+#endif
+
 #include "OSVREntryPoint.h"
 
 OSVR_ClientContext osvrClientContext(nullptr);
@@ -25,14 +28,19 @@ OSVREntryPoint::OSVREntryPoint()
 {
 	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
 
-	//InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
-	//	osvrClientContext
-	//	));
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
+		osvrClientContext
+		));
+#endif
 }
 
 OSVREntryPoint::~OSVREntryPoint()
 {
-	//InterfaceCollection = nullptr;
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+	InterfaceCollection = nullptr;
+#endif
+
 	osvrClientShutdown(osvrClientContext);
 }
 
@@ -41,7 +49,9 @@ void OSVREntryPoint::Tick(float DeltaTime)
 	osvrClientUpdate(osvrClientContext);
 }
 
-//OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
-//{
-//	return InterfaceCollection.Get();
-//}
+#if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
+OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
+{
+	return InterfaceCollection.Get();
+}
+#endif
