@@ -41,7 +41,6 @@
 extern OSVR_ClientContext osvrClientContext;
 
 DEFINE_LOG_CATEGORY(OSVRHMDLog);
-DEFINE_LOG_CATEGORY(FOSVRCustomPresentLog);
 
 //---------------------------------------------------
 // IHeadMountedDisplay Implementation
@@ -138,18 +137,18 @@ bool FOSVRHMD::HasValidTrackingPosition()
 void FOSVRHMD::GetPositionalTrackingCameraProperties(FVector& OutOrigin, FQuat& OutOrientation,
     float& OutHFOV, float& OutVFOV, float& OutCameraDistance, float& OutNearPlane, float& OutFarPlane) const
 {
-    // @TODO
+    // OSVR does not currently provide this information.
 }
 
 bool FOSVRHMD::IsInLowPersistenceMode() const
 {
-    // @TODO
+    // Intentionally left blank
     return true;
 }
 
 void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
 {
-    // @TODO
+    // Intentionally left blank
 }
 
 bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
@@ -190,7 +189,7 @@ void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVect
 
 void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orientation) const
 {
-
+    // @TODO ???
 }
 
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
@@ -205,7 +204,8 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
 
     // Pitch from other sources is never good, because there is an absolute up and down that must be respected to avoid motion sickness.
-    // Same with roll.
+    // Same with roll. Retain yaw by default - mouse/controller based yaw movement still isn't pleasant, but
+    // it's necessary for sitting VR experiences.
     DeltaControlRotation.Pitch = 0;
     DeltaControlRotation.Roll = 0;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
@@ -232,6 +232,7 @@ void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct F
     UpdateHeadPose();
 
     LastHmdOrientation = CurHmdOrientation;
+    //LastHmdPosition = CurHmdPosition; // @todo: why aren't we doing this?
 
     DeltaControlRotation = POV.Rotation;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
@@ -243,7 +244,8 @@ void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct F
 
 bool FOSVRHMD::IsChromaAbCorrectionEnabled() const
 {
-    // @TODO
+    // @TODO - why does Unreal need to know this? We're doing distortion/chroma correction
+    // in render manager.
     return false;
 }
 
@@ -360,6 +362,9 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     if (sceneViewport) {
         sceneViewport->SetViewportSize(1280, 720);
     }
+
+    GEngine->bForceDisableFrameRateSmoothing = stereo;
+
     return bStereoEnabled;
 }
 
