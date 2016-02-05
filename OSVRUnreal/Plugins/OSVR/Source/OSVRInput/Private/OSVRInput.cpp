@@ -18,23 +18,6 @@ class FOSVRInput : public IOSVRInput
 	TSharedPtr< class FOSVRInputDevice > InputDevice;
 };
 
-// class FOSVR : public IOSVR
-// {
-// 	/** IModuleInterface implementation */
-// 	virtual void StartupModule() override;
-// 	virtual void ShutdownModule() override;
-
-// 	/** IHeadMountedDisplayModule implementation */
-// 	virtual TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > CreateHeadMountedDisplay() override;
-
-// 	// Pre-init the HMD module (optional).
-// 	//virtual void PreInit() override;
-
-// 	virtual OSVREntryPoint* GetEntryPoint() override;
-
-// 	TSharedPtr< class OSVREntryPoint > EntryPoint;
-// };
-
 IMPLEMENT_MODULE(FOSVRInput, OSVRInput)
 
 TSharedPtr< class IInputDevice > FOSVRInput::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
@@ -48,13 +31,9 @@ TSharedPtr< class IInputDevice > FOSVRInput::CreateInputDevice(const TSharedRef<
 void FOSVRInput::StartupModule()
 {
 	IInputDeviceModule::StartupModule();
-
-	//EntryPoint = MakeShareable(new OSVREntryPoint());
 }
 
 void FOSVRInput::ShutdownModule()
 {
-	//EntryPoint = nullptr;
-
 	IInputDeviceModule::ShutdownModule();
 }

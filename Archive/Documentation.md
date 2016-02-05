@@ -42,4 +42,90 @@ The OSVR-Unreal plugin looks at the following interface paths and maps them to t
         - `/controller/left/middle` and `/controller/right/middle` are mapped to special left and special right, respectively.
 
 ## Blueprint API
-The original OSVR Blueprint API is being redesigned. The original OSVR Blueprint API should be considered deprecated. It has been archived in /Archive if you need it. 
+
+APIs identify OSVR devices/resources using the same OSVR resource path notation.
+Following UE4 input management, as general rule:
+
+- state of continuous valued resources ("axis" inputs in UE4) is queried by polling, using functions defined in the OSVR Blueprint Function Library.
+- state of discrete valued resources ("action" inputs in UE4) is reported by events. As UE4 currently does not support the definition of global events, OSVR events are wrapped in `OSVRInputComponent` and `OSVRActor` classes.
+
+## `OSVRActor`
+
+Predefined Actor class containing an `OSVRInputComponent`.
+It can be used as a base class for custom Actors or can be placed into a level to manage OSVR action events directly from the "Level Blueprint".
+
+## `OSVRInputComponent`
+
+If there are buttons or other tracker interfaces that don't fit into the standard Unreal motion controller or standard controller model, then `OSVRInputComponent` can be used to expose OSVR action events for that interface. You can use it to bind custom actions to OSVR action events like buttons press, etc.
+
+### `void OnPositionChanged (FName name, FVector position);`
+
+Fired when the position of an OSVR resource changes.
+
+Outputs:
+
+- `name`: OSVR resource path;
+- `position`: the new position.
+
+### `void OnOrientationChanged (FName name, FRotator orientation);`
+
+Fired when the orientation of an OSVR resource changes.
+
+Outputs:
+
+- `name`: OSVR resource path;
+- `position`: the new orientation.
+
+### `void OnButtonStateChanged (FName name, EButtonState::Type state);`
+Fired when the state of a button of an OSVR resource is updated.
+
+Outputs:
+
+- `name`: OSVR resource path;
+- `state`: the new button state (`PRESSED`, `NOT_PRESSED`).
+
+### `void OnAnalogValueChanged (FName name, float value);`
+
+Fired when the value of a single-valued analog resource changes (e.g. a gamepad trigger analog control).
+
+Outputs:
+
+- `name`: OSVR resource path;
+- `value`: the new value, in [0, 1].
+
+## Blueprint function library
+
+### `static FVector GetInterfacePosition(FName Name);`
+Return the current position of an OSVR resource.
+
+Inputs:
+
+- `name`: OSVR resource path.
+
+### `static FRotator GetInterfaceRotation(FName Name);`
+
+Return the current orientation of an OSVR resource.
+
+Inputs:
+
+- `name`: OSVR resource path.
+
+### `static EButtonState::Type GetInterfaceButtonState(FName Name);`
+
+Return the current state of an OSVR button.
+
+Inputs:
+
+- `name`: OSVR resource path.
+
+### `static float GetInterfaceAnalogValue(FName Name);`
+
+Return the current value of a single-valued OSVR analog resource (e.g. a gamepad trigger analog control).
+
+Inputs:
+
+- `name`: OSVR resource path.
+
+### `static void SetCurrentHmdOrientationAndPositionAsBase();`
+
+Set the current position and orientation of OSVR HMD device as "rest" position.

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "OSVRInterfaceCollection.h"
+//#include "OSVRInterfaceCollection.h"
 
 OSVR_API class OSVREntryPoint : public FTickableGameObject
 {
@@ -43,8 +43,8 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(OSVREntryPoint, STATGROUP_Tickables);
 	}
 
-	OSVRInterfaceCollection* GetInterfaceCollection();
+	//OSVRInterfaceCollection* GetInterfaceCollection();
 
 private:
-	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
+	//TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
 };

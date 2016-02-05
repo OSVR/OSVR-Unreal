@@ -10,24 +10,12 @@
 
 DEFINE_LOG_CATEGORY(OSVRLog);
 
-#if 0
-class FOSVR : public IOSVR
-{
-    /** IModuleInterface implementation */
-    virtual void StartupModule() override;
-    virtual void ShutdownModule() override;
-
-    virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
-
-    TSharedPtr< class FOSVRInputDevice > InputDevice;
-};
-#endif
-
 class FOSVR : public IOSVR
 {
 private:
     TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> hmd;
     FCriticalSection mModuleMutex;
+    TSharedPtr< class OSVREntryPoint > EntryPoint;
     bool mModulesLoaded = false;
 public:
     /** IModuleInterface implementation */
@@ -43,9 +31,6 @@ public:
     virtual OSVREntryPoint* GetEntryPoint() override;
     virtual TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> GetHMD() override;
     virtual void LoadOSVRClientKitModule() override;
-
-    // @todo: why is this public?
-    TSharedPtr< class OSVREntryPoint > EntryPoint;
 };
 
 IMPLEMENT_MODULE(FOSVR, OSVR)
@@ -128,16 +113,6 @@ TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMo
 
     return nullptr;
 }
-
-//#if OSVR_INPUTDEVICE_ENABLED
-//TSharedPtr< class IInputDevice > FOSVR::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
-//{
-//	FOSVRInputDevice::RegisterNewKeys();
-//
-//	InputDevice = MakeShareable(new FOSVRInputDevice(InMessageHandler));
-//	return InputDevice;
-//}
-//#endif // OSVR_INPUTDEVICE_ENABLED
 
 void FOSVR::StartupModule()
 {
