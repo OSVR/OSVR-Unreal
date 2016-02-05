@@ -12,6 +12,12 @@
 
 #define OSVR_INPUTDEVICE_ENABLED 1
 
+// The original OSVR Blueprint API should be considered deprecated,
+// but if you're still using it, copy the code from /Archive back
+// into the project, and set this to 1. Keep in mind the Blueprint
+// API is scheduled for a redesign soon.
+#define OSVR_DEPRECATED_BLUEPRINT_API_ENABLED 0
+
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/ClientKit/InterfaceCallbackC.h>
