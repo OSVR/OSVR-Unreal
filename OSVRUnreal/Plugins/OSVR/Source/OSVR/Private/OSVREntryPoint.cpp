@@ -16,7 +16,7 @@
 
 #include "OSVRPrivatePCH.h"
 
-#include "OSVRInterfaceCollection.h"
+//#include "OSVRInterfaceCollection.h"
 #include "OSVREntryPoint.h"
 
 OSVR_ClientContext osvrClientContext(nullptr);
@@ -25,14 +25,14 @@ OSVREntryPoint::OSVREntryPoint()
 {
 	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
 
-	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
-		osvrClientContext
-		));
+	//InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
+	//	osvrClientContext
+	//	));
 }
 
 OSVREntryPoint::~OSVREntryPoint()
 {
-	InterfaceCollection = nullptr;
+	//InterfaceCollection = nullptr;
 	osvrClientShutdown(osvrClientContext);
 }
 
@@ -41,7 +41,7 @@ void OSVREntryPoint::Tick(float DeltaTime)
 	osvrClientUpdate(osvrClientContext);
 }
 
-OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
-{
-	return InterfaceCollection.Get();
-}
+//OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
+//{
+//	return InterfaceCollection.Get();
+//}
