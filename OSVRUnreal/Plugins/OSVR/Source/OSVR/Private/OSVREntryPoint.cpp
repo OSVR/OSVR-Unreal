@@ -22,8 +22,6 @@
 
 #include "OSVREntryPoint.h"
 
-OSVR_ClientContext osvrClientContext(nullptr);
-
 OSVREntryPoint::OSVREntryPoint()
 {
 	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");

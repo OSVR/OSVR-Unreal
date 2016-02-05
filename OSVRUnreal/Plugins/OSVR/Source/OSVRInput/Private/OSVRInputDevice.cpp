@@ -49,8 +49,6 @@ namespace {
 }
 
 class OSVRButton {
-private:
-    OSVR_ClientContext context;
 
 public:
     OSVRButton() {}
@@ -108,7 +106,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     : MessageHandler(InMessageHandler)
 {
     // make sure OSVR module is loaded.
-    context = osvrClientInit("com.osvr.unreal.plugin.input");
+    context = IOSVR::Get().GetEntryPoint()->GetClientContext();
 
     const float defaultThreshold = 0.25f;
 
@@ -244,7 +242,6 @@ FOSVRInputDevice::~FOSVRInputDevice()
                 osvrClientFreeInterface(context, iface.second);
             }
         }
-        osvrClientShutdown(context);
     }
 }
 

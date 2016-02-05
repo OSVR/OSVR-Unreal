@@ -20,6 +20,7 @@
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
 #include "SceneViewport.h"
+#include "OSVREntryPoint.h"
 
 #if WITH_EDITOR
 #include "Editor/UnrealEd/Classes/Editor/EditorEngine.h"
@@ -37,8 +38,6 @@
 #include <osvr/Util/MatrixConventionsC.h>
 #include <cmath>
 #include <vector>
-
-extern OSVR_ClientContext osvrClientContext;
 
 DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
@@ -114,7 +113,7 @@ void FOSVRHMD::UpdateHeadPose() {
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
 
-    returnCode = osvrClientUpdate(osvrClientContext);
+    returnCode = osvrClientUpdate(IOSVR::Get().GetEntryPoint()->GetClientContext());
     check(returnCode == OSVR_RETURN_SUCCESS);
 
     returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
@@ -556,6 +555,7 @@ FOSVRHMD::FOSVRHMD()
 {
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
+    OSVR_ClientContext osvrClientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
 
     FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
 
@@ -581,7 +581,7 @@ FOSVRHMD::FOSVRHMD()
 
     // check if the client context is ok.
     bool clientContextOK = false;
-    {
+    {  
         size_t numTries = 0;
         bool failure = false;
         while (numTries++ < 10000 && !clientContextOK && !failure) {
