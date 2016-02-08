@@ -344,7 +344,11 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 {
     bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
 
-    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+    auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+    auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+    auto width = leftEye.X + rightEye.X;
+    auto height = leftEye.Y;
+    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
@@ -359,7 +363,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 #endif
 
     if (sceneViewport) {
-        sceneViewport->SetViewportSize(1280, 720);
+        sceneViewport->SetViewportSize(width, height);
     }
 
     GEngine->bForceDisableFrameRateSmoothing = stereo;
@@ -557,7 +561,10 @@ FOSVRHMD::FOSVRHMD()
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
     OSVR_ClientContext osvrClientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
 
+    // Prevents debugger hangs that sometimes occur with only one monitor.
+#if OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE
     FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed); // bStereo ? WindowedMirror : Windowed
+#endif
 
     EnablePositionalTracking(true);
 
