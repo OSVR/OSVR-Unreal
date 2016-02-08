@@ -18,6 +18,11 @@
 // API is scheduled for a redesign soon.
 #define OSVR_DEPRECATED_BLUEPRINT_API_ENABLED 0
 
+// Set to 1 to force the game into windowed mode early on. Helps when debugging
+// with only one monitor (otherwise you sometimes end up frozen with the debugger
+// in the background and no way to switch apps).
+#define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 0
+
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/ClientKit/InterfaceCallbackC.h>
