@@ -40,7 +40,9 @@ DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDLog, Log, All);
 class FOSVRHMD : public IHeadMountedDisplay, public ISceneViewExtension, public TSharedFromThis< FOSVRHMD, ESPMode::ThreadSafe >
 {
 public:
-    /** IHeadMountedDisplay interface */
+
+    virtual void OnBeginPlay() override;
+    virtual void OnEndPlay() override;
     virtual bool IsHMDConnected() override;
     virtual bool IsHMDEnabled() const override;
     virtual void EnableHMD(bool allow = true) override;
@@ -126,9 +128,6 @@ public:
     virtual void SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView) override;
     virtual FRHICustomPresent* GetCustomPresent() override
     {
-        if (GIsEditor) {
-            return nullptr;
-        }
         return mCustomPresent;
     }
 
@@ -193,8 +192,9 @@ private:
     bool bHmdConnected;
     bool bHmdOverridesApplied;
     bool bWaitedForClientStatus = false;
+    bool bPlaying = false;
 
     OSVRHMDDescription HMDDescription;
     OSVR_DisplayConfig DisplayConfig;
-    FCurrentCustomPresent* mCustomPresent = nullptr;
+    TRefCountPtr<FCurrentCustomPresent> mCustomPresent;
 };

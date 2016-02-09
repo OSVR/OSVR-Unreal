@@ -45,6 +45,18 @@ DEFINE_LOG_CATEGORY(OSVRHMDLog);
 // IHeadMountedDisplay Implementation
 //---------------------------------------------------
 
+void FOSVRHMD::OnBeginPlay()
+{
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnBeginPlay()"));
+    bPlaying = true;
+}
+
+void FOSVRHMD::OnEndPlay()
+{
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnEndPlay()"));
+    bPlaying = false;
+}
+
 bool FOSVRHMD::IsHMDConnected()
 {
     return bHmdConnected;
@@ -569,7 +581,7 @@ FOSVRHMD::FOSVRHMD()
     EnablePositionalTracking(true);
 
 #if PLATFORM_WINDOWS
-    if (!GIsEditor && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
+    if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
         mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
     }
 #endif
