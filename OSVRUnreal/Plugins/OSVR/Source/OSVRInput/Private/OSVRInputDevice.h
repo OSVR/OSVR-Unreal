@@ -86,4 +86,7 @@ private:
     TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;
+    bool leftHandValid = false;
+    bool rightHandValid = false;
+    bool contextValid = false;
 };
