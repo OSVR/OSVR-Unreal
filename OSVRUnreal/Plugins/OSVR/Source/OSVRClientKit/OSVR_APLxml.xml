@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--OSVR plugin additions-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+  <init>
+    <log text="OSVR init"/>
+    <setBool result="bOSVRSupported" value="false"/>
+    <isArch arch="armeabi-v7a">
+      <setBool result="bOSVRSupported" value="true"/>
+    </isArch>
+  </init>
+  <androidManifestUpdates>
+    <if condition="bOSVRSupported">
+      <true>
+        <addPermission android:name="android.permission.INTERNET" />
+        <addPermission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        <addPermission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        <addPermission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+      </true>
+    </if>
+  </androidManifestUpdates>
+  <resourceCopies>
+    <isArch arch="armeabi-v7a">
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClientKit.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClientKit.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClient.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClient.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrCommon.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrCommon.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrUtil.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrUtil.so" />
+    </isArch>
+  </resourceCopies>
+  <soLoadLibrary>
+    <if condition="bOSVRSupported">
+      <true>
+        <loadLibrary name="osvrCommon" failmsg="libosvrCommon.so failed to load!" />
+        <loadLibrary name="osvrUtil" failmsg="libosvrUtil.so failed to load!" />
+        <loadLibrary name="osvrClient" failmsg="libosvrClient.so failed to load!" />
+        <loadLibrary name="osvrClientKit" failmsg="libosvrClientKit.so failed to load!" />        
+      </true>
+    </if>
+  </soLoadLibrary>
+</root>

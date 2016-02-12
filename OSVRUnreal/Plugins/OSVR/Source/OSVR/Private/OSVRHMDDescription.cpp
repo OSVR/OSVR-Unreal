@@ -23,15 +23,9 @@
 
 DEFINE_LOG_CATEGORY(OSVRHMDDescriptionLog);
 
-struct DescriptionData
-{
-	FVector2D DisplaySize[2];
-	FVector2D Fov[2];
 
-	DescriptionData();
-};
 
-static DescriptionData& GetData(void* This)
+static DescriptionData& GetData(DescriptionData* This)
 {
 	return *reinterpret_cast< DescriptionData* >(This);
 }

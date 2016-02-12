@@ -22,9 +22,9 @@
 
 #include "SlateBasics.h"
 
-#include "WindowsApplication.h"
-#include "WindowsWindow.h"
-#include "WindowsCursor.h"
+//#include "WindowsApplication.h"
+//#include "WindowsWindow.h"
+//#include "WindowsCursor.h"
 #include "GenericApplicationMessageHandler.h"
 
 #include "OSVRTypes.h"

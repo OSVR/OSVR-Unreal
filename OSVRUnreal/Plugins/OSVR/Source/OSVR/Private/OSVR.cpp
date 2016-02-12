@@ -76,7 +76,7 @@ void FOSVR::LoadOSVRClientKitModule()
             FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win32/"
         };
 #endif
-#endif
+
         FString osvrClientKitLibPath;
         for (size_t i = 0; i < pathsToTry.size(); i++) {
             if (FPaths::DirectoryExists(pathsToTry[i])) {
@@ -98,6 +98,7 @@ void FOSVR::LoadOSVRClientKitModule()
             }
         }
         FPlatformProcess::PopDllDirectory(*osvrClientKitLibPath);
+#endif
         mModulesLoaded = true;
     }
 }

@@ -1,5 +1,6 @@
 
 using System;
+using System.IO;
 using UnrealBuildTool;
 
 public class OSVRClientKit : ModuleRules
@@ -44,19 +45,43 @@ public class OSVRClientKit : ModuleRules
                 baseBinaryDirectory = "$(EngineDir)/Binaries/ThirdParty/OSVRClientKit/bin";
             }
 
-            // There are convenient methods to get the name of the current game,
-            // as well as the binary folder. But apparently not if you're a plugin?
-            // @todo see if there is a more robust way to accomplish getting the "binaries" folder
-            // from a plugin build file.
-            // @todo: can we do multiple copies from the same source file? If so,
-            // include the RuntimeDependencies code below inside this loop and copy the binaries
-            // into each game folder.
             string DllFormat = "{0}/{1}/{2}";
             foreach (var dll in osvrDlls)
             {
                 var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
                 RuntimeDependencies.Add(new RuntimeDependency(src));
             }
+        }
+        else if(Target.Platform == UnrealTargetPlatform.Android)
+        {
+            string PlatformAbbrev = "armeabi-v7a";
+
+            PublicLibraryPaths.Add(String.Format("{0}/bin/Android/{1}", ModuleDirectory, PlatformAbbrev));
+            PublicAdditionalLibraries.Add("osvrClientKit");
+
+            var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(basePath, "OSVR_APL.xml")));
+            //var osvrDlls = new string[] {
+            //    "libosvrClientKit.so",
+            //    "libosvrClient.so",
+            //    "libosvrCommon.so",
+            //    "libosvrUtil.so",
+            //  };
+
+            //PublicDelayLoadDLLs.AddRange(osvrDlls); // @todo Does this work on Android?
+
+            //string baseBinaryDirectory = ModuleDirectory + "/bin";
+            //if (!System.IO.Directory.Exists(baseBinaryDirectory))
+            //{
+            //    baseBinaryDirectory = "$(EngineDir)/Binaries/ThirdParty/OSVRClientKit/bin/Android";
+            //}
+
+            //string DllFormat = "{0}/{1}/{2}";
+            //foreach (var dll in osvrDlls)
+            //{
+            //    var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
+            //    RuntimeDependencies.Add(new RuntimeDependency(src));
+            //}
         }
     }
 }
