@@ -5,6 +5,7 @@
     <log text="OSVR init"/>
     <setBool result="bOSVRSupported" value="false"/>
     <isArch arch="armeabi-v7a">
+      <log text="OSVR is supported on this build!" />
       <setBool result="bOSVRSupported" value="true"/>
     </isArch>
   </init>
@@ -20,6 +21,14 @@
   </androidManifestUpdates>
   <resourceCopies>
     <isArch arch="armeabi-v7a">
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libgnustl_shared.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libgnustl_shared.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libusb1.0.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libusb1.0.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libjsoncpp.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libjsoncpp.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcrystax.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libcrystax.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClientKit.so"
                 dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClientKit.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClient.so"
@@ -33,6 +42,7 @@
   <soLoadLibrary>
     <if condition="bOSVRSupported">
       <true>
+        <loadLibrary name="gnustl_shared" failmsg="libgnustl_shared.so failed to load!" />
         <loadLibrary name="osvrCommon" failmsg="libosvrCommon.so failed to load!" />
         <loadLibrary name="osvrUtil" failmsg="libosvrUtil.so failed to load!" />
         <loadLibrary name="osvrClient" failmsg="libosvrClient.so failed to load!" />

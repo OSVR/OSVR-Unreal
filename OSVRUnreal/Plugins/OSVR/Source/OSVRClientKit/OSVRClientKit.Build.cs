@@ -60,28 +60,9 @@ public class OSVRClientKit : ModuleRules
             PublicAdditionalLibraries.Add("osvrClientKit");
 
             var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
-            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", Path.Combine(basePath, "OSVR_APL.xml")));
-            //var osvrDlls = new string[] {
-            //    "libosvrClientKit.so",
-            //    "libosvrClient.so",
-            //    "libosvrCommon.so",
-            //    "libosvrUtil.so",
-            //  };
-
-            //PublicDelayLoadDLLs.AddRange(osvrDlls); // @todo Does this work on Android?
-
-            //string baseBinaryDirectory = ModuleDirectory + "/bin";
-            //if (!System.IO.Directory.Exists(baseBinaryDirectory))
-            //{
-            //    baseBinaryDirectory = "$(EngineDir)/Binaries/ThirdParty/OSVRClientKit/bin/Android";
-            //}
-
-            //string DllFormat = "{0}/{1}/{2}";
-            //foreach (var dll in osvrDlls)
-            //{
-            //    var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
-            //    RuntimeDependencies.Add(new RuntimeDependency(src));
-            //}
+            var xmlPath = Path.Combine(ModuleDirectory, "OSVR_APL.xml");
+            //System.Console.WriteLine("xmlPath: {0}", xmlPath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", xmlPath));
         }
     }
 }

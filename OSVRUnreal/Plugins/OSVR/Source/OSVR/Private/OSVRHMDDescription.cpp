@@ -150,8 +150,16 @@ bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
     }
 
     auto data = GetData(Data);
-    data.DisplaySize[0] = FVector2D(leftViewportWidth, leftViewportHeight);
-    data.DisplaySize[1] = FVector2D(rightViewportWidth, rightViewportHeight);
+    data.DisplaySize[0].Set(leftViewportWidth, leftViewportHeight);
+    data.DisplaySize[1].Set(rightViewportWidth, rightViewportHeight);
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() width: %d"), leftViewportWidth + rightViewportWidth);
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() height: %d"), leftViewportHeight);
+    auto leftEye = data.DisplaySize[0];
+    auto rightEye = data.DisplaySize[1];
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize leftEye.X: %f"), leftEye.X);
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize leftEye.Y: %f"), leftEye.Y);
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize rightEye.X: %f"), rightEye.X);
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize rightEye.Y: %f"), rightEye.Y);
     return true;
 }
 
@@ -182,16 +190,20 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_Display
     // if the OSVR viewer doesn't fit nicely with the Unreal HMD model, don't
     // bother trying to fill everything else out.
     if (!OSVRViewerFitsUnrealModel(displayConfig)) {
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() viewer doesn't fit unreal model."));
         return false;
     }
 
     if (!InitIPD(displayConfig)) { 
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitIPD failed"));
         return false; 
     }
     if (!InitDisplaySize(displayConfig)) { 
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitDisplaySize failed."));
         return false; 
     }
     if (!InitFOV(displayConfig)) { 
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitFOV failed."));
         return false; 
     }
     Valid = true;

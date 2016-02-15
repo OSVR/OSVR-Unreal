@@ -360,7 +360,12 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
     auto width = leftEye.X + rightEye.X;
     auto height = leftEye.Y;
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), width: %f"), width);
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), height: %f"), height);
+
+#if PLATFORM_WINDOWS
     FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+#endif
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
