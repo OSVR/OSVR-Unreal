@@ -115,7 +115,7 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
     if (!IsStereoEnabled()) {
         return;
     }
-
+    
     if (mCustomPresent) {
         if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize()) {
             delete mCustomPresent;
@@ -124,7 +124,14 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         if (mCustomPresent && mCustomPresent->IsInitialized()) {
             mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
         }
+    } else {
+        auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+        auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+        InOutSizeX = leftEye.X + rightEye.X;
+        InOutSizeY = leftEye.Y;
     }
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), width: %d"), InOutSizeX);
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), height: %d"), InOutSizeY);
 }
 
 

@@ -363,9 +363,17 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), width: %f"), width);
     UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), height: %f"), height);
 
-#if PLATFORM_WINDOWS
-    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
-#endif
+    //FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), ResX: %d"), GSystemResolution.ResX);
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), ResY: %d"), GSystemResolution.ResY);
+    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), stereo: %d"), (int)stereo);
+
+    //FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::Fullscreen : EWindowMode::Windowed);
+    UGameUserSettings* MyGameSettings = GEngine->GetGameUserSettings();
+    MyGameSettings->SetScreenResolution(FIntPoint(2560, 1440));
+    MyGameSettings->SetFullscreenMode(EWindowMode::Fullscreen);
+    //MyGameSettings->SetVSyncEnabled(true);
+    MyGameSettings->ApplySettings(false);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
@@ -392,12 +400,22 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
 {
     if (mCustomPresent && mCustomPresent->IsInitialized()) {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+    } else {
+        auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+        auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+        SizeX = leftEye.X + rightEye.X;
+        SizeY = leftEye.Y;
     }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
     {
         X += SizeX;
     }
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), SizeX: %d"), SizeX);
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), SizeY: %d"), SizeY);
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), X: %d"), X);
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), Y: %d"), Y);
+    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), StereoPass: %d"), (int)StereoPass);
 }
 
 void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation, const float WorldToMeters, FVector& ViewLocation)
