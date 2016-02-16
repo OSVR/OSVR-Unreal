@@ -368,12 +368,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), ResY: %d"), GSystemResolution.ResY);
     UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), stereo: %d"), (int)stereo);
 
-    //FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::Fullscreen : EWindowMode::Windowed);
-    UGameUserSettings* MyGameSettings = GEngine->GetGameUserSettings();
-    MyGameSettings->SetScreenResolution(FIntPoint(2560, 1440));
-    MyGameSettings->SetFullscreenMode(EWindowMode::Fullscreen);
-    //MyGameSettings->SetVSyncEnabled(true);
-    MyGameSettings->ApplySettings(false);
+    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::Fullscreen : EWindowMode::Windowed);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
@@ -618,6 +613,11 @@ FOSVRHMD::FOSVRHMD()
     if (CVScreenPercentage) {
         CVScreenPercentage->Set(100);
     }
+
+    IConsoleVariable* CMobilePercentageVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.MobileContentScaleFactor"));
+    if (CMobilePercentageVar)
+        CMobilePercentageVar->Set(0.0f);
+
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
 
