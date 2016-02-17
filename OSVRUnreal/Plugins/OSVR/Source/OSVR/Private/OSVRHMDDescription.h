@@ -22,6 +22,14 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDDescriptionLog, Log, All);
 
+struct DescriptionData
+{
+    FVector2D DisplaySize[2];
+    FVector2D Fov[2];
+
+    DescriptionData();
+};
+
 class OSVRHMDDescription
 {
 public:
@@ -67,5 +75,5 @@ private:
 
     float m_ipd;
 	bool Valid;
-	void* Data;
+    DescriptionData* Data;
 };

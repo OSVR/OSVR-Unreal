@@ -23,19 +23,6 @@
 
 DEFINE_LOG_CATEGORY(OSVRHMDDescriptionLog);
 
-struct DescriptionData
-{
-	FVector2D DisplaySize[2];
-	FVector2D Fov[2];
-
-	DescriptionData();
-};
-
-static DescriptionData& GetData(void* This)
-{
-	return *reinterpret_cast< DescriptionData* >(This);
-}
-
 DescriptionData::DescriptionData()
 {
 	// Set defaults...
@@ -155,9 +142,8 @@ bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
         return false;
     }
 
-    auto data = GetData(Data);
-    data.DisplaySize[0] = FVector2D(leftViewportWidth, leftViewportHeight);
-    data.DisplaySize[1] = FVector2D(rightViewportWidth, rightViewportHeight);
+    Data->DisplaySize[0].Set(leftViewportWidth, leftViewportHeight);
+    Data->DisplaySize[1].Set(rightViewportWidth, rightViewportHeight);
     return true;
 }
 
@@ -173,8 +159,7 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig) {
 
         double horizontalFOV = FMath::RadiansToDegrees(std::atan(std::abs(left)) + std::atan(std::abs(right)));
         double verticalFOV = FMath::RadiansToDegrees(std::atan(std::abs(top)) + std::atan(std::abs(bottom)));
-        auto data = GetData(Data);
-        data.Fov[eye] = FVector2D(horizontalFOV, verticalFOV);
+        Data->Fov[eye].Set(horizontalFOV, verticalFOV);
     }
     return true;
 }
@@ -182,22 +167,24 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig) {
 bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig)
 {
 	Valid = false;
-
-    auto data = GetData(Data);
     
     // if the OSVR viewer doesn't fit nicely with the Unreal HMD model, don't
     // bother trying to fill everything else out.
     if (!OSVRViewerFitsUnrealModel(displayConfig)) {
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() viewer doesn't fit unreal model."));
         return false;
     }
 
-    if (!InitIPD(displayConfig)) { 
+    if (!InitIPD(displayConfig)) {
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitIPD failed"));
         return false; 
     }
-    if (!InitDisplaySize(displayConfig)) { 
+    if (!InitDisplaySize(displayConfig)) {
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitDisplaySize failed."));
         return false; 
     }
-    if (!InitFOV(displayConfig)) { 
+    if (!InitFOV(displayConfig)) {
+        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitFOV failed."));
         return false; 
     }
     Valid = true;
@@ -206,16 +193,31 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_Display
 
 FVector2D OSVRHMDDescription::GetDisplaySize(EEye Eye) const
 {
-	return GetData(Data).DisplaySize[Eye];
+    if (Eye == EEye::LEFT_EYE) {
+        return Data->DisplaySize[0];
+        
+    }
+    else if (Eye == EEye::RIGHT_EYE) {
+        return Data->DisplaySize[1];
+    }
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::GetDisplaySize() Invalid EEye."));
+    return FVector2D();
 }
 
 FVector2D OSVRHMDDescription::GetFov(OSVR_EyeCount Eye) const
 {
-	return GetData(Data).Fov[Eye];
+	return Data->Fov[Eye];
 }
 FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
 {
-    return GetData(Data).Fov[Eye];
+    if (Eye == EEye::LEFT_EYE) {
+        return Data->Fov[0];
+    }
+    else if (Eye == EEye::RIGHT_EYE) {
+        return Data->Fov[1];
+    }
+    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::GetFov() Invalid EEye."));
+    return FVector2D();
 }
 
 // implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.

@@ -84,20 +84,14 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 
 // @todo: move this to OSVRHMDDescription
 void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const {
-    OSVR_ReturnCode returnCode;
-
-    OSVR_DisplayDimension width, height;
-    returnCode = osvrClientGetDisplayDimensions(DisplayConfig, 0, &width, &height);
-    check(returnCode == OSVR_RETURN_SUCCESS);
-
-    OSVR_ViewportDimension left, bottomIgnored, widthIgnored, heightIgnored;
-    returnCode = osvrClientGetRelativeViewportForViewerEyeSurface(DisplayConfig, 0, 0, 0,
-        &left, &bottomIgnored, &widthIgnored, &heightIgnored);
-    check(returnCode == OSVR_RETURN_SUCCESS);
+    auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+    auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+    OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
+    OSVR_ViewportDimension height = (OSVR_ViewportDimension)leftEye.Y;
 
     MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
     MonitorDesc.MonitorId = 0;				  //@TODO
-    MonitorDesc.DesktopX = left;
+    MonitorDesc.DesktopX = 0;
     MonitorDesc.DesktopY = 0;
     MonitorDesc.ResolutionX = width;
     MonitorDesc.ResolutionY = height;
