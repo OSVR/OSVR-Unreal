@@ -19,14 +19,8 @@
 #include "GenericPlatformMath.h"
 #include "OSVREntryPoint.h"
 #include "OSVRInputDevice.h"
-
 #include "SlateBasics.h"
-
-//#include "WindowsApplication.h"
-//#include "WindowsWindow.h"
-//#include "WindowsCursor.h"
 #include "GenericApplicationMessageHandler.h"
-
 #include "OSVRTypes.h"
 #include "IOSVR.h"
 #include "OSVRHMD.h"

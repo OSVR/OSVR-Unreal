@@ -167,7 +167,7 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig) {
 
         double horizontalFOV = FMath::RadiansToDegrees(std::atan(std::abs(left)) + std::atan(std::abs(right)));
         double verticalFOV = FMath::RadiansToDegrees(std::atan(std::abs(top)) + std::atan(std::abs(bottom)));
-        Data->Fov[eye] = FVector2D(horizontalFOV, verticalFOV);
+        Data->Fov[eye].Set(horizontalFOV, verticalFOV);
     }
     return true;
 }
