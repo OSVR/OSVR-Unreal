@@ -47,13 +47,11 @@ DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
 void FOSVRHMD::OnBeginPlay()
 {
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnBeginPlay()"));
     bPlaying = true;
 }
 
 void FOSVRHMD::OnEndPlay()
 {
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnEndPlay()"));
     bPlaying = false;
 }
 
@@ -84,20 +82,14 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 
 // @todo: move this to OSVRHMDDescription
 void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const {
-    OSVR_ReturnCode returnCode;
-
-    OSVR_DisplayDimension width, height;
-    returnCode = osvrClientGetDisplayDimensions(DisplayConfig, 0, &width, &height);
-    check(returnCode == OSVR_RETURN_SUCCESS);
-
-    OSVR_ViewportDimension left, bottomIgnored, widthIgnored, heightIgnored;
-    returnCode = osvrClientGetRelativeViewportForViewerEyeSurface(DisplayConfig, 0, 0, 0,
-        &left, &bottomIgnored, &widthIgnored, &heightIgnored);
-    check(returnCode == OSVR_RETURN_SUCCESS);
+    auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+    auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+    OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
+    OSVR_ViewportDimension height = (OSVR_ViewportDimension)leftEye.Y;
 
     MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
     MonitorDesc.MonitorId = 0;				  //@TODO
-    MonitorDesc.DesktopX = left;
+    MonitorDesc.DesktopX = 0;
     MonitorDesc.DesktopY = 0;
     MonitorDesc.ResolutionX = width;
     MonitorDesc.ResolutionY = height;
@@ -360,15 +352,12 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
     auto width = leftEye.X + rightEye.X;
     auto height = leftEye.Y;
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), width: %f"), width);
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), height: %f"), height);
 
-    //FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), ResX: %d"), GSystemResolution.ResX);
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), ResY: %d"), GSystemResolution.ResY);
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo(), stereo: %d"), (int)stereo);
-
-    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::Fullscreen : EWindowMode::Windowed);
+    // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
+    // We may revisit once display plugins are added to OSVR-Core.
+#if !PLATFORM_ANDROID
+    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+#endif
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
@@ -406,11 +395,6 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
     {
         X += SizeX;
     }
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), SizeX: %d"), SizeX);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), SizeY: %d"), SizeY);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), X: %d"), X);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), Y: %d"), Y);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::AdjustViewRect(), StereoPass: %d"), (int)StereoPass);
 }
 
 void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation, const float WorldToMeters, FVector& ViewLocation)
@@ -613,10 +597,6 @@ FOSVRHMD::FOSVRHMD()
     if (CVScreenPercentage) {
         CVScreenPercentage->Set(100);
     }
-
-    IConsoleVariable* CMobilePercentageVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.MobileContentScaleFactor"));
-    if (CMobilePercentageVar)
-        CMobilePercentageVar->Set(0.0f);
 
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;

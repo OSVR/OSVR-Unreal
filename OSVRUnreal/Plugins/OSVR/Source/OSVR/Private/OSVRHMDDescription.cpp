@@ -123,6 +123,12 @@ bool OSVRHMDDescription::InitIPD(OSVR_DisplayConfig displayConfig) {
 }
 
 bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
+#if PLATFORM_ANDROID
+    // On Android, we just use the resolution Unreal sets for us.
+    // This may be a downscaled resolution for performance reasons.
+    Data->DisplaySize[0].Set(GSystemResolution.ResX / 2, GSystemResolution.ResY);
+    Data->DisplaySize[1].Set(GSystemResolution.ResX - Data->DisplaySize[0].X, GSystemResolution.ResY);
+#else
     OSVR_ReturnCode returnCode;
 
     // left eye surface (only one surface per eye supported)
@@ -145,14 +151,7 @@ bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
 
     Data->DisplaySize[0].Set(leftViewportWidth, leftViewportHeight);
     Data->DisplaySize[1].Set(rightViewportWidth, rightViewportHeight);
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() width: %d"), leftViewportWidth + rightViewportWidth);
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() height: %d"), leftViewportHeight);
-    auto leftEye = Data->DisplaySize[0];
-    auto rightEye = Data->DisplaySize[1];
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize leftEye.X: %f"), leftEye.X);
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize leftEye.Y: %f"), leftEye.Y);
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize rightEye.X: %f"), rightEye.X);
-    UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::InitDisplaySize() GetDisplaySize rightEye.Y: %f"), rightEye.Y);
+#endif
     return true;
 }
 
