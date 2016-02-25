@@ -104,13 +104,14 @@ void FOSVR::LoadOSVRClientKitModule()
 
 TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMountedDisplay()
 {
-    TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
-    if (OSVRHMD->IsInitialized())
-    {
-        hmd = OSVRHMD;
-        return OSVRHMD;
+    if (EntryPoint->IsOSVRConnected()) {
+        TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
+        if (OSVRHMD->IsInitialized() && OSVRHMD->IsHMDConnected())
+        {
+            hmd = OSVRHMD;
+            return OSVRHMD;
+        }
     }
-
     return nullptr;
 }
 
