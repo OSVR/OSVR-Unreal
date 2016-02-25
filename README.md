@@ -26,7 +26,7 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  2. Run the ImportFromSDK.cmd script and specify the SDK paths as it prompts you.   
   * NOTE: It's easiest to drag the folders to the console window when it prompts you for SDK paths, as this will automatically wrap the paths in quotes as needed. If you enter them in manually, please use quotes around any paths with spaces in them.
  3. Check that the OSVR-Core and Render Manager binaries have been copied to the correct place in OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin, include, and lib.
- 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins directory to your existing project's directory.
+ 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins and OSVRUnreal/Source directories to your existing project's directory.
  5. Temporarily rename the Plugins folder something else, like Plugins_. This will allow you to open the project in the editor without first building the plugin. Without this step, the editor will complain about the OSVR module being missing.
  6. Open the existing project in the Unreal editor.
  7. Rename the Plugins_ folder back to Plugins.
