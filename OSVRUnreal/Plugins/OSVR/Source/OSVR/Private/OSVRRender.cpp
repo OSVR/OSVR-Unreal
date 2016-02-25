@@ -118,7 +118,6 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
     
     if (mCustomPresent) {
         if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize()) {
-            delete mCustomPresent;
             mCustomPresent = nullptr;
         }
         if (mCustomPresent && mCustomPresent->IsInitialized()) {
