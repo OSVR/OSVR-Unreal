@@ -22,6 +22,9 @@
 
 #include "OSVREntryPoint.h"
 
+#include <chrono>
+#include <thread>
+
 DEFINE_LOG_CATEGORY(OSVREntryPointLog);
 
 OSVREntryPoint::OSVREntryPoint()
@@ -30,9 +33,11 @@ OSVREntryPoint::OSVREntryPoint()
 
     {
         bool clientContextOK = false;
-        size_t numTries = 0;
         bool failure = false;
-        while (numTries++ < 10000 && !clientContextOK && !failure) {
+        auto begin = std::chrono::system_clock::now();
+        auto end = begin + std::chrono::milliseconds(1000);
+
+        while (std::chrono::system_clock::now() < end && !clientContextOK && !failure) {
             clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
             if (!clientContextOK) {
                 failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
@@ -40,6 +45,7 @@ OSVREntryPoint::OSVREntryPoint()
                     UE_LOG(OSVREntryPointLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                     break;
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         }
         if (!clientContextOK) {

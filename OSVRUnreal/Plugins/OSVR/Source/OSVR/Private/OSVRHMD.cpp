@@ -38,6 +38,8 @@
 #include <osvr/Util/MatrixConventionsC.h>
 #include <cmath>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
@@ -565,7 +567,8 @@ FOSVRHMD::FOSVRHMD()
 {
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
-    OSVR_ClientContext osvrClientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    OSVR_ClientContext osvrClientContext = entryPoint->GetClientContext();
 
     // Prevents debugger hangs that sometimes occur with only one monitor.
 #if OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE
@@ -593,37 +596,21 @@ FOSVRHMD::FOSVRHMD()
     GEngine->bSmoothFrameRate = false;
 
     // check if the client context is ok.
-    bool clientContextOK = false;
-    {  
-        size_t numTries = 0;
-        bool failure = false;
-        while (numTries++ < 10000 && !clientContextOK && !failure) {
-            clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
-            if (!clientContextOK) {
-                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-                if (failure) {
-                    UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
-                    break;
-                }
-            }
-        }
-        if (!clientContextOK) {
-            UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
-        }
-        clientContextOK = clientContextOK && !failure;
-    }
+    bool clientContextOK = entryPoint->IsOSVRConnected();
 
     // get the display context
     bool displayConfigOK = false;
     if (clientContextOK)
     {
         bool failure = false;
+
         auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
         if (rc == OSVR_RETURN_FAILURE) {
             UE_LOG(OSVRHMDLog, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
         } else {
-            int numTries = 0;
-            while (!displayConfigOK && numTries++ < 10000) {
+            auto begin = std::chrono::system_clock::now();
+            auto end = begin + std::chrono::milliseconds(1000);
+            while (!displayConfigOK && std::chrono::system_clock::now() < end) {
                 displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
                 if (!displayConfigOK) {
                     failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
@@ -632,6 +619,7 @@ FOSVRHMD::FOSVRHMD()
                         break;
                     }
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
             displayConfigOK = displayConfigOK && !failure;
             if (!displayConfigOK) {
