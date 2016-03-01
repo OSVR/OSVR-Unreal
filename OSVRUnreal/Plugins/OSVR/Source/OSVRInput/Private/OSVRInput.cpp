@@ -1,7 +1,9 @@
 // Copyright 1998-2014 Epic Games, Inc. All Rights Reserved.
 
 #include "OSVRInputPrivatePCH.h"
+#include "IOSVR.h"
 #include "IOSVRInput.h"
+#include "OSVREntryPoint.h"
 #include "OSVRInputDevice.h"
 
 #include "InputCoreTypes.h"
@@ -22,10 +24,13 @@ IMPLEMENT_MODULE(FOSVRInput, OSVRInput)
 
 TSharedPtr< class IInputDevice > FOSVRInput::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 {
-	FOSVRInputDevice::RegisterNewKeys();
+    if (IOSVR::Get().GetEntryPoint()->IsOSVRConnected()) {
+        FOSVRInputDevice::RegisterNewKeys();
 
-	InputDevice = MakeShareable(new FOSVRInputDevice(InMessageHandler));
-	return InputDevice;
+        InputDevice = MakeShareable(new FOSVRInputDevice(InMessageHandler));
+        return InputDevice;
+    }
+    return nullptr;
 }
 
 void FOSVRInput::StartupModule()

@@ -20,6 +20,8 @@
 #include "OSVRInterfaceCollection.h"
 #endif
 
+DECLARE_LOG_CATEGORY_EXTERN(OSVREntryPointLog, Log, All);
+
 OSVR_API class OSVREntryPoint : public FTickableGameObject
 {
 public:
@@ -51,6 +53,7 @@ public:
         return osvrClientContext;
     }
 
+    virtual bool IsOSVRConnected();
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	OSVRInterfaceCollection* GetInterfaceCollection();
 #endif
