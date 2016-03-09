@@ -18,19 +18,21 @@
 
 #if !PLATFORM_WINDOWS
 #include "IOSVR.h"
-#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+#include "OSVRCustomPresent.h"
+
+#include <osvr/RenderKit/RenderManagerC.h>
 
 // @todo OpenGL implementation
-class FCurrentCustomPresent : public FOSVRCustomPresent< ? >
+class FCurrentCustomPresent : public FOSVRCustomPresent<void*>
 {
 protected:
-    virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
-        osvr::renderkit::GraphicsLibrary ret;
-        // OpenGL path not implemented yet
-        return ret;
-    }
+    //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
+    //    osvr::renderkit::GraphicsLibrary ret;
+    //    // OpenGL path not implemented yet
+    //    return ret;
+    //}
 
-    virtual const std::string& GetGraphicsLibraryName() override {
+    virtual std::string GetGraphicsLibraryName() override {
         return "OpenGL";
     }
 

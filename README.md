@@ -19,6 +19,9 @@ Currently works with Unreal Engine 4.10.x. If you are still on 4.9.x, there is a
 You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:
  > http://osvr.github.io/using/
 
+You will also need the OSVR-Android binaries. Prebuild binaries are available here:
+ > http://resource.osvr.com/public_download/artifacts/osvr-android-ndk/osvr-android-ndk.tar.bz2
+
 ### Integrating the plugin from source with an existing project
 The current recommended way to integrate the OSVR Unreal plugin with an existing project is directly from source.
 
@@ -33,11 +36,11 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  8. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
   * NOTE: if your project is a pure blueprint project, you may need to add a dummy C++ game module to your project to get Unreal to generate a Visual Studio project for you. Otherwise it may complain about there not being any code to compile (having local plugins isn't enough).
  9. Open the generated or refreshed Visual Studio project and rebuild using the Development Editor build configuration.
- 10. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries/Win64 (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries/Win64.
-
- > Note: If you installed Unreal to a non-standard location, or you are running a custom build of the engine, you may need to make a slight modification to /Plugins/OSVR/Source/OSVR/OSVR.Build.cs. There are some hard-coded paths to the engine at the bottom which are added to the default include directories list. Please adjust these as necessary for your custom install location.
+ 10. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64 and YourProject/Binaries/Android/armeabi-v7a. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries.
 
  > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
+
+ > Note: Android support is currently preliminary/alpha-quality. It is not yet ready for production. If you still want to build for Android without OSVR support enabled, remove Android from the WhiteListPlatforms of both OSVR and OSVRInput modules in /OSVRUnreal/Plugins/OSVR/OSVR.uplugin.
 
 ## More documentation
 

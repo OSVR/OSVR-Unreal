@@ -25,6 +25,12 @@ IF %3.==. (
 	set rm64bit=%~3
 )
 
+IF %4.==. (
+	set /p osvrAndroid=Type OSVR Android SDK root dir:
+) ELSE (
+	set osvrAndroid=%~4
+)
+
 set rm32bit=%rm64bit%
 
 rem Get rid of the old
@@ -36,6 +42,7 @@ call :copy_arch_indep %osvr32bit% %rm32bit% %DEST_ROOT%
 
 call :copy_arch %osvr32bit% %rm32bit% %PLUGIN_ROOT% %DEST_ROOT% 32
 call :copy_arch %osvr64bit% %rm64bit% %PLUGIN_ROOT% %DEST_ROOT% 64
+call :copy_android %osvrAndroid% %PLUGIN_ROOT% %DEST_ROOT%
 
 echo Note: The 32-bit target is not yet supported. Please use the 64-bit target only for now.
 
@@ -53,6 +60,21 @@ xcopy %SRC%\include\osvr\Util "%DEST_ROOT%\include\osvr\Util" /S /I /y
 xcopy %SRC%\include\osvr\Client "%DEST_ROOT%\include\osvr\Client" /S /I /y
 xcopy %SRC%\include\osvr\Common "%DEST_ROOT%\include\osvr\Common" /S /I /y
 xcopy %SRC_RM%\include\osvr\RenderKit "%DEST_ROOT%\include\osvr\RenderKit" /S /I /y
+endlocal
+goto :eof
+
+:copy_android
+
+set SRC=%1
+set PLUGIN_ROOT=%2
+set DEST_ROOT=%3
+set SRC_LIB=%SRC%\NDK\osvr\builds\armeabi-v7a\lib
+
+for %%F in (%SRC_LIB%\libcrystax.so,%SRC_LIB%\libfunctionality.so,%SRC_LIB%\libgnustl_shared.so,%SRC_LIB%\libjsoncpp.so,%SRC_LIB%\libosvrAnalysisPluginKit.so,%SRC_LIB%\libosvrClient.so,%SRC_LIB%\libosvrClientKit.so,%SRC_LIB%\libosvrCommon.so,%SRC_LIB%\libosvrConnection.so,%SRC_LIB%\libosvrJointClientKit.so,%SRC_LIB%\libosvrPluginHost.so,%SRC_LIB%\libosvrServer.so,%SRC_LIB%\libosvrUtil.so,%SRC_LIB%\libosvrVRPNServer.so) do (
+  echo xcopy %%F "%DEST_ROOT%\bin\Android\armeabi-v7a\" /Y
+  xcopy %%F "%DEST_ROOT%\bin\Android\armeabi-v7a\" /Y
+)
+
 endlocal
 goto :eof
 

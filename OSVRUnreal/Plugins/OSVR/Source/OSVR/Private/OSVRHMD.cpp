@@ -49,13 +49,11 @@ DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
 void FOSVRHMD::OnBeginPlay()
 {
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnBeginPlay()"));
     bPlaying = true;
 }
 
 void FOSVRHMD::OnEndPlay()
 {
-    UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OnEndPlay()"));
     bPlaying = false;
 }
 
@@ -356,7 +354,12 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
     auto width = leftEye.X + rightEye.X;
     auto height = leftEye.Y;
+
+    // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
+    // We may revisit once display plugins are added to OSVR-Core.
+#if !PLATFORM_ANDROID
     FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+#endif
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor) {
@@ -383,6 +386,11 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
 {
     if (mCustomPresent && mCustomPresent->IsInitialized()) {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+    } else {
+        auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+        auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+        SizeX = leftEye.X + rightEye.X;
+        SizeY = leftEye.Y;
     }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
@@ -592,6 +600,7 @@ FOSVRHMD::FOSVRHMD()
     if (CVScreenPercentage) {
         CVScreenPercentage->Set(100);
     }
+
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;
 

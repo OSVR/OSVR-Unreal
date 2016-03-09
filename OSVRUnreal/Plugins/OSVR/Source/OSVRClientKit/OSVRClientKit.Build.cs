@@ -1,5 +1,6 @@
 
 using System;
+using System.IO;
 using UnrealBuildTool;
 
 public class OSVRClientKit : ModuleRules
@@ -50,6 +51,18 @@ public class OSVRClientKit : ModuleRules
                 var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
                 RuntimeDependencies.Add(new RuntimeDependency(src));
             }
+        }
+        else if(Target.Platform == UnrealTargetPlatform.Android)
+        {
+            string PlatformAbbrev = "armeabi-v7a";
+
+            PublicLibraryPaths.Add(String.Format("{0}/bin/Android/{1}", ModuleDirectory, PlatformAbbrev));
+            PublicAdditionalLibraries.Add("osvrClientKit");
+
+            var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
+            var xmlPath = Path.Combine(ModuleDirectory, "OSVR_APL.xml");
+            //System.Console.WriteLine("xmlPath: {0}", xmlPath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", xmlPath));
         }
     }
 }

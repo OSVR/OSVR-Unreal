@@ -23,6 +23,7 @@
 
 DEFINE_LOG_CATEGORY(OSVRHMDDescriptionLog);
 
+
 DescriptionData::DescriptionData()
 {
 	// Set defaults...
@@ -122,6 +123,12 @@ bool OSVRHMDDescription::InitIPD(OSVR_DisplayConfig displayConfig) {
 }
 
 bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
+#if PLATFORM_ANDROID
+    // On Android, we just use the resolution Unreal sets for us.
+    // This may be a downscaled resolution for performance reasons.
+    Data->DisplaySize[0].Set(GSystemResolution.ResX / 2, GSystemResolution.ResY);
+    Data->DisplaySize[1].Set(GSystemResolution.ResX - Data->DisplaySize[0].X, GSystemResolution.ResY);
+#else
     OSVR_ReturnCode returnCode;
 
     // left eye surface (only one surface per eye supported)
@@ -144,6 +151,7 @@ bool OSVRHMDDescription::InitDisplaySize(OSVR_DisplayConfig displayConfig) {
 
     Data->DisplaySize[0].Set(leftViewportWidth, leftViewportHeight);
     Data->DisplaySize[1].Set(rightViewportWidth, rightViewportHeight);
+#endif
     return true;
 }
 
@@ -167,7 +175,7 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig) {
 bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig)
 {
 	Valid = false;
-    
+
     // if the OSVR viewer doesn't fit nicely with the Unreal HMD model, don't
     // bother trying to fill everything else out.
     if (!OSVRViewerFitsUnrealModel(displayConfig)) {
@@ -175,15 +183,15 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_Display
         return false;
     }
 
-    if (!InitIPD(displayConfig)) {
+    if (!InitIPD(displayConfig)) { 
         UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitIPD failed"));
         return false; 
     }
-    if (!InitDisplaySize(displayConfig)) {
+    if (!InitDisplaySize(displayConfig)) { 
         UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitDisplaySize failed."));
         return false; 
     }
-    if (!InitFOV(displayConfig)) {
+    if (!InitFOV(displayConfig)) { 
         UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitFOV failed."));
         return false; 
     }
@@ -195,19 +203,18 @@ FVector2D OSVRHMDDescription::GetDisplaySize(EEye Eye) const
 {
     if (Eye == EEye::LEFT_EYE) {
         return Data->DisplaySize[0];
-        
-    }
-    else if (Eye == EEye::RIGHT_EYE) {
+    } else if (Eye == EEye::RIGHT_EYE) {
         return Data->DisplaySize[1];
     }
     UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::GetDisplaySize() Invalid EEye."));
-    return FVector2D();
+	return FVector2D();
 }
 
 FVector2D OSVRHMDDescription::GetFov(OSVR_EyeCount Eye) const
 {
 	return Data->Fov[Eye];
 }
+
 FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
 {
     if (Eye == EEye::LEFT_EYE) {
