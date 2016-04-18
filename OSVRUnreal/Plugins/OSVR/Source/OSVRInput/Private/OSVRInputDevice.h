@@ -57,7 +57,7 @@ public:
     */
     virtual bool GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const override;
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
     virtual ETrackingStatus GetControllerTrackingStatus(const int32, const EControllerHand) const override;
 #endif
 

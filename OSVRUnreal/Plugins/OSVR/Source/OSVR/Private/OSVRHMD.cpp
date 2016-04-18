@@ -218,7 +218,7 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
 }
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
 bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
     UpdateHeadPose();

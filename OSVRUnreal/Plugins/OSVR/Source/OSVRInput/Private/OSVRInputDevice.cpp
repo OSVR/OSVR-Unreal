@@ -275,7 +275,7 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
     return RetVal;
 }
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
 ETrackingStatus FOSVRInputDevice::GetControllerTrackingStatus(const int32, const EControllerHand) const
 {
     if (contextValid && (leftHandValid || rightHandValid)) {

@@ -68,7 +68,7 @@ public:
     virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
     virtual void ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation) override;
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
     virtual bool UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition) override;
 #else
     virtual void UpdatePlayerCameraRotation(class APlayerCameraManager* Camera, struct FMinimalViewInfo& POV) override;
