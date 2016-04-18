@@ -32,11 +32,13 @@ protected:
     //    return ret;
     //}
 
-    virtual std::string GetGraphicsLibraryName() override {
+    virtual std::string GetGraphicsLibraryName() override
+    {
         return "OpenGL";
     }
 
-    virtual bool ShouldFlipY() override {
+    virtual bool ShouldFlipY() override
+    {
         return false;
     }
 

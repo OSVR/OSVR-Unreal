@@ -35,21 +35,27 @@ public:
         mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
     }
 
-    virtual ~FOSVRCustomPresent() {
-        if (mClientContext) {
+    virtual ~FOSVRCustomPresent()
+    {
+        if (mClientContext)
+        {
             osvrClientShutdown(mClientContext);
         }
 
-        if (mRenderManager) {
+        if (mRenderManager)
+        {
             osvrDestroyRenderManager(mRenderManager);
         }
     }
 
     // virtual methods from FRHICustomPresent
 
-    virtual void OnBackBufferResize() override {}
+    virtual void OnBackBufferResize() override
+    {
+    }
 
-    virtual bool Present(int32 &inOutSyncInterval) override {
+    virtual bool Present(int32 &inOutSyncInterval) override
+    {
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
         InitializeImpl();
@@ -58,12 +64,14 @@ public:
     }
 
     // implement this in the sub-class
-    virtual bool Initialize() {
+    virtual bool Initialize()
+    {
         FScopeLock lock(&mOSVRMutex);
         return InitializeImpl();
     }
 
-    virtual bool IsInitialized() {
+    virtual bool IsInitialized()
+    {
         return mInitialized;
     }
 
@@ -71,7 +79,8 @@ public:
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
-    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY) {
+    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY)
+    {
         FScopeLock lock(&mOSVRMutex);
         return CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
     }
@@ -92,7 +101,8 @@ protected:
 
     virtual bool InitializeImpl() = 0;
 
-    virtual TGraphicsDevice* GetGraphicsDevice() {
+    virtual TGraphicsDevice* GetGraphicsDevice()
+    {
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
     }

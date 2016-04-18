@@ -37,26 +37,28 @@ OSVREntryPoint::OSVREntryPoint()
         auto begin = std::chrono::system_clock::now();
         auto end = begin + std::chrono::milliseconds(1000);
 
-        while (std::chrono::system_clock::now() < end && !clientContextOK && !failure) {
+        while (std::chrono::system_clock::now() < end && !clientContextOK && !failure)
+        {
             clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
-            if (!clientContextOK) {
+            if (!clientContextOK)
+            {
                 failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-                if (failure) {
+                if (failure)
+                {
                     UE_LOG(OSVREntryPointLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         }
-        if (!clientContextOK) {
+        if (!clientContextOK)
+        {
             UE_LOG(OSVREntryPointLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
         }
     }
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
-	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(
-		osvrClientContext
-		));
+	InterfaceCollection = MakeShareable(new OSVRInterfaceCollection(osvrClientContext));
 #endif
 }
 

@@ -96,7 +96,8 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    if (mCustomPresent) {
+    if (mCustomPresent)
+    {
         mCustomPresent->Initialize();
     }
     // steamVR updates the current pose here, should we?
@@ -112,31 +113,37 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
 {
     check(IsInGameThread());
     
-    if (!IsStereoEnabled()) {
+    if (!IsStereoEnabled())
+    {
         return;
     }
     
-    if (mCustomPresent) {
-        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize()) {
+    if (mCustomPresent)
+    {
+        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
+        {
             mCustomPresent = nullptr;
         }
-        if (mCustomPresent && mCustomPresent->IsInitialized()) {
+        if (mCustomPresent && mCustomPresent->IsInitialized())
+        {
             mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
         }
-    } else {
+    }
+    else
+    {
         auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         InOutSizeX = leftEye.X + rightEye.X;
         InOutSizeY = leftEye.Y;
     }
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), width: %d"), InOutSizeX);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), height: %d"), InOutSizeY);
 }
 
 
-bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport) {
+bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport)
+{
     check(IsInGameThread());
-    if (IsStereoEnabled()) {
+    if (IsStereoEnabled())
+    {
         const uint32 inSizeX = viewport.GetSizeXY().X;
         const uint32 inSizeY = viewport.GetSizeXY().Y;
         FIntPoint renderTargetSize;
@@ -145,7 +152,8 @@ bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport) {
 
         uint32 newSizeX = inSizeX, newSizeY = inSizeY;
         CalculateRenderTargetSize(viewport, newSizeX, newSizeY);
-        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y) {
+        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y)
+        {
             return true;
         }
     }
@@ -157,13 +165,16 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
     check(IsInGameThread());
 
     auto viewportRHI = InViewport.GetViewportRHI().GetReference();
-    if ((GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget)) {
+    if ((GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget))
+    {
         viewportRHI->SetCustomPresent(nullptr);
         return;
     }
 
-    if (mCustomPresent && mCustomPresent->IsInitialized()) {
-        if (!mCustomPresent->UpdateViewport(InViewport, viewportRHI)) {
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
+        if (!mCustomPresent->UpdateViewport(InViewport, viewportRHI))
+        {
             delete mCustomPresent;
             mCustomPresent = nullptr;
         }
@@ -173,7 +184,8 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
 bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
 {
     check(index == 0);
-    if (mCustomPresent && mCustomPresent->IsInitialized()) {
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
     return false;

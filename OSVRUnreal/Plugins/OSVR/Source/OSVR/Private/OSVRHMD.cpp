@@ -83,7 +83,8 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 }
 
 // @todo: move this to OSVRHMDDescription
-void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const {
+void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const
+{
     auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
     OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
@@ -115,7 +116,8 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
     return false;
 }
 
-void FOSVRHMD::UpdateHeadPose() {
+void FOSVRHMD::UpdateHeadPose()
+{
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
 
@@ -123,7 +125,8 @@ void FOSVRHMD::UpdateHeadPose() {
     check(returnCode == OSVR_RETURN_SUCCESS);
 
     returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-    if (returnCode == OSVR_RETURN_SUCCESS) {
+    if (returnCode == OSVR_RETURN_SUCCESS)
+    {
         CurHmdPosition = BaseOrientation.Inverse().RotateVector((OSVR2FVector(pose.translation) * WorldToMetersScale) - BasePosition);
         CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
     }
@@ -156,9 +159,11 @@ void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
     // Intentionally left blank
 }
 
-bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext) {
+bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext)
+{
     check(IsInGameThread());
-    if (!bHmdOverridesApplied) {
+    if (!bHmdOverridesApplied)
+    {
         IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"))->Set(1);
         bHmdOverridesApplied = true;
     }
@@ -362,18 +367,21 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 #endif
 
     FSceneViewport* sceneViewport;
-    if (!GIsEditor) {
+    if (!GIsEditor)
+    {
         UGameEngine* gameEngine = Cast<UGameEngine>(GEngine);
         sceneViewport = gameEngine->SceneViewport.Get();
     }
 #if WITH_EDITOR
-    else {
+    else
+    {
         UEditorEngine* editorEngine = Cast<UEditorEngine>(GEngine);
         sceneViewport = (FSceneViewport*)(editorEngine->GetPIEViewport());
     }
 #endif
 
-    if (sceneViewport) {
+    if (sceneViewport)
+    {
         sceneViewport->SetViewportSize(width, height);
     }
 
@@ -384,9 +392,12 @@ bool FOSVRHMD::EnableStereo(bool stereo)
 
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
-    if (mCustomPresent && mCustomPresent->IsInitialized()) {
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
-    } else {
+    }
+    else
+    {
         auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         SizeX = leftEye.X + rightEye.X;
@@ -431,7 +442,9 @@ void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
     OSVR_PoseState Pose;
     OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
     if (ReturnCode != OSVR_RETURN_SUCCESS)
+    {
         return;
+    }
 
     CurrentRotation = OSVR2FQuat(Pose.rotation);
 
@@ -463,7 +476,9 @@ void FOSVRHMD::ResetPosition()
     OSVR_PoseState Pose;
     OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
     if (ReturnCode != OSVR_RETURN_SUCCESS)
+    {
         return;
+    }
 
     CurrentPosition = OSVR2FVector(Pose.translation);
 
@@ -477,10 +492,11 @@ void FOSVRHMD::SetCurrentHmdOrientationAndPositionAsBase()
     ResetOrientation(false, 0);
 }
 
-namespace {
+namespace
+{
     static OSVR_MatrixConventions gMatrixFlags = OSVR_MATRIX_ROWMAJOR | OSVR_MATRIX_RHINPUT;
-
 }
+
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
     FMatrix original = HMDDescription.GetProjectionMatrix(
@@ -489,15 +505,18 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
 
     // @todo we should be getting a matrix from core, but this doesn't appear to be working.
     //OSVR_EyeCount eye = 0;
-    //if (StereoPassType == eSSP_LEFT_EYE) {
+    //if (StereoPassType == eSSP_LEFT_EYE)
+    //{
     //    eye = 0;
     //}
-    //else if (StereoPassType == eSSP_RIGHT_EYE) {
+    //else if (StereoPassType == eSSP_RIGHT_EYE)
+    //{
     //    eye = 1;
     //}
 
     //float yUpMatrix[16];
-    //if (osvrClientGetViewerEyeSurfaceProjectionMatrixf(DisplayConfig, 0, eye, 0, GNearClippingPlane, 10000.0f, gMatrixFlags, yUpMatrix) == OSVR_RETURN_FAILURE) {
+    //if (osvrClientGetViewerEyeSurfaceProjectionMatrixf(DisplayConfig, 0, eye, 0, GNearClippingPlane, 10000.0f, gMatrixFlags, yUpMatrix) == OSVR_RETURN_FAILURE)
+    //{
     //    throw std::exception("FOSVRHMD::GetStereoProjectionMatrix: couldn't get the viewer eye matrix.");
     //}
     //FMatrix ret = OSVR2FMatrix(yUpMatrix);
@@ -520,16 +539,16 @@ void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 
 /*void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
-FMatrix m;
-m.SetIdentity();
-InCanvas->PushAbsoluteTransform(m);
+    FMatrix m;
+    m.SetIdentity();
+    InCanvas->PushAbsoluteTransform(m);
 }
 
 void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FSceneView* InView) const
 {
-FMatrix m;
-m.SetIdentity();
-InCanvas->PushAbsoluteTransform(m);
+    FMatrix m;
+    m.SetIdentity();
+    InCanvas->PushAbsoluteTransform(m);
 }*/
 
 //---------------------------------------------------
@@ -586,7 +605,8 @@ FOSVRHMD::FOSVRHMD()
     EnablePositionalTracking(true);
 
 #if PLATFORM_WINDOWS
-    if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform)) {
+    if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
+    {
         mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
     }
 #endif
@@ -594,10 +614,13 @@ FOSVRHMD::FOSVRHMD()
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
     if (CVSyncVar)
+    {
         CVSyncVar->Set(false);
+    }
 
     IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
-    if (CVScreenPercentage) {
+    if (CVScreenPercentage)
+    {
         CVScreenPercentage->Set(100);
     }
 
@@ -614,16 +637,22 @@ FOSVRHMD::FOSVRHMD()
         bool failure = false;
 
         auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
-        if (rc == OSVR_RETURN_FAILURE) {
+        if (rc == OSVR_RETURN_FAILURE)
+        {
             UE_LOG(OSVRHMDLog, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));
-        } else {
+        }
+        else
+        {
             auto begin = std::chrono::system_clock::now();
             auto end = begin + std::chrono::milliseconds(1000);
-            while (!displayConfigOK && std::chrono::system_clock::now() < end) {
+            while (!displayConfigOK && std::chrono::system_clock::now() < end)
+            {
                 displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
-                if (!displayConfigOK) {
+                if (!displayConfigOK)
+                {
                     failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-                    if (failure) {
+                    if (failure)
+                    {
                         UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                         break;
                     }
@@ -631,21 +660,27 @@ FOSVRHMD::FOSVRHMD()
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
             displayConfigOK = displayConfigOK && !failure;
-            if (!displayConfigOK) {
+            if (!displayConfigOK)
+            {
                 UE_LOG(OSVRHMDLog, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
             }
         }
     }
 
     bool displayConfigMatchesUnrealExpectations = false;
-    if (displayConfigOK) {
+    if (displayConfigOK)
+    {
         bool success = HMDDescription.Init(osvrClientContext, DisplayConfig);
-        if (success) {
+        if (success)
+        {
             displayConfigMatchesUnrealExpectations = HMDDescription.OSVRViewerFitsUnrealModel(DisplayConfig);
-            if (!displayConfigMatchesUnrealExpectations) {
+            if (!displayConfigMatchesUnrealExpectations)
+            {
                 UE_LOG(OSVRHMDLog, Warning, TEXT("The OSVR display config does not match the expectations of Unreal. Possibly incompatible HMD configuration."));
             }
-        } else {
+        }
+        else
+        {
             UE_LOG(OSVRHMDLog, Warning, TEXT("Unable to initialize the HMDDescription. Possible failures during initialization."));
         }
     }
@@ -658,7 +693,8 @@ FOSVRHMD::FOSVRHMD()
 FOSVRHMD::~FOSVRHMD()
 {
     EnablePositionalTracking(false);
-    if (DisplayConfig) {
+    if (DisplayConfig)
+    {
         osvrClientFreeDisplay(DisplayConfig);
     }
 }

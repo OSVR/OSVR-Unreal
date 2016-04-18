@@ -146,7 +146,8 @@ public:
     virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
     void SetCurrentHmdOrientationAndPositionAsBase();
 
-    inline float GetWorldToMetersScale() {
+    inline float GetWorldToMetersScale()
+    {
         return WorldToMetersScale;
     }
 

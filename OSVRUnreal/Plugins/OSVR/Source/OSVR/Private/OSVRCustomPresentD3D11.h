@@ -31,16 +31,21 @@ class FCurrentCustomPresent : public FOSVRCustomPresent<ID3D11Device>
 public:
     FCurrentCustomPresent(OSVR_ClientContext clientContext) :
         FOSVRCustomPresent(clientContext)
-    {}
+    {
+    }
 
-    virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) override {
+    virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) override
+    {
         FScopeLock lock(&mOSVRMutex);
 
         check(IsInGameThread());
-        if (!IsInitialized()) {
+        if (!IsInitialized())
+        {
             UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("UpdateViewport called but custom present is not initialized - doing nothing"));
             return false;
-        } else {
+        }
+        else
+        {
             check(InViewportRHI);
             //const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
             //check(IsValidRef(rt));
@@ -56,9 +61,11 @@ public:
         }
     }
 
-    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override {
+    virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
+    {
         FScopeLock lock(&mOSVRMutex);
-        if (IsInitialized()) {
+        if (IsInitialized())
+        {
             auto d3d11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
             auto graphicsDevice = GetGraphicsDevice();
             HRESULT hr;
@@ -150,7 +157,8 @@ protected:
     OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) override {
-        if (InitializeImpl()) {
+        if (InitializeImpl())
+        {
             // Should we create a RenderParams?
             OSVR_ReturnCode rc;
 
@@ -162,7 +170,8 @@ protected:
             check(rc == OSVR_RETURN_SUCCESS);
 
             mRenderInfos.clear();
-            for (size_t i = 0; i < numRenderInfo; i++) {
+            for (size_t i = 0; i < numRenderInfo; i++)
+            {
                 OSVR_RenderInfoD3D11 renderInfo;
                 rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, i, mRenderParams, &renderInfo);
                 check(rc == OSVR_RETURN_SUCCESS);
@@ -181,32 +190,38 @@ protected:
         return false;
     }
 
-    virtual bool InitializeImpl() override {
-        if (!IsInitialized()) {
+    virtual bool InitializeImpl() override
+    {
+        if (!IsInitialized())
+        {
             auto graphicsLibrary = CreateGraphicsLibrary();
             auto graphicsLibraryName = GetGraphicsLibraryName();
             OSVR_ReturnCode rc;
 
-            if (!mClientContext) {
+            if (!mClientContext)
+            {
                 UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("Can't initialize FOSVRCustomPresent without a valid client context"));
                 return false;
             }
 
             rc = osvrCreateRenderManagerD3D11(mClientContext, graphicsLibraryName.c_str(), graphicsLibrary, &mRenderManager, &mRenderManagerD3D11);
-            if (rc == OSVR_RETURN_FAILURE || !mRenderManager || !mRenderManagerD3D11) {
+            if (rc == OSVR_RETURN_FAILURE || !mRenderManager || !mRenderManagerD3D11)
+            {
                 UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("osvrCreateRenderManagerD3D11 call failed, or returned numm renderManager/renderManagerD3D11 instances"));
                 return false;
             }
 
             rc = osvrRenderManagerGetDoingOkay(mRenderManager);
-            if (rc == OSVR_RETURN_FAILURE) {
+            if (rc == OSVR_RETURN_FAILURE)
+            {
                 UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("osvrRenderManagerGetDoingOkay call failed. Perhaps there was an error during initialization?"));
                 return false;
             }
 
             OSVR_OpenResultsD3D11 results;
             rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
-            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE) {
+            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
+            {
                 UE_LOG(FOSVRCustomPresentLog, Warning,
                     TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
                 return false;
@@ -230,7 +245,8 @@ protected:
         rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
         check(rc == OSVR_RETURN_SUCCESS);
         check(mRenderBuffers.size() == mRenderInfos.size() && mRenderBuffers.size() == mViewportDescriptions.size());
-        for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+        for (size_t i = 0; i < mRenderBuffers.size(); i++)
+        {
             rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
             check(rc == OSVR_RETURN_SUCCESS);
         }
@@ -238,7 +254,8 @@ protected:
         check(rc == OSVR_RETURN_SUCCESS);
     }
 
-    void SetRenderTargetTexture(ID3D11Texture2D* renderTargetTexture) {
+    void SetRenderTargetTexture(ID3D11Texture2D* renderTargetTexture)
+    {
         if (RenderTargetTexture != nullptr && RenderTargetTexture != renderTargetTexture)
         {
             // @todo: testing if this is causing problems later on.
@@ -248,11 +265,13 @@ protected:
         RenderTargetTexture->AddRef();
     }
 
-    virtual void UpdateRenderBuffers() override {
+    virtual void UpdateRenderBuffers() override
+    {
         HRESULT hr;
 
         check(IsInitialized());
-        if (mRenderBuffersNeedToUpdate) {
+        if (mRenderBuffersNeedToUpdate)
+        {
             uint32 width;
             uint32 height;
             // @todo: can't call this here, we're in the wrong thread.
@@ -285,7 +304,8 @@ protected:
             mRenderBuffers.clear();
 
             // Adding two RenderBuffers, but they both point to the same D3D11 texture target
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 2; i++)
+            {
                 OSVR_RenderBufferD3D11 buffer;
                 buffer.colorBuffer = RenderTargetTexture;
                 //buffer.colorBufferView = renderTargetView;
@@ -304,7 +324,8 @@ protected:
                 hr = osvrRenderManagerStartRegisterRenderBuffers(&state);
                 check(hr == OSVR_RETURN_SUCCESS);
 
-                for (size_t i = 0; i < mRenderBuffers.size(); i++) {
+                for (size_t i = 0; i < mRenderBuffers.size(); i++)
+                {
                     hr = osvrRenderManagerRegisterRenderBufferD3D11(state, mRenderBuffers[i]);
                     check(hr == OSVR_RETURN_SUCCESS);
                 }
@@ -334,7 +355,8 @@ protected:
         }
     }
 
-    virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary() {
+    virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary()
+    {
         OSVR_GraphicsLibraryD3D11 ret;
         // Put the device and context into a structure to let RenderManager
         // know to use this one rather than creating its own.
@@ -347,11 +369,13 @@ protected:
         return ret;
     }
 
-    virtual std::string GetGraphicsLibraryName() override {
+    virtual std::string GetGraphicsLibraryName() override
+    {
         return "Direct3D11";
     }
 
-    virtual bool ShouldFlipY() override {
+    virtual bool ShouldFlipY() override
+    {
         return false;
     }
 };

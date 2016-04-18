@@ -1,4 +1,18 @@
-// Copyright 1998-2014 Epic Games, Inc. All Rights Reserved.
+//
+// Copyright 2016 Sensics Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include "OSVRPrivatePCH.h"
 #include "InputCoreTypes.h"
@@ -48,9 +62,11 @@ TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> FOSVR::GetHMD()
 void FOSVR::LoadOSVRClientKitModule()
 {
     FScopeLock lock(&mModuleMutex);
-    if (!mModulesLoaded) {
+    if (!mModulesLoaded)
+    {
 #if PLATFORM_WINDOWS
-        const std::vector<std::string> osvrDlls = {
+        const std::vector<std::string> osvrDlls =
+        {
             "osvrClientKit.dll",
             "osvrClient.dll",
             "osvrCommon.dll",
@@ -61,7 +77,8 @@ void FOSVR::LoadOSVRClientKitModule()
             "SDL2.dll"
         };
 #if PLATFORM_64BITS
-        std::vector<FString> pathsToTry = {
+        std::vector<FString> pathsToTry =
+        {
             FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/",
             FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/",
             FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/",
@@ -69,7 +86,8 @@ void FOSVR::LoadOSVRClientKitModule()
         };
 
 #else
-        std::vector<FString> pathsToTry = {
+        std::vector<FString> pathsToTry =
+        {
             FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/",
             FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/",
             FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/",
@@ -78,22 +96,27 @@ void FOSVR::LoadOSVRClientKitModule()
 #endif
 
         FString osvrClientKitLibPath;
-        for (size_t i = 0; i < pathsToTry.size(); i++) {
-            if (FPaths::DirectoryExists(pathsToTry[i])) {
+        for (size_t i = 0; i < pathsToTry.size(); i++)
+        {
+            if (FPaths::DirectoryExists(pathsToTry[i]))
+            {
                 osvrClientKitLibPath = pathsToTry[i];
                 break;
             }
         }
-        if (osvrClientKitLibPath.Len() == 0) {
+        if (osvrClientKitLibPath.Len() == 0)
+        {
             UE_LOG(OSVRLog, Warning, TEXT("Could not find OSVRClientKit module binaries in either the engine plugins or game plugins folder."));
             return;
         }
         FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
-        for (size_t i = 0; i < osvrDlls.size(); i++) {
+        for (size_t i = 0; i < osvrDlls.size(); i++)
+        {
             void* libHandle = nullptr;
             auto path = osvrClientKitLibPath + osvrDlls[i].c_str();
             libHandle = FPlatformProcess::GetDllHandle(*path);
-            if (!libHandle) {
+            if (!libHandle)
+            {
                 UE_LOG(OSVRLog, Warning, TEXT("FAILED to load %s"), *path);
             }
         }
@@ -105,7 +128,8 @@ void FOSVR::LoadOSVRClientKitModule()
 
 TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMountedDisplay()
 {
-    if (EntryPoint->IsOSVRConnected()) {
+    if (EntryPoint->IsOSVRConnected())
+    {
         TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
         if (OSVRHMD->IsInitialized() && OSVRHMD->IsHMDConnected())
         {
