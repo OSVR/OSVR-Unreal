@@ -39,7 +39,7 @@ public:
 	bool Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig);
 	bool IsValid() const
 	{
-		return Valid;
+		return bValid;
 	}
 
 	enum EEye
@@ -74,6 +74,6 @@ private:
     bool InitFOV(OSVR_DisplayConfig displayConfig);
 
     float m_ipd;
-	bool Valid;
+	bool bValid;
     DescriptionData* Data;
 };

@@ -26,15 +26,16 @@
 class FCurrentCustomPresent : public FOSVRCustomPresent<void*>
 {
 protected:
-    //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
+    //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override
+    //{
     //    osvr::renderkit::GraphicsLibrary ret;
     //    // OpenGL path not implemented yet
     //    return ret;
     //}
 
-    virtual std::string GetGraphicsLibraryName() override
+    virtual FString GetGraphicsLibraryName() override
     {
-        return "OpenGL";
+        return FString("OpenGL");
     }
 
     virtual bool ShouldFlipY() override

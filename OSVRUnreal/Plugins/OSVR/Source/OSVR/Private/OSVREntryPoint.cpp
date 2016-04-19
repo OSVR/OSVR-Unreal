@@ -32,18 +32,18 @@ OSVREntryPoint::OSVREntryPoint()
 	osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
 
     {
-        bool clientContextOK = false;
-        bool failure = false;
+        bool bClientContextOK = false;
+        bool bFailure = false;
         auto begin = std::chrono::system_clock::now();
         auto end = begin + std::chrono::milliseconds(1000);
 
-        while (std::chrono::system_clock::now() < end && !clientContextOK && !failure)
+        while (std::chrono::system_clock::now() < end && !bClientContextOK && !bFailure)
         {
-            clientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
-            if (!clientContextOK)
+            bClientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
+            if (!bClientContextOK)
             {
-                failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-                if (failure)
+                bFailure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                if (bFailure)
                 {
                     UE_LOG(OSVREntryPointLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                     break;
@@ -51,7 +51,7 @@ OSVREntryPoint::OSVREntryPoint()
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         }
-        if (!clientContextOK)
+        if (!bClientContextOK)
         {
             UE_LOG(OSVREntryPointLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
         }

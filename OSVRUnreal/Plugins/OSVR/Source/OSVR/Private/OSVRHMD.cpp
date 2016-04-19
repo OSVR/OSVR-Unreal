@@ -67,9 +67,9 @@ bool FOSVRHMD::IsHMDEnabled() const
     return bHmdConnected && bHmdEnabled;
 }
 
-void FOSVRHMD::EnableHMD(bool enable)
+void FOSVRHMD::EnableHMD(bool bEnable)
 {
-    bHmdEnabled = enable;
+    bHmdEnabled = bEnable;
 
     if (!bHmdEnabled)
     {
@@ -154,7 +154,7 @@ bool FOSVRHMD::IsInLowPersistenceMode() const
     return true;
 }
 
-void FOSVRHMD::EnableLowPersistenceMode(bool Enable)
+void FOSVRHMD::EnableLowPersistenceMode(bool bEnable)
 {
     // Intentionally left blank
 }
@@ -336,9 +336,9 @@ bool FOSVRHMD::IsPositionalTrackingEnabled() const
     return bHmdPosTracking;
 }
 
-bool FOSVRHMD::EnablePositionalTracking(bool enable)
+bool FOSVRHMD::EnablePositionalTracking(bool bEnable)
 {
-    bHmdPosTracking = enable;
+    bHmdPosTracking = bEnable;
     return IsPositionalTrackingEnabled();
 }
 
@@ -351,9 +351,9 @@ bool FOSVRHMD::IsStereoEnabled() const
     return bStereoEnabled && bHmdEnabled;
 }
 
-bool FOSVRHMD::EnableStereo(bool stereo)
+bool FOSVRHMD::EnableStereo(bool bStereo)
 {
-    bStereoEnabled = (IsHMDEnabled()) ? stereo : false;
+    bStereoEnabled = (IsHMDEnabled()) ? bStereo : false;
 
     auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
@@ -363,7 +363,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
     // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
     // We may revisit once display plugins are added to OSVR-Core.
 #if !PLATFORM_ANDROID
-    FSystemResolution::RequestResolutionChange(width, height, stereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+    FSystemResolution::RequestResolutionChange(width, height, bStereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
 #endif
 
     FSceneViewport* sceneViewport;
@@ -385,7 +385,7 @@ bool FOSVRHMD::EnableStereo(bool stereo)
         sceneViewport->SetViewportSize(width, height);
     }
 
-    GEngine->bForceDisableFrameRateSmoothing = stereo;
+    GEngine->bForceDisableFrameRateSmoothing = bStereo;
 
     return bStereoEnabled;
 }
@@ -435,7 +435,7 @@ void FOSVRHMD::ResetOrientation(float yaw)
     ResetOrientation(true, yaw);
 }
 
-void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
+void FOSVRHMD::ResetOrientation(bool bAdjustOrientation, float yaw)
 {
     FQuat CurrentRotation(FQuat::Identity);
 
@@ -448,7 +448,7 @@ void FOSVRHMD::ResetOrientation(bool adjustOrientation, float yaw)
 
     CurrentRotation = OSVR2FQuat(Pose.rotation);
 
-    if (adjustOrientation)
+    if (bAdjustOrientation)
     {
         FRotator ViewRotation;
         ViewRotation = FRotator(CurrentRotation);
@@ -628,13 +628,13 @@ FOSVRHMD::FOSVRHMD()
     GEngine->bSmoothFrameRate = false;
 
     // check if the client context is ok.
-    bool clientContextOK = entryPoint->IsOSVRConnected();
+    bool bClientContextOK = entryPoint->IsOSVRConnected();
 
     // get the display context
-    bool displayConfigOK = false;
-    if (clientContextOK)
+    bool bDisplayConfigOK = false;
+    if (bClientContextOK)
     {
-        bool failure = false;
+        bool bFailure = false;
 
         auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
         if (rc == OSVR_RETURN_FAILURE)
@@ -645,13 +645,13 @@ FOSVRHMD::FOSVRHMD()
         {
             auto begin = std::chrono::system_clock::now();
             auto end = begin + std::chrono::milliseconds(1000);
-            while (!displayConfigOK && std::chrono::system_clock::now() < end)
+            while (!bDisplayConfigOK && std::chrono::system_clock::now() < end)
             {
-                displayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
-                if (!displayConfigOK)
+                bDisplayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
+                if (!bDisplayConfigOK)
                 {
-                    failure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
-                    if (failure)
+                    bFailure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
+                    if (bFailure)
                     {
                         UE_LOG(OSVRHMDLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
                         break;
@@ -659,22 +659,22 @@ FOSVRHMD::FOSVRHMD()
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
-            displayConfigOK = displayConfigOK && !failure;
-            if (!displayConfigOK)
+            bDisplayConfigOK = bDisplayConfigOK && !bFailure;
+            if (!bDisplayConfigOK)
             {
                 UE_LOG(OSVRHMDLog, Warning, TEXT("DisplayConfig failed to startup. This could mean that there is nothing mapped to /me/head. Treating this as if the HMD is not connected."));
             }
         }
     }
 
-    bool displayConfigMatchesUnrealExpectations = false;
-    if (displayConfigOK)
+    bool bDisplayConfigMatchesUnrealExpectations = false;
+    if (bDisplayConfigOK)
     {
-        bool success = HMDDescription.Init(osvrClientContext, DisplayConfig);
-        if (success)
+        bool bSuccess = HMDDescription.Init(osvrClientContext, DisplayConfig);
+        if (bSuccess)
         {
-            displayConfigMatchesUnrealExpectations = HMDDescription.OSVRViewerFitsUnrealModel(DisplayConfig);
-            if (!displayConfigMatchesUnrealExpectations)
+            bDisplayConfigMatchesUnrealExpectations = HMDDescription.OSVRViewerFitsUnrealModel(DisplayConfig);
+            if (!bDisplayConfigMatchesUnrealExpectations)
             {
                 UE_LOG(OSVRHMDLog, Warning, TEXT("The OSVR display config does not match the expectations of Unreal. Possibly incompatible HMD configuration."));
             }
@@ -687,7 +687,7 @@ FOSVRHMD::FOSVRHMD()
 
     // our version of connected is that the client context is ok (server is running)
     // and the display config is ok (/me/head exists and received a pose)
-    bHmdConnected = clientContextOK && displayConfigOK && displayConfigMatchesUnrealExpectations;
+    bHmdConnected = bClientContextOK && bDisplayConfigOK && bDisplayConfigMatchesUnrealExpectations;
 }
 
 FOSVRHMD::~FOSVRHMD()

@@ -30,7 +30,7 @@ private:
     TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> hmd;
     FCriticalSection mModuleMutex;
     TSharedPtr< class OSVREntryPoint > EntryPoint;
-    bool mModulesLoaded = false;
+    bool bModulesLoaded = false;
 public:
     /** IModuleInterface implementation */
     virtual void StartupModule() override;
@@ -62,45 +62,40 @@ TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> FOSVR::GetHMD()
 void FOSVR::LoadOSVRClientKitModule()
 {
     FScopeLock lock(&mModuleMutex);
-    if (!mModulesLoaded)
+    if (!bModulesLoaded)
     {
 #if PLATFORM_WINDOWS
-        const std::vector<std::string> osvrDlls =
-        {
-            "osvrClientKit.dll",
-            "osvrClient.dll",
-            "osvrCommon.dll",
-            "osvrUtil.dll",
-            "osvrRenderManager.dll",
-            "d3dcompiler_47.dll",
-            "glew32.dll",
-            "SDL2.dll"
-        };
+        TArray<FString> osvrDlls;
+        osvrDlls.Add(FString("osvrClientKit.dll"));
+        osvrDlls.Add(FString("osvrClient.dll"));
+        osvrDlls.Add(FString("osvrCommon.dll"));
+        osvrDlls.Add(FString("osvrUtil.dll"));
+        osvrDlls.Add(FString("osvrRenderManager.dll"));
+        osvrDlls.Add(FString("d3dcompiler_47.dll"));
+        osvrDlls.Add(FString("glew32.dll"));
+        osvrDlls.Add(FString("SDL2.dll"));
+
 #if PLATFORM_64BITS
-        std::vector<FString> pathsToTry =
-        {
-            FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/",
-            FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/",
-            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/",
-            FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win64/"
-        };
+        TArray<FString> pathsToTry;
+        pathsToTry.Add(FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/");
+        pathsToTry.Add(FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/");
+        pathsToTry.Add(FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/");
+        pathsToTry.Add(FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win64/");
 
 #else
-        std::vector<FString> pathsToTry =
-        {
-            FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/",
-            FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/",
-            FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/",
-            FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win32/"
-        };
+        TArray<FString> pathsToTry;
+        pathsToTry.Add(FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/");
+        pathsToTry.Add(FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/");
+        pathsToTry.Add(FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/");
+        pathsToTry.Add(FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win32/");
 #endif
 
         FString osvrClientKitLibPath;
-        for (size_t i = 0; i < pathsToTry.size(); i++)
+        for(auto& it : pathsToTry)
         {
-            if (FPaths::DirectoryExists(pathsToTry[i]))
+            if (FPaths::DirectoryExists(it))
             {
-                osvrClientKitLibPath = pathsToTry[i];
+                osvrClientKitLibPath = it;
                 break;
             }
         }
@@ -110,10 +105,11 @@ void FOSVR::LoadOSVRClientKitModule()
             return;
         }
         FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
-        for (size_t i = 0; i < osvrDlls.size(); i++)
+
+        for(auto& it : osvrDlls)
         {
             void* libHandle = nullptr;
-            auto path = osvrClientKitLibPath + osvrDlls[i].c_str();
+            auto path = osvrClientKitLibPath + it;
             libHandle = FPlatformProcess::GetDllHandle(*path);
             if (!libHandle)
             {
@@ -122,7 +118,7 @@ void FOSVR::LoadOSVRClientKitModule()
         }
         FPlatformProcess::PopDllDirectory(*osvrClientKitLibPath);
 #endif
-        mModulesLoaded = true;
+        bModulesLoaded = true;
     }
 }
 

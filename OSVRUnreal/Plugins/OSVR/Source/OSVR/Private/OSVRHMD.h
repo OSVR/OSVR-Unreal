@@ -45,7 +45,7 @@ public:
     virtual void OnEndPlay() override;
     virtual bool IsHMDConnected() override;
     virtual bool IsHMDEnabled() const override;
-    virtual void EnableHMD(bool allow = true) override;
+    virtual void EnableHMD(bool bEnable = true) override;
     virtual EHMDDeviceType::Type GetHMDDeviceType() const override;
     virtual bool GetHMDMonitorInfo(MonitorInfo&) override;
 
@@ -80,12 +80,12 @@ public:
     virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 
     virtual bool IsPositionalTrackingEnabled() const override;
-    virtual bool EnablePositionalTracking(bool enable) override;
+    virtual bool EnablePositionalTracking(bool bEnable) override;
 
     virtual bool IsHeadTrackingAllowed() const override;
 
     virtual bool IsInLowPersistenceMode() const override;
-    virtual void EnableLowPersistenceMode(bool Enable = true) override;
+    virtual void EnableLowPersistenceMode(bool bEnable = true) override;
     virtual bool OnStartGameFrame(FWorldContext& WorldContext) override;
 
 #if 0
@@ -103,7 +103,7 @@ public:
 
     /** IStereoRendering interface */
     virtual bool IsStereoEnabled() const override;
-    virtual bool EnableStereo(bool stereo = true) override;
+    virtual bool EnableStereo(bool bStereo = true) override;
     virtual void AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const override;
     virtual void CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation,
         const float MetersToWorld, FVector& ViewLocation) override;
@@ -141,7 +141,7 @@ public:
     assuming that current yaw is forward direction and assuming
     current position as 0 point. */
     virtual void ResetOrientation(float yaw) override;
-    void ResetOrientation(bool adjustOrientation, float yaw);
+    void ResetOrientation(bool bAdjustOrientation, float yaw);
     virtual void ResetPosition() override;
     virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
     void SetCurrentHmdOrientationAndPositionAsBase();

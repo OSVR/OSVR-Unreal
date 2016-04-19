@@ -72,7 +72,7 @@ public:
 
     virtual bool IsInitialized()
     {
-        return mInitialized;
+        return bInitialized;
     }
 
     virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
@@ -89,11 +89,11 @@ public:
 
 protected:
     FCriticalSection mOSVRMutex;
-    std::vector<OSVR_ViewportDescription> mViewportDescriptions;
+    TArray<OSVR_ViewportDescription> mViewportDescriptions;
     OSVR_RenderParams mRenderParams;
 
-    bool mRenderBuffersNeedToUpdate = true;
-    bool mInitialized = false;
+    bool bRenderBuffersNeedToUpdate = true;
+    bool bInitialized = false;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
 
@@ -110,7 +110,7 @@ protected:
     virtual void FinishRendering() = 0;
 
     // abstract methods, implement in DirectX/OpenGL specific subclasses
-    virtual std::string GetGraphicsLibraryName() = 0;
+    virtual FString GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
     virtual void UpdateRenderBuffers() = 0;
 };

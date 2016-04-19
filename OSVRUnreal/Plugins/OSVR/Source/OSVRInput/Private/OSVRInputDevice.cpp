@@ -50,25 +50,25 @@ class OSVRButton
 
 public:
     OSVRButton() {}
-    OSVRButton(OSVRButtonType _type, FName _key, const std::string& _ifacePath) :
+    OSVRButton(OSVRButtonType _type, FName _key, const FString& _ifacePath) :
         type(_type), key(_key), ifacePath(_ifacePath)
     {
     }
 
-    OSVRButton(OSVRButtonType _type, OSVRThresholdType _thresholdType, float _threshold, FName _key, const std::string& _ifacePath) :
+    OSVRButton(OSVRButtonType _type, OSVRThresholdType _thresholdType, float _threshold, FName _key, const FString& _ifacePath) :
         type(_type), thresholdType(_thresholdType), threshold(_threshold), key(_key), ifacePath(_ifacePath)
     {
     }
 
-    bool oldState = false;
-    bool isValid = true;
+    bool bOldState = false;
+    bool bIsValid = true;
     float threshold = 0.75f;
     FName key;
-    std::string ifacePath;
+    FString ifacePath;
     OSVRButtonType type;
     OSVRThresholdType thresholdType = OSVR_THRESHOLD_TYPE_GT;
-    std::queue<bool> digitalStateQueue;
-    std::queue<float> analogStateQueue;
+    TQueue<bool> digitalStateQueue;
+    TQueue<float> analogStateQueue;
 };
 
 namespace {
@@ -83,7 +83,7 @@ namespace {
     void buttonCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_ButtonReport *report)
     {
         OSVRButton* button = static_cast<OSVRButton*>(userdata);
-        button->digitalStateQueue.push(report->state == OSVR_BUTTON_PRESSED);
+        button->digitalStateQueue.Enqueue(report->state == OSVR_BUTTON_PRESSED);
     }
 
     void analogCallback(void *userdata, const OSVR_TimeValue *timestamp, const OSVR_AnalogReport *report)
@@ -91,18 +91,18 @@ namespace {
         OSVRButton* button = static_cast<OSVRButton*>(userdata);
         if (button->type == OSVR_BUTTON_TYPE_THRESHOLD)
         {
-            bool newState = (button->thresholdType == OSVR_THRESHOLD_TYPE_GT && report->state > button->threshold) ||
+            bool bNewState = (button->thresholdType == OSVR_THRESHOLD_TYPE_GT && report->state > button->threshold) ||
                 (button->thresholdType == OSVR_THRESHOLD_TYPE_LT && report->state < button->threshold);
 
-            if (newState != button->oldState)
+            if (bNewState != button->bOldState)
             {
-                button->digitalStateQueue.push(newState);
+                button->digitalStateQueue.Enqueue(bNewState);
             }
-            button->oldState = newState;
+            button->bOldState = bNewState;
         }
         else
         {
-            button->analogStateQueue.push(report->state);
+            button->analogStateQueue.Enqueue(report->state);
         }
     }
 }
@@ -117,13 +117,13 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     // make sure OSVR module is loaded.
     context = IOSVR::Get().GetEntryPoint()->GetClientContext();
 
-    contextValid = context && osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS;
+    bContextValid = context && osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS;
 
-    if (contextValid)
+    if (bContextValid)
     {
         const float defaultThreshold = 0.25f;
 
-        osvrButtons =
+        OSVRButton buttons[] =
         {
             // left hand
             OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle"),
@@ -194,18 +194,17 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
             OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger"),
             OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger"),
         };
+        osvrButtons.Append(buttons, ARRAY_COUNT(buttons));
 
-        for (size_t i = 0; i < osvrButtons.size(); i++)
+        for(auto& button : osvrButtons)
         {
-            auto& button = osvrButtons[i];
-
-            auto ifaceItr = interfaces.find(button.ifacePath);
+            auto ifaceItr = interfaces.Find(button.ifacePath);
             OSVR_ClientInterface iface = nullptr;
-            if (ifaceItr == interfaces.end())
+            if (!ifaceItr)
             {
-                if (osvrClientGetInterface(context, button.ifacePath.c_str(), &iface) != OSVR_RETURN_SUCCESS)
+                if (osvrClientGetInterface(context, TCHAR_TO_ANSI(*button.ifacePath), &iface) != OSVR_RETURN_SUCCESS)
                 {
-                    button.isValid = false;
+                    button.bIsValid = false;
                 }
                 else
                 {
@@ -214,16 +213,16 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
             }
             else
             {
-                iface = ifaceItr->second;
+                iface = *ifaceItr;
             }
 
-            if (button.isValid)
+            if (button.bIsValid)
             {
                 if (button.type == OSVR_BUTTON_TYPE_DIGITAL)
                 {
                     if (osvrRegisterButtonCallback(iface, buttonCallback, &button) == OSVR_RETURN_FAILURE)
                     {
-                        button.isValid = false;
+                        button.bIsValid = false;
                     }
                 }
 
@@ -232,16 +231,16 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
                 {
                     if (osvrRegisterAnalogCallback(iface, analogCallback, &button) == OSVR_RETURN_FAILURE)
                     {
-                        button.isValid = false;
+                        button.bIsValid = false;
                     }
                 }
             }
         }
 
-        leftHandValid = osvrClientGetInterface(context, "/me/hands/left", &leftHand)
+        bLeftHandValid = osvrClientGetInterface(context, "/me/hands/left", &leftHand)
             == OSVR_RETURN_SUCCESS;
 
-        rightHandValid = osvrClientGetInterface(context, "/me/hands/right", &rightHand)
+        bRightHandValid = osvrClientGetInterface(context, "/me/hands/right", &rightHand)
             == OSVR_RETURN_SUCCESS;
 
         IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
@@ -267,9 +266,9 @@ FOSVRInputDevice::~FOSVRInputDevice()
         }
         for (auto iface : interfaces)
         {
-            if (iface.second)
+            if (iface.Value)
             {
-                osvrClientFreeInterface(context, iface.second);
+                osvrClientFreeInterface(context, iface.Value);
             }
         }
     }
@@ -290,7 +289,7 @@ void FOSVRInputDevice::EventReport(const FKey& Key, const FVector& Translation, 
 */
 bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
-    bool RetVal = false;
+    bool bRet = false;
     if (ControllerIndex == 0)
     {
         if (osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS)
@@ -303,17 +302,17 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
                 float worldToMetersScale = IOSVR::Get().GetHMD()->GetWorldToMetersScale();
                 OutPosition = OSVR2FVector(state.translation) * worldToMetersScale;
                 OutOrientation = OSVR2FQuat(state.rotation).Rotator();
-                RetVal = true;
+                bRet = true;
             }
         }
     }
-    return RetVal;
+    return bRet;
 }
 
 #if OSVR_UNREAL_4_11
 ETrackingStatus FOSVRInputDevice::GetControllerTrackingStatus(const int32, const EControllerHand) const
 {
-    if (contextValid && (leftHandValid || rightHandValid))
+    if (bContextValid && (bLeftHandValid || bRightHandValid))
     {
         return ETrackingStatus::Tracked;
     }
@@ -332,15 +331,14 @@ void FOSVRInputDevice::Tick(float DeltaTime)
 void FOSVRInputDevice::SendControllerEvents()
 {
     const int32 controllerId = 0;
-    for (size_t i = 0; i < osvrButtons.size(); i++)
+    for(auto& button : osvrButtons)
     {
-        auto& button = osvrButtons[i];
-        if (button.isValid)
+        if (button.bIsValid)
         {
-            while (!button.digitalStateQueue.empty())
+            while (!button.digitalStateQueue.IsEmpty())
             {
-                auto state = button.digitalStateQueue.front();
-                button.digitalStateQueue.pop();
+                bool state = false;
+                button.digitalStateQueue.Dequeue(state);
                 if (state)
                 {
                     MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
@@ -350,10 +348,10 @@ void FOSVRInputDevice::SendControllerEvents()
                     MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
                 }
             }
-            while (!button.analogStateQueue.empty())
+            while (!button.analogStateQueue.IsEmpty())
             {
-                auto state = button.analogStateQueue.front();
-                button.analogStateQueue.pop();
+                float state = 0.0f;
+                button.analogStateQueue.Dequeue(state);
                 MessageHandler->OnControllerAnalog(button.key, controllerId, state);
             }
         }

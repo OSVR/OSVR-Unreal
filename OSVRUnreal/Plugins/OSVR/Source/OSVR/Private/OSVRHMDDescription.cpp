@@ -35,7 +35,7 @@ DescriptionData::DescriptionData()
 }
 
 OSVRHMDDescription::OSVRHMDDescription()
-	: Valid(false),
+	: bValid(false),
 	  Data(new DescriptionData())
 {
 }
@@ -190,7 +190,7 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig)
 
 bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig)
 {
-	Valid = false;
+	bValid = false;
 
     // if the OSVR viewer doesn't fit nicely with the Unreal HMD model, don't
     // bother trying to fill everything else out.
@@ -215,8 +215,8 @@ bool OSVRHMDDescription::Init(OSVR_ClientContext OSVRClientContext, OSVR_Display
         UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("OSVRHMDDescription::Init() InitFOV failed."));
         return false; 
     }
-    Valid = true;
-	return Valid;
+    bValid = true;
+	return bValid;
 }
 
 FVector2D OSVRHMDDescription::GetDisplaySize(EEye Eye) const

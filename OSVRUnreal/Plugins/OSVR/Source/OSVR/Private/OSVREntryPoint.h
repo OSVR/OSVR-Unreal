@@ -35,14 +35,17 @@ public:
 	{
 		return (!GWorld->HasBegunPlay() && GIsEditor) ? false : true;
 	}
+
 	virtual bool IsTickableWhenPaused() const override
 	{
 		return true;
 	}
+
 	virtual bool IsTickableInEditor() const override
 	{
 		return false;
 	}
+
 	virtual TStatId GetStatId() const override
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(OSVREntryPoint, STATGROUP_Tickables);

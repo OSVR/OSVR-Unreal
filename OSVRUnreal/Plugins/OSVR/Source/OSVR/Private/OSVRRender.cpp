@@ -33,7 +33,8 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
-    if (GIsEditor || !mCustomPresent || !mCustomPresent->IsInitialized()) {
+    if (GIsEditor || !mCustomPresent || !mCustomPresent->IsInitialized())
+    {
         const uint32 viewportWidth = backBuffer->GetSizeX();
         const uint32 viewportHeight = backBuffer->GetSizeY();
 
