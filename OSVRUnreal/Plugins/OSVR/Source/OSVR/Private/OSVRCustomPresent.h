@@ -28,7 +28,7 @@ class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
     FTexture2DRHIRef mRenderTexture;
-
+  
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
     {
@@ -37,11 +37,6 @@ public:
 
     virtual ~FOSVRCustomPresent()
     {
-        if (mClientContext)
-        {
-            osvrClientShutdown(mClientContext);
-        }
-
         if (mRenderManager)
         {
             osvrDestroyRenderManager(mRenderManager);

@@ -82,28 +82,24 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
     return EHMDDeviceType::DT_ES2GenericStereoMesh;
 }
 
-// @todo: move this to OSVRHMDDescription
-void FOSVRHMD::GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const
-{
-    auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
-    auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
-    OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
-    OSVR_ViewportDimension height = (OSVR_ViewportDimension)leftEye.Y;
-
-    MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
-    MonitorDesc.MonitorId = 0;				  //@TODO
-    MonitorDesc.DesktopX = 0;
-    MonitorDesc.DesktopY = 0;
-    MonitorDesc.ResolutionX = width;
-    MonitorDesc.ResolutionY = height;
-}
-
 bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 {
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
     if (IsInitialized()
         && osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS)
     {
-        GetMonitorInfo(MonitorDesc);
+        auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+        auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+        OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
+        OSVR_ViewportDimension height = (OSVR_ViewportDimension)leftEye.Y;
+
+        MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
+        MonitorDesc.MonitorId = 0;				  //@TODO
+        MonitorDesc.DesktopX = 0;
+        MonitorDesc.DesktopY = 0;
+        MonitorDesc.ResolutionX = width;
+        MonitorDesc.ResolutionY = height;
         return true;
     }
     else
@@ -120,8 +116,11 @@ void FOSVRHMD::UpdateHeadPose()
 {
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
+    auto clientContext = entryPoint->GetClientContext();
 
-    returnCode = osvrClientUpdate(IOSVR::Get().GetEntryPoint()->GetClientContext());
+    returnCode = osvrClientUpdate(clientContext);
     check(returnCode == OSVR_RETURN_SUCCESS);
 
     returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
@@ -437,6 +436,9 @@ void FOSVRHMD::ResetOrientation(float yaw)
 
 void FOSVRHMD::ResetOrientation(bool bAdjustOrientation, float yaw)
 {
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
+
     FQuat CurrentRotation(FQuat::Identity);
 
     OSVR_PoseState Pose;
@@ -472,6 +474,9 @@ void FOSVRHMD::ResetOrientation(bool bAdjustOrientation, float yaw)
 
 void FOSVRHMD::ResetPosition()
 {
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
+
     FVector CurrentPosition(FVector::ZeroVector);
     OSVR_PoseState Pose;
     OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
@@ -499,6 +504,10 @@ namespace
 
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    auto mutex = entryPoint->GetClientContextMutex();
+    FScopeLock lock(mutex);
+
     FMatrix original = HMDDescription.GetProjectionMatrix(
         StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
         DisplayConfig);
@@ -595,7 +604,8 @@ FOSVRHMD::FOSVRHMD()
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
     auto entryPoint = IOSVR::Get().GetEntryPoint();
-    OSVR_ClientContext osvrClientContext = entryPoint->GetClientContext();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
+    auto osvrClientContext = entryPoint->GetClientContext();
 
     // Prevents debugger hangs that sometimes occur with only one monitor.
 #if OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE
@@ -607,7 +617,9 @@ FOSVRHMD::FOSVRHMD()
 #if PLATFORM_WINDOWS
     if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
     {
-        mCustomPresent = new FCurrentCustomPresent(osvrClientContext);
+        // currently, FCustomPresent creates its own client context, so no need to
+        // synchronize with the one from FOSVREntryPoint.
+        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/);
     }
 #endif
 
@@ -692,6 +704,8 @@ FOSVRHMD::FOSVRHMD()
 
 FOSVRHMD::~FOSVRHMD()
 {
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
     EnablePositionalTracking(false);
     if (DisplayConfig)
     {

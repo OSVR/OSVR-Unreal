@@ -64,6 +64,8 @@ OSVREntryPoint::OSVREntryPoint()
 
 OSVREntryPoint::~OSVREntryPoint()
 {
+    FScopeLock lock(this->GetClientContextMutex());
+
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	InterfaceCollection = nullptr;
 #endif
@@ -73,6 +75,7 @@ OSVREntryPoint::~OSVREntryPoint()
 
 void OSVREntryPoint::Tick(float DeltaTime)
 {
+    FScopeLock lock(this->GetClientContextMutex());
 	osvrClientUpdate(osvrClientContext);
 }
 

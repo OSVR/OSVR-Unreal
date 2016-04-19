@@ -83,6 +83,7 @@ private:
     TMap<FString, OSVR_ClientInterface> interfaces;
     TArray<OSVRButton> osvrButtons;
     OSVR_ClientContext context;
+    FCriticalSection* contextMutex;
     TSharedRef<FGenericApplicationMessageHandler> MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;

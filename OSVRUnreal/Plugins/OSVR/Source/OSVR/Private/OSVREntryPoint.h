@@ -56,6 +56,11 @@ public:
         return osvrClientContext;
     }
 
+    virtual FCriticalSection* GetClientContextMutex()
+    {
+        return &mContextMutex;
+    }
+
     virtual bool IsOSVRConnected();
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	OSVRInterfaceCollection* GetInterfaceCollection();
@@ -63,6 +68,7 @@ public:
 
 private:
     OSVR_ClientContext osvrClientContext = nullptr;
+    FCriticalSection mContextMutex;
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;

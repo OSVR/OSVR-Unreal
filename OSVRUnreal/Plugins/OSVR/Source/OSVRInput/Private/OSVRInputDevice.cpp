@@ -115,7 +115,10 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     : MessageHandler(InMessageHandler)
 {
     // make sure OSVR module is loaded.
-    context = IOSVR::Get().GetEntryPoint()->GetClientContext();
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    contextMutex = entryPoint->GetClientContextMutex();
+    FScopeLock lock(contextMutex);
+    context = entryPoint->GetClientContext();
 
     bContextValid = context && osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS;
 
@@ -253,6 +256,8 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 
 FOSVRInputDevice::~FOSVRInputDevice()
 {
+    FScopeLock lock(contextMutex);
+
     //GEngine->MotionControllerDevices.Remove(this); // This crashes. Maybe they changed something in the engine since the steamvr plugin was written?
     if (context)
     {
@@ -292,7 +297,9 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
     bool bRet = false;
     if (ControllerIndex == 0)
     {
-        if (osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS)
+        FScopeLock lock(contextMutex);
+        if (osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS
+            && osvrClientUpdate(context) == OSVR_RETURN_SUCCESS)
         {
             auto iface = DeviceHand == EControllerHand::Left ? leftHand : rightHand;
             OSVR_PoseState state;
@@ -322,14 +329,16 @@ ETrackingStatus FOSVRInputDevice::GetControllerTrackingStatus(const int32, const
 
 void FOSVRInputDevice::Tick(float DeltaTime)
 {
-    if (osvrClientCheckStatus(context) == OSVR_RETURN_SUCCESS)
-    {
-        osvrClientUpdate(context);
-    }
 }
 
 void FOSVRInputDevice::SendControllerEvents()
 {
+    FScopeLock lock(contextMutex);
+    if (osvrClientUpdate(context) == OSVR_RETURN_FAILURE)
+    {
+        UE_LOG(LogOSVRInputDevice, Warning, TEXT("FOSVRInputDevice::SendControllerEvents(): osvrClientUpdate failed."));
+    }
+
     const int32 controllerId = 0;
     for(auto& button : osvrButtons)
     {

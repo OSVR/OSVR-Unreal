@@ -38,7 +38,9 @@ IMPLEMENT_MODULE(FOSVRInput, OSVRInput)
 
 TSharedPtr< class IInputDevice > FOSVRInput::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 {
-    if (IOSVR::Get().GetEntryPoint()->IsOSVRConnected())
+    auto entryPoint = IOSVR::Get().GetEntryPoint();
+    FScopeLock lock(entryPoint->GetClientContextMutex());
+    if (entryPoint->IsOSVRConnected())
     {
         FOSVRInputDevice::RegisterNewKeys();
 

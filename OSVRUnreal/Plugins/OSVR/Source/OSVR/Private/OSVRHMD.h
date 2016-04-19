@@ -162,7 +162,6 @@ public:
     bool IsInitialized() const;
 
 private:
-    void GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const;
     void UpdateHeadPose();
 
     IRendererModule* RendererModule;

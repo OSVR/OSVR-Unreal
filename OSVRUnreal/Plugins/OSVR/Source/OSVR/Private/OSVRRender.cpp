@@ -101,7 +101,7 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     {
         mCustomPresent->Initialize();
     }
-    // steamVR updates the current pose here, should we?
+    UpdateHeadPose();
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
