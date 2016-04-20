@@ -101,13 +101,22 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     {
         mCustomPresent->Initialize();
     }
-    UpdateHeadPose();
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+    CurHmdOrientationRT = hmdOrientation;
+    const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
+    const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
+
+    ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
 {
-    // @todo
-
+    check(IsInRenderingThread());
+    const FQuat deltaOriention = View.BaseHmdOrientation.Inverse() * CurHmdOrientationRT;
+    View.ViewRotation = FRotator(View.ViewRotation.Quaternion() * deltaOriention);
+    View.UpdateViewMatrix();
 }
 
 void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)

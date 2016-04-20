@@ -114,6 +114,13 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 
 void FOSVRHMD::UpdateHeadPose()
 {
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+}
+
+void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
+{
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
     auto entryPoint = IOSVR::Get().GetEntryPoint();
@@ -126,8 +133,19 @@ void FOSVRHMD::UpdateHeadPose()
     returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
     if (returnCode == OSVR_RETURN_SUCCESS)
     {
+        LastHmdOrientation = CurHmdOrientation;
+        LastHmdPosition = CurHmdPosition;
         CurHmdPosition = BaseOrientation.Inverse().RotateVector((OSVR2FVector(pose.translation) * WorldToMetersScale) - BasePosition);
         CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
+        lastHmdOrientation = LastHmdOrientation;
+        lastHmdPosition = LastHmdPosition;
+        hmdOrientation = CurHmdOrientation;
+        hmdPosition = CurHmdPosition;
+    }
+    else
+    {
+        lastHmdOrientation = hmdOrientation = FQuat::Identity;
+        lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
     }
 }
 
@@ -191,10 +209,13 @@ void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
     checkf(IsInGameThread(), TEXT("Orientation and position failed IsInGameThread test"));
-    UpdateHeadPose();
 
-    CurrentOrientation = LastHmdOrientation = CurHmdOrientation;
-    CurrentPosition = CurHmdPosition;
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+
+    CurrentOrientation = hmdOrientation;
+    CurrentPosition = hmdPosition;
 }
 
 void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orientation) const
@@ -206,9 +227,9 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
     ViewRotation.Normalize();
 
-    UpdateHeadPose();
-
-    LastHmdOrientation = CurHmdOrientation;
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
     DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
@@ -220,35 +241,35 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     DeltaControlRotation.Roll = 0;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-    ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
+    ViewRotation = FRotator(DeltaControlOrientation * hmdOrientation);
 }
 
 #if OSVR_UNREAL_4_11
 bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-    UpdateHeadPose();
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
 
-    LastHmdOrientation = CurHmdOrientation;
-    //LastHmdPosition = CurHmdPosition; // @todo: why aren't we doing this?
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
-    CurrentOrientation = CurHmdOrientation;
-    CurrentPosition = CurHmdPosition;
+    CurrentOrientation = hmdOrientation;
+    CurrentPosition = hmdPosition;
 
     return true;
 }
 #else
 void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct FMinimalViewInfo& POV)
 {
-    UpdateHeadPose();
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
 
-    LastHmdOrientation = CurHmdOrientation;
-    //LastHmdPosition = CurHmdPosition; // @todo: why aren't we doing this?
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     DeltaControlRotation = POV.Rotation;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
     // Apply HMD orientation to camera rotation.
-    POV.Rotation = FRotator(POV.Rotation.Quaternion() * CurHmdOrientation);
+    POV.Rotation = FRotator(POV.Rotation.Quaternion() * hmdOrientation);
 }
 #endif
 
@@ -424,7 +445,6 @@ void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType,
 
         const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
         ViewLocation += vHMDPosition;
-        LastHmdPosition = CurHmdPosition;
     }
 }
 

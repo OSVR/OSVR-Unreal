@@ -162,17 +162,21 @@ public:
     bool IsInitialized() const;
 
 private:
+    void UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
     void UpdateHeadPose();
 
     IRendererModule* RendererModule;
 
     /** Player's orientation tracking */
     mutable FQuat CurHmdOrientation;
+    mutable FVector CurHmdPosition;
+
+    /** Player's orientation tracking (on render thread) */
+    mutable FQuat CurHmdOrientationRT;
 
     FRotator DeltaControlRotation; // same as DeltaControlOrientation but as rotator
     FQuat DeltaControlOrientation; // same as DeltaControlRotation but as quat
 
-    mutable FVector CurHmdPosition;
 
     mutable FQuat LastHmdOrientation; // contains last APPLIED ON GT HMD orientation
     FVector LastHmdPosition;		  // contains last APPLIED ON GT HMD position
