@@ -161,9 +161,10 @@ void FOSVRHMD::EnableLowPersistenceMode(bool bEnable)
 bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext)
 {
     check(IsInGameThread());
+    static auto sFinishCurrentFrame = IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"));
     if (!bHmdOverridesApplied)
     {
-        IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"))->Set(1);
+        sFinishCurrentFrame->Set(1);
         bHmdOverridesApplied = true;
     }
     return true;
@@ -394,6 +395,10 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
         mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+        // FCustomPresent is expected to account for screenScale,
+        // so we need to back it out here
+        SizeX = int(float(SizeX) * (1.0f / mScreenScale));
+        SizeY = int(float(SizeY) * (1.0f / mScreenScale));
     }
     else
     {
@@ -614,12 +619,18 @@ FOSVRHMD::FOSVRHMD()
 
     EnablePositionalTracking(true);
 
+    IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
+    if (CVScreenPercentage)
+    {
+        mScreenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
+    }
+
 #if PLATFORM_WINDOWS
     if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
     {
         // currently, FCustomPresent creates its own client context, so no need to
         // synchronize with the one from FOSVREntryPoint.
-        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/);
+        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
     }
 #endif
 
@@ -630,11 +641,6 @@ FOSVRHMD::FOSVRHMD()
         CVSyncVar->Set(false);
     }
 
-    IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
-    if (CVScreenPercentage)
-    {
-        CVScreenPercentage->Set(100);
-    }
 
     // Uncap fps to enable FPS higher than 62
     GEngine->bSmoothFrameRate = false;

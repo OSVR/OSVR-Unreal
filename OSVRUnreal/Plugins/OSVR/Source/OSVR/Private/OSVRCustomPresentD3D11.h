@@ -29,8 +29,8 @@
 class FCurrentCustomPresent : public FOSVRCustomPresent<ID3D11Device>
 {
 public:
-    FCurrentCustomPresent(OSVR_ClientContext clientContext) :
-        FOSVRCustomPresent(clientContext)
+    FCurrentCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
+        FOSVRCustomPresent(clientContext, screenScale)
     {
     }
 
@@ -184,6 +184,13 @@ protected:
             // check some assumptions. Should all be the same height.
             check(mRenderInfos.Num() == 2);
             check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
+
+            mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * mScreenScale);
+            mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * mScreenScale);
+            mRenderInfos[1].viewport.width = mRenderInfos[0].viewport.width;
+            mRenderInfos[1].viewport.height = mRenderInfos[0].viewport.height;
+            mRenderInfos[1].viewport.left = mRenderInfos[0].viewport.width;
+            
             InOutSizeX = mRenderInfos[0].viewport.width + mRenderInfos[1].viewport.width;
             InOutSizeY = mRenderInfos[0].viewport.height;
             check(InOutSizeX != 0 && InOutSizeY != 0);

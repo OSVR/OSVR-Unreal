@@ -183,6 +183,7 @@ private:
 
     /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
     float WorldToMetersScale; // @todo: isn't this meters to world units scale?
+    float mScreenScale = 1.0f;
 
     bool bHmdPosTracking;
     bool bHaveVisionTracking;

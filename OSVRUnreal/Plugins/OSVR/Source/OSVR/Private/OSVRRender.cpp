@@ -136,9 +136,10 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         InOutSizeX = leftEye.X + rightEye.X;
         InOutSizeY = leftEye.Y;
+        InOutSizeX = int(float(InOutSizeX) * mScreenScale);
+        InOutSizeY = int(float(InOutSizeY) * mScreenScale);
     }
 }
-
 
 bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport)
 {

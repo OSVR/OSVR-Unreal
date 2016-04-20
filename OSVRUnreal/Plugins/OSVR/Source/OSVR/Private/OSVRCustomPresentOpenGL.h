@@ -25,6 +25,12 @@
 // @todo OpenGL implementation
 class FCurrentCustomPresent : public FOSVRCustomPresent<void*>
 {
+public:
+    FCurrentCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
+        FOSVRCustomPresent(clientContext, screenScale)
+    {
+    }
+
 protected:
     //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override
     //{

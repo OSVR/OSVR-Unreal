@@ -29,10 +29,11 @@ class FOSVRCustomPresent : public FRHICustomPresent
 public:
     FTexture2DRHIRef mRenderTexture;
   
-    FOSVRCustomPresent(OSVR_ClientContext clientContext) :
+    FOSVRCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
         FRHICustomPresent(nullptr)
     {
         mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
+        mScreenScale = screenScale;
     }
 
     virtual ~FOSVRCustomPresent()
@@ -89,6 +90,7 @@ protected:
 
     bool bRenderBuffersNeedToUpdate = true;
     bool bInitialized = false;
+    float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
 
