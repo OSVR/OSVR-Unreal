@@ -30,7 +30,6 @@
 		}
 	],
 	"TargetPlatforms": [
-		"WindowsNoEditor",
-		"Android"
+		"WindowsNoEditor"
 	]
 }
