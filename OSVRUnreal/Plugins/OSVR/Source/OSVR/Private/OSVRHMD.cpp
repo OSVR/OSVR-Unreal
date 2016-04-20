@@ -713,10 +713,6 @@ FOSVRHMD::~FOSVRHMD()
     auto entryPoint = IOSVR::Get().GetEntryPoint();
     FScopeLock lock(entryPoint->GetClientContextMutex());
     EnablePositionalTracking(false);
-    if (DisplayConfig)
-    {
-        osvrClientFreeDisplay(DisplayConfig);
-    }
 }
 
 bool FOSVRHMD::IsInitialized() const

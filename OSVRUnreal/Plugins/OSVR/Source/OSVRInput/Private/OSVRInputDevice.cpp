@@ -223,7 +223,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
             {
                 if (button->type == OSVR_BUTTON_TYPE_DIGITAL)
                 {
-                    if (osvrRegisterButtonCallback(iface, buttonCallback, &button) == OSVR_RETURN_FAILURE)
+                    if (osvrRegisterButtonCallback(iface, buttonCallback, button.Get()) == OSVR_RETURN_FAILURE)
                     {
                         button->bIsValid = false;
                     }
@@ -232,7 +232,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
                 if (button->type == OSVR_BUTTON_TYPE_ANALOG ||
                     button->type == OSVR_BUTTON_TYPE_THRESHOLD)
                 {
-                    if (osvrRegisterAnalogCallback(iface, analogCallback, &button) == OSVR_RETURN_FAILURE)
+                    if (osvrRegisterAnalogCallback(iface, analogCallback, button.Get()) == OSVR_RETURN_FAILURE)
                     {
                         button->bIsValid = false;
                     }
