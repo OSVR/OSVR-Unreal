@@ -81,7 +81,7 @@ public:
 
 private:
     TMap<FString, OSVR_ClientInterface> interfaces;
-    TArray<OSVRButton> osvrButtons;
+    TArray<TSharedPtr<OSVRButton> > osvrButtons;
     OSVR_ClientContext context;
     FCriticalSection* contextMutex;
     TSharedRef<FGenericApplicationMessageHandler> MessageHandler;

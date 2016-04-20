@@ -126,92 +126,92 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
     {
         const float defaultThreshold = 0.25f;
 
-        OSVRButton buttons[] =
+        TSharedPtr<OSVRButton> buttons[] =
         {
             // left hand
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Shoulder, "/controller/left/bumper"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Thumbstick, "/controller/left/joystick/button"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton1, "/controller/left/1"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton2, "/controller/left/2"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton3, "/controller/left/3"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton4, "/controller/left/4"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Right, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Left, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Up, "/controller/left/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Down, "/controller/left/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialLeft, "/controller/left/middle")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Shoulder, "/controller/left/bumper")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_Thumbstick, "/controller/left/joystick/button")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton1, "/controller/left/1")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton2, "/controller/left/2")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton3, "/controller/left/3")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Left_FaceButton4, "/controller/left/4")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_X, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Right, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Left, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_Thumbstick_Y, "/controller/left/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Up, "/controller/left/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Left_Thumbstick_Down, "/controller/left/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Left_TriggerAxis, "/controller/left/trigger")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Left_Trigger, "/controller/left/trigger")),
 
             // right hand
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialRight, "/controller/right/middle"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Shoulder, "/controller/right/bumper"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Thumbstick, "/controller/right/joystick/button"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton1, "/controller/right/1"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton2, "/controller/right/2"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton3, "/controller/right/3"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton4, "/controller/right/4"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Right, "/controller/right/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Left, "/controller/right/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Up, "/controller/right/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Down, "/controller/right/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::SpecialRight, "/controller/right/middle")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Shoulder, "/controller/right/bumper")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_Thumbstick, "/controller/right/joystick/button")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton1, "/controller/right/1")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton2, "/controller/right/2")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton3, "/controller/right/3")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::MotionController_Right_FaceButton4, "/controller/right/4")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_X, "/controller/right/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Right, "/controller/right/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Left, "/controller/right/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_Thumbstick_Y, "/controller/right/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Up, "/controller/right/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::MotionController_Right_Thumbstick_Down, "/controller/right/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::MotionController_Right_TriggerAxis, "/controller/right/trigger")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::MotionController_Right_Trigger, "/controller/right/trigger")),
 
             // "controller" (like xbox360)
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightShoulder, "/controller/right/bumper"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightThumb, "/controller/right/joystick/button"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonBottom, "/controller/right/1"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonRight, "/controller/right/2"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonLeft, "/controller/right/3"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonTop, "/controller/right/4"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightShoulder, "/controller/right/bumper")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::RightThumb, "/controller/right/joystick/button")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonBottom, "/controller/right/1")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonRight, "/controller/right/2")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonLeft, "/controller/right/3")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::FaceButtonTop, "/controller/right/4")),
 
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftShoulder, "/controller/left/bumper"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftThumb, "/controller/left/joystick/button"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadDown, "/controller/left/1"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadRight, "/controller/left/2"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadLeft, "/controller/left/3"),
-            OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadUp, "/controller/left/4"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftShoulder, "/controller/left/bumper")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::LeftThumb, "/controller/left/joystick/button")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadDown, "/controller/left/1")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadRight, "/controller/left/2")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadLeft, "/controller/left/3")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_DIGITAL, FGamepadKeyNames::DPadUp, "/controller/left/4")),
 
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogX, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickRight, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickLeft, "/controller/left/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogY, "/controller/left/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickUp, "/controller/left/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickDown, "/controller/left/joystick/y"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogX, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickRight, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickLeft, "/controller/left/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftAnalogY, "/controller/left/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::LeftStickUp, "/controller/left/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::LeftStickDown, "/controller/left/joystick/y")),
 
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogX, "/controller/right/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickRight, "/controller/right/joystick/x"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickLeft, "/controller/right/joystick/x"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogX, "/controller/right/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickRight, "/controller/right/joystick/x")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickLeft, "/controller/right/joystick/x")),
 
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogY, "/controller/right/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickUp, "/controller/right/joystick/y"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickDown, "/controller/right/joystick/y"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightAnalogY, "/controller/right/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_GT, defaultThreshold, FGamepadKeyNames::RightStickUp, "/controller/right/joystick/y")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, OSVR_THRESHOLD_TYPE_LT, -defaultThreshold, FGamepadKeyNames::RightStickDown, "/controller/right/joystick/y")),
 
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger"),
-            OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger"),
-            OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger"),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::LeftTriggerAnalog, "/controller/left/trigger")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_ANALOG, FGamepadKeyNames::RightTriggerAnalog, "/controller/right/trigger")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::LeftTriggerThreshold, "/controller/left/trigger")),
+            MakeShareable(new OSVRButton(OSVR_BUTTON_TYPE_THRESHOLD, FGamepadKeyNames::RightTriggerThreshold, "/controller/right/trigger")),
         };
         osvrButtons.Append(buttons, ARRAY_COUNT(buttons));
 
         for(auto& button : osvrButtons)
         {
-            auto ifaceItr = interfaces.Find(button.ifacePath);
+            auto ifaceItr = interfaces.Find(button->ifacePath);
             OSVR_ClientInterface iface = nullptr;
             if (!ifaceItr)
             {
-                if (osvrClientGetInterface(context, TCHAR_TO_ANSI(*button.ifacePath), &iface) != OSVR_RETURN_SUCCESS)
+                if (osvrClientGetInterface(context, TCHAR_TO_ANSI(*(button->ifacePath)), &iface) != OSVR_RETURN_SUCCESS)
                 {
-                    button.bIsValid = false;
+                    button->bIsValid = false;
                 }
                 else
                 {
-                    interfaces[button.ifacePath] = iface;
+                    interfaces.Add(button->ifacePath, iface);
                 }
             }
             else
@@ -219,22 +219,22 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
                 iface = *ifaceItr;
             }
 
-            if (button.bIsValid)
+            if (button->bIsValid)
             {
-                if (button.type == OSVR_BUTTON_TYPE_DIGITAL)
+                if (button->type == OSVR_BUTTON_TYPE_DIGITAL)
                 {
                     if (osvrRegisterButtonCallback(iface, buttonCallback, &button) == OSVR_RETURN_FAILURE)
                     {
-                        button.bIsValid = false;
+                        button->bIsValid = false;
                     }
                 }
 
-                if (button.type == OSVR_BUTTON_TYPE_ANALOG ||
-                    button.type == OSVR_BUTTON_TYPE_THRESHOLD)
+                if (button->type == OSVR_BUTTON_TYPE_ANALOG ||
+                    button->type == OSVR_BUTTON_TYPE_THRESHOLD)
                 {
                     if (osvrRegisterAnalogCallback(iface, analogCallback, &button) == OSVR_RETURN_FAILURE)
                     {
-                        button.bIsValid = false;
+                        button->bIsValid = false;
                     }
                 }
             }
@@ -342,26 +342,26 @@ void FOSVRInputDevice::SendControllerEvents()
     const int32 controllerId = 0;
     for(auto& button : osvrButtons)
     {
-        if (button.bIsValid)
+        if (button->bIsValid)
         {
-            while (!button.digitalStateQueue.IsEmpty())
+            while (!button->digitalStateQueue.IsEmpty())
             {
                 bool state = false;
-                button.digitalStateQueue.Dequeue(state);
+                button->digitalStateQueue.Dequeue(state);
                 if (state)
                 {
-                    MessageHandler->OnControllerButtonPressed(button.key, controllerId, false);
+                    MessageHandler->OnControllerButtonPressed(button->key, controllerId, false);
                 }
                 else
                 {
-                    MessageHandler->OnControllerButtonReleased(button.key, controllerId, false);
+                    MessageHandler->OnControllerButtonReleased(button->key, controllerId, false);
                 }
             }
-            while (!button.analogStateQueue.IsEmpty())
+            while (!button->analogStateQueue.IsEmpty())
             {
                 float state = 0.0f;
-                button.analogStateQueue.Dequeue(state);
-                MessageHandler->OnControllerAnalog(button.key, controllerId, state);
+                button->analogStateQueue.Dequeue(state);
+                MessageHandler->OnControllerAnalog(button->key, controllerId, state);
             }
         }
     }
