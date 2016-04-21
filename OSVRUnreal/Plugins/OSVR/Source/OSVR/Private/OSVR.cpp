@@ -38,6 +38,9 @@ public:
 
     /** IHeadMountedDisplayModule implementation */
     virtual TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > CreateHeadMountedDisplay() override;
+#if OSVR_UNREAL_4_12
+    virtual bool IsHMDConnected() override;
+#endif
 
     // Pre-init the HMD module (optional).
     //virtual void PreInit() override;
@@ -91,7 +94,7 @@ void FOSVR::LoadOSVRClientKitModule()
 #endif
 
         FString osvrClientKitLibPath;
-        for(auto& it : pathsToTry)
+        for (auto& it : pathsToTry)
         {
             if (FPaths::DirectoryExists(it))
             {
@@ -106,7 +109,7 @@ void FOSVR::LoadOSVRClientKitModule()
         }
         FPlatformProcess::PushDllDirectory(*osvrClientKitLibPath);
 
-        for(auto& it : osvrDlls)
+        for (auto& it : osvrDlls)
         {
             void* libHandle = nullptr;
             auto path = osvrClientKitLibPath + it;
@@ -135,6 +138,13 @@ TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMo
     }
     return nullptr;
 }
+
+#if OSVR_UNREAL_4_12
+bool FOSVR::IsHMDConnected()
+{
+    return EntryPoint->IsOSVRConnected();
+}
+#endif
 
 void FOSVR::StartupModule()
 {

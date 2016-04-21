@@ -199,7 +199,7 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
         };
         osvrButtons.Append(buttons, ARRAY_COUNT(buttons));
 
-        for(auto& button : osvrButtons)
+        for (auto& button : osvrButtons)
         {
             auto ifaceItr = interfaces.Find(button->ifacePath);
             OSVR_ClientInterface iface = nullptr;
@@ -248,9 +248,11 @@ FOSVRInputDevice::FOSVRInputDevice(const TSharedRef< FGenericApplicationMessageH
 
         IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
 
+#if !OSVR_UNREAL_4_12
         // This may need to be removed in a future version of the engine.
         // From the SteamVR plugin: "construction of the controller happens after InitializeMotionControllers(), so we manually add this to the array here"
         GEngine->MotionControllerDevices.AddUnique(this);
+#endif
     }
 }
 
@@ -258,7 +260,8 @@ FOSVRInputDevice::~FOSVRInputDevice()
 {
     FScopeLock lock(contextMutex);
 
-    //GEngine->MotionControllerDevices.Remove(this); // This crashes. Maybe they changed something in the engine since the steamvr plugin was written?
+    IModularFeatures::Get().UnregisterModularFeature(GetModularFeatureName(), this);
+
     if (context)
     {
         if (leftHand)
@@ -340,7 +343,7 @@ void FOSVRInputDevice::SendControllerEvents()
     }
 
     const int32 controllerId = 0;
-    for(auto& button : osvrButtons)
+    for (auto& button : osvrButtons)
     {
         if (button->bIsValid)
         {
