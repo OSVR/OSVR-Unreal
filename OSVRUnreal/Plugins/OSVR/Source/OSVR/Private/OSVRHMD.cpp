@@ -135,7 +135,7 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
     {
         LastHmdOrientation = CurHmdOrientation;
         LastHmdPosition = CurHmdPosition;
-        CurHmdPosition = BaseOrientation.Inverse().RotateVector((OSVR2FVector(pose.translation) * WorldToMetersScale) - BasePosition);
+        CurHmdPosition = BaseOrientation.Inverse().RotateVector(OSVR2FVector(pose.translation, WorldToMetersScale) - BasePosition);
         CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
         lastHmdOrientation = LastHmdOrientation;
         lastHmdPosition = LastHmdPosition;
@@ -456,70 +456,49 @@ void FOSVRHMD::ResetOrientationAndPosition(float yaw)
 
 void FOSVRHMD::ResetOrientation(float yaw)
 {
-    ResetOrientation(true, yaw);
-}
+    FRotator ViewRotation;
+    ViewRotation = FRotator(CurHmdOrientation);
+    ViewRotation.Pitch = 0;
+    ViewRotation.Roll = 0;
+    ViewRotation.Yaw += BaseOrientation.Rotator().Yaw;
 
-void FOSVRHMD::ResetOrientation(bool bAdjustOrientation, float yaw)
-{
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-
-    FQuat CurrentRotation(FQuat::Identity);
-
-    OSVR_PoseState Pose;
-    OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
-    if (ReturnCode != OSVR_RETURN_SUCCESS)
+    if (yaw != 0.f)
     {
-        return;
+        // apply optional yaw offset
+        ViewRotation.Yaw -= yaw;
+        ViewRotation.Normalize();
     }
 
-    CurrentRotation = OSVR2FQuat(Pose.rotation);
-
-    if (bAdjustOrientation)
-    {
-        FRotator ViewRotation;
-        ViewRotation = FRotator(CurrentRotation);
-        ViewRotation.Pitch = 0;
-        ViewRotation.Roll = 0;
-
-        if (yaw != 0.f)
-        {
-            // apply optional yaw offset
-            ViewRotation.Yaw -= yaw;
-            ViewRotation.Normalize();
-        }
-
-        BaseOrientation = ViewRotation.Quaternion();
-    }
-    else
-    {
-        BaseOrientation = CurrentRotation;
-    }
+    BaseOrientation = ViewRotation.Quaternion();
 }
 
 void FOSVRHMD::ResetPosition()
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-
-    FVector CurrentPosition(FVector::ZeroVector);
-    OSVR_PoseState Pose;
-    OSVR_ReturnCode ReturnCode = osvrClientGetViewerPose(DisplayConfig, 0, &Pose);
-    if (ReturnCode != OSVR_RETURN_SUCCESS)
-    {
-        return;
-    }
-
-    CurrentPosition = OSVR2FVector(Pose.translation);
-
     // Reset position
-    BasePosition = CurrentPosition * WorldToMetersScale;
+    BasePosition = CurHmdPosition;
 }
 
-void FOSVRHMD::SetCurrentHmdOrientationAndPositionAsBase()
+void FOSVRHMD::SetClippingPlanes(float NCP, float FCP)
 {
-    ResetPosition();
-    ResetOrientation(false, 0);
+}
+
+void FOSVRHMD::SetBaseRotation(const FRotator& BaseRot)
+{
+}
+
+FRotator FOSVRHMD::GetBaseRotation() const
+{
+    return FRotator::ZeroRotator;
+}
+
+void FOSVRHMD::SetBaseOrientation(const FQuat& BaseOrient)
+{
+    BaseOrientation = BaseOrient;
+}
+
+FQuat FOSVRHMD::GetBaseOrientation() const
+{
+    return BaseOrientation;
 }
 
 namespace
@@ -593,14 +572,13 @@ void FOSVRHMD::SetupViewFamily(FSceneViewFamily& InViewFamily)
 {
     InViewFamily.EngineShowFlags.MotionBlur = 0;
     InViewFamily.EngineShowFlags.HMDDistortion = false;
-    InViewFamily.EngineShowFlags.ScreenPercentage = 1.0f;
     InViewFamily.EngineShowFlags.StereoRendering = IsStereoEnabled();
 }
 
 void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 {
-    InView.BaseHmdOrientation = FQuat(FRotator(0.0f, 0.0f, 0.0f));
-    InView.BaseHmdLocation = FVector(0.f);
+    InView.BaseHmdOrientation = LastHmdOrientation;
+    InView.BaseHmdLocation = LastHmdPosition;
     WorldToMetersScale = InView.WorldToMetersScale;
     InViewFamily.bUseSeparateRenderTarget = true;
 }

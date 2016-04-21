@@ -93,7 +93,6 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 	// intentionally left blank
 }
 
-// @todo: Why is this function never called?
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
@@ -101,6 +100,7 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     {
         mCustomPresent->Initialize();
     }
+
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
     UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);

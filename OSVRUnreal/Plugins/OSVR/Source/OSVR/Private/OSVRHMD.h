@@ -88,7 +88,6 @@ public:
     virtual void EnableLowPersistenceMode(bool bEnable = true) override;
     virtual bool OnStartGameFrame(FWorldContext& WorldContext) override;
 
-#if 0
     // seen in simplehmd
     virtual void SetClippingPlanes(float NCP, float FCP) override;
 
@@ -97,7 +96,6 @@ public:
 
     virtual void SetBaseOrientation(const FQuat& BaseOrient) override;
     virtual FQuat GetBaseOrientation() const override;
-#endif
 
     virtual void DrawDistortionMesh_RenderThread(struct FRenderingCompositePassContext& Context, const FIntPoint& TextureSize) override;
 
@@ -144,7 +142,6 @@ public:
     void ResetOrientation(bool bAdjustOrientation, float yaw);
     virtual void ResetPosition() override;
     virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
-    void SetCurrentHmdOrientationAndPositionAsBase();
 
     inline float GetWorldToMetersScale()
     {

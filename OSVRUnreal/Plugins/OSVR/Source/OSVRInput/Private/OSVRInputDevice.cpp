@@ -307,7 +307,7 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
             if (osvrGetPoseState(iface, &tvalue, &state) == OSVR_RETURN_SUCCESS)
             {
                 float worldToMetersScale = IOSVR::Get().GetHMD()->GetWorldToMetersScale();
-                OutPosition = OSVR2FVector(state.translation) * worldToMetersScale;
+                OutPosition = OSVR2FVector(state.translation, worldToMetersScale);
                 OutOrientation = OSVR2FQuat(state.rotation).Rotator();
                 bRet = true;
             }

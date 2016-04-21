@@ -16,11 +16,11 @@
 
 #pragma once
 
-FORCEINLINE FVector OSVR2FVector(const OSVR_Vec3& Vec3)
+FORCEINLINE FVector OSVR2FVector(const OSVR_Vec3& Vec3, float WorldToMetersScale)
 {
 	// OSVR: The coordinate system is right-handed, with X to the right, Y up, and Z near.
     // @todo automatically use meters-to-world-units scale here.
-	return FVector(-float(Vec3.data[2]), float(Vec3.data[0]), float(Vec3.data[1]));
+	return FVector(-float(Vec3.data[2]), float(Vec3.data[0]), float(Vec3.data[1])) * WorldToMetersScale;
 }
 
 FORCEINLINE FQuat OSVR2FQuat(const OSVR_Quaternion& Quat)
