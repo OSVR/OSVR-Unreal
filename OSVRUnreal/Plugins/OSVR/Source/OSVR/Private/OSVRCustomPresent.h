@@ -71,6 +71,7 @@ public:
         return bInitialized;
     }
 
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top) = 0;
     virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.

@@ -252,18 +252,8 @@ FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
     return FVector2D();
 }
 
-// implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.
-FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const
+FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, double bottom, double top) const
 {
-    OSVR_EyeCount eye = (Eye == LEFT_EYE ? 0 : 1);
-    double left, right, bottom, top;
-    OSVR_ReturnCode rc;
-    rc = osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(displayConfig, 0, eye, 0, &left, &right, &bottom, &top);
-    check(rc == OSVR_RETURN_SUCCESS);
-
-    // The steam plugin inverts the clipping planes here, but that doesn't appear to
-    // be necessary for the OSVR calculated planes.
-
     // sanity check: what is going on with this projection matrix?
     // no reference to far clipping plane. This looks nothing like glFrustum.
     // matches their occulus rift calculation in the parts that they correct for unreal though
@@ -279,6 +269,21 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig dis
     FPlane row4(0.0f, 0.0f, zNear, 0.0f);
     FMatrix ret = FMatrix(row1, row2, row3, row4);
     return ret;
+}
+
+// implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.
+FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const
+{
+    OSVR_EyeCount eye = (Eye == LEFT_EYE ? 0 : 1);
+    double left, right, bottom, top;
+    OSVR_ReturnCode rc;
+    rc = osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(displayConfig, 0, eye, 0, &left, &right, &bottom, &top);
+    check(rc == OSVR_RETURN_SUCCESS);
+
+    // The steam plugin inverts the clipping planes here, but that doesn't appear to
+    // be necessary for the OSVR calculated planes.
+
+    return GetProjectionMatrix(left, right, bottom, top);
 }
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const

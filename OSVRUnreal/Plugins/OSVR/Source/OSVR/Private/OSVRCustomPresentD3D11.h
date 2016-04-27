@@ -149,6 +149,23 @@ public:
         return false;
     }
 
+
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top) override
+    {
+        OSVR_ReturnCode rc;
+        rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
+        check(rc == OSVR_RETURN_SUCCESS);
+
+        OSVR_RenderInfoD3D11 renderInfo;
+        rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, eye, mRenderParams, &renderInfo);
+        check(rc == OSVR_RETURN_SUCCESS);
+
+        left = renderInfo.projection.left / renderInfo.projection.nearClip;
+        right = renderInfo.projection.right / renderInfo.projection.nearClip;
+        top = renderInfo.projection.top / renderInfo.projection.nearClip;
+        bottom = renderInfo.projection.bottom / renderInfo.projection.nearClip;
+    }
+
 protected:
     ID3D11Texture2D* RenderTargetTexture = NULL;
     ID3D11RenderTargetView* RenderTargetView = NULL;

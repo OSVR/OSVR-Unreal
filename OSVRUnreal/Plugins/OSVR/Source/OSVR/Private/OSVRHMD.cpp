@@ -512,37 +512,23 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     auto mutex = entryPoint->GetClientContextMutex();
     FScopeLock lock(mutex);
 
-    FMatrix original = HMDDescription.GetProjectionMatrix(
-        StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
-        DisplayConfig);
+    FMatrix ret;
+    if (mCustomPresent)
+    {
+        double left, right, bottom, top;
+        mCustomPresent->GetProjectionMatrix(
+            StereoPassType == eSSP_LEFT_EYE ? 0 : 1,
+            left, right, bottom, top);
+        ret = HMDDescription.GetProjectionMatrix(left, right, bottom, top);
+    }
+    else
+    {
+        ret = HMDDescription.GetProjectionMatrix(
+            StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
+            DisplayConfig);
+    }
 
-    // @todo we should be getting a matrix from core, but this doesn't appear to be working.
-    //OSVR_EyeCount eye = 0;
-    //if (StereoPassType == eSSP_LEFT_EYE)
-    //{
-    //    eye = 0;
-    //}
-    //else if (StereoPassType == eSSP_RIGHT_EYE)
-    //{
-    //    eye = 1;
-    //}
-
-    //float yUpMatrix[16];
-    //if (osvrClientGetViewerEyeSurfaceProjectionMatrixf(DisplayConfig, 0, eye, 0, GNearClippingPlane, 10000.0f, gMatrixFlags, yUpMatrix) == OSVR_RETURN_FAILURE)
-    //{
-    //    throw std::exception("FOSVRHMD::GetStereoProjectionMatrix: couldn't get the viewer eye matrix.");
-    //}
-    //FMatrix ret = OSVR2FMatrix(yUpMatrix);
-    //FMatrix axisChange = FMatrix(
-    //    FPlane(1, 0, 0, 0),
-    //    FPlane(0, 0, 1, 0),
-    //    FPlane(0, 1, 0, 0),
-    //    FPlane(0, 0, 0, 1));
-
-    //// @todo do a change of basis here? Seems to make it worse??
-    //FMatrix preMultiply = axisChange * ret;
-    //FMatrix postMultiply = ret * axisChange;
-    return original;
+    return ret;
 }
 
 void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
