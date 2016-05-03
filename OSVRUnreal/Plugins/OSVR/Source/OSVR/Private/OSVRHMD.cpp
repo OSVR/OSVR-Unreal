@@ -182,7 +182,7 @@ bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext)
     static auto sFinishCurrentFrame = IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"));
     if (!bHmdOverridesApplied)
     {
-        sFinishCurrentFrame->Set(1);
+        sFinishCurrentFrame->Set(0);
         bHmdOverridesApplied = true;
     }
     return true;
