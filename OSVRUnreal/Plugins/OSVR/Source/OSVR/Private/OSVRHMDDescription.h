@@ -39,7 +39,7 @@ public:
 	bool Init(OSVR_ClientContext OSVRClientContext, OSVR_DisplayConfig displayConfig);
 	bool IsValid() const
 	{
-		return Valid;
+		return bValid;
 	}
 
 	enum EEye
@@ -53,6 +53,7 @@ public:
 	FVector2D GetFov(EEye Eye) const;
     FVector2D GetFov(OSVR_EyeCount Eye) const;
 	FVector GetLocation(EEye Eye) const;
+    FMatrix GetProjectionMatrix(double left, double right, double bottom, double top) const;
 	FMatrix GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const;
     bool OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayConfig);
 
@@ -74,6 +75,6 @@ private:
     bool InitFOV(OSVR_DisplayConfig displayConfig);
 
     float m_ipd;
-	bool Valid;
+	bool bValid;
     DescriptionData* Data;
 };

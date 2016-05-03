@@ -28,28 +28,30 @@ class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
     FTexture2DRHIRef mRenderTexture;
-
-    FOSVRCustomPresent(OSVR_ClientContext clientContext) :
+  
+    FOSVRCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
         FRHICustomPresent(nullptr)
     {
         mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
+        mScreenScale = screenScale;
     }
 
-    virtual ~FOSVRCustomPresent() {
-        if (mClientContext) {
-            osvrClientShutdown(mClientContext);
-        }
-
-        if (mRenderManager) {
+    virtual ~FOSVRCustomPresent()
+    {
+        if (mRenderManager)
+        {
             osvrDestroyRenderManager(mRenderManager);
         }
     }
 
     // virtual methods from FRHICustomPresent
 
-    virtual void OnBackBufferResize() override {}
+    virtual void OnBackBufferResize() override
+    {
+    }
 
-    virtual bool Present(int32 &inOutSyncInterval) override {
+    virtual bool Present(int32 &inOutSyncInterval) override
+    {
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
         InitializeImpl();
@@ -58,20 +60,24 @@ public:
     }
 
     // implement this in the sub-class
-    virtual bool Initialize() {
+    virtual bool Initialize()
+    {
         FScopeLock lock(&mOSVRMutex);
         return InitializeImpl();
     }
 
-    virtual bool IsInitialized() {
-        return mInitialized;
+    virtual bool IsInitialized()
+    {
+        return bInitialized;
     }
 
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top) = 0;
     virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
-    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY) {
+    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY)
+    {
         FScopeLock lock(&mOSVRMutex);
         return CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
     }
@@ -80,11 +86,12 @@ public:
 
 protected:
     FCriticalSection mOSVRMutex;
-    std::vector<OSVR_ViewportDescription> mViewportDescriptions;
+    TArray<OSVR_ViewportDescription> mViewportDescriptions;
     OSVR_RenderParams mRenderParams;
 
-    bool mRenderBuffersNeedToUpdate = true;
-    bool mInitialized = false;
+    bool bRenderBuffersNeedToUpdate = true;
+    bool bInitialized = false;
+    float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
 
@@ -92,7 +99,8 @@ protected:
 
     virtual bool InitializeImpl() = 0;
 
-    virtual TGraphicsDevice* GetGraphicsDevice() {
+    virtual TGraphicsDevice* GetGraphicsDevice()
+    {
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
     }
@@ -100,7 +108,7 @@ protected:
     virtual void FinishRendering() = 0;
 
     // abstract methods, implement in DirectX/OpenGL specific subclasses
-    virtual std::string GetGraphicsLibraryName() = 0;
+    virtual FString GetGraphicsLibraryName() = 0;
     virtual bool ShouldFlipY() = 0;
     virtual void UpdateRenderBuffers() = 0;
 };

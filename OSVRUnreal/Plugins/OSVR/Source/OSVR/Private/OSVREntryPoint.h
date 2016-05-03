@@ -35,14 +35,17 @@ public:
 	{
 		return (!GWorld->HasBegunPlay() && GIsEditor) ? false : true;
 	}
+
 	virtual bool IsTickableWhenPaused() const override
 	{
 		return true;
 	}
+
 	virtual bool IsTickableInEditor() const override
 	{
 		return false;
 	}
+
 	virtual TStatId GetStatId() const override
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT(OSVREntryPoint, STATGROUP_Tickables);
@@ -53,6 +56,11 @@ public:
         return osvrClientContext;
     }
 
+    virtual FCriticalSection* GetClientContextMutex()
+    {
+        return &mContextMutex;
+    }
+
     virtual bool IsOSVRConnected();
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	OSVRInterfaceCollection* GetInterfaceCollection();
@@ -60,6 +68,7 @@ public:
 
 private:
     OSVR_ClientContext osvrClientContext = nullptr;
+    FCriticalSection mContextMutex;
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;

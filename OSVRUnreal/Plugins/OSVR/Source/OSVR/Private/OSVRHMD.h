@@ -45,7 +45,7 @@ public:
     virtual void OnEndPlay() override;
     virtual bool IsHMDConnected() override;
     virtual bool IsHMDEnabled() const override;
-    virtual void EnableHMD(bool allow = true) override;
+    virtual void EnableHMD(bool bEnable = true) override;
     virtual EHMDDeviceType::Type GetHMDDeviceType() const override;
     virtual bool GetHMDMonitorInfo(MonitorInfo&) override;
 
@@ -68,7 +68,7 @@ public:
     virtual TSharedPtr< class ISceneViewExtension, ESPMode::ThreadSafe > GetViewExtension() override;
     virtual void ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation) override;
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
     virtual bool UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition) override;
 #else
     virtual void UpdatePlayerCameraRotation(class APlayerCameraManager* Camera, struct FMinimalViewInfo& POV) override;
@@ -80,15 +80,14 @@ public:
     virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 
     virtual bool IsPositionalTrackingEnabled() const override;
-    virtual bool EnablePositionalTracking(bool enable) override;
+    virtual bool EnablePositionalTracking(bool bEnable) override;
 
     virtual bool IsHeadTrackingAllowed() const override;
 
     virtual bool IsInLowPersistenceMode() const override;
-    virtual void EnableLowPersistenceMode(bool Enable = true) override;
+    virtual void EnableLowPersistenceMode(bool bEnable = true) override;
     virtual bool OnStartGameFrame(FWorldContext& WorldContext) override;
 
-#if 0
     // seen in simplehmd
     virtual void SetClippingPlanes(float NCP, float FCP) override;
 
@@ -97,13 +96,12 @@ public:
 
     virtual void SetBaseOrientation(const FQuat& BaseOrient) override;
     virtual FQuat GetBaseOrientation() const override;
-#endif
 
     virtual void DrawDistortionMesh_RenderThread(struct FRenderingCompositePassContext& Context, const FIntPoint& TextureSize) override;
 
     /** IStereoRendering interface */
     virtual bool IsStereoEnabled() const override;
-    virtual bool EnableStereo(bool stereo = true) override;
+    virtual bool EnableStereo(bool bStereo = true) override;
     virtual void AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const override;
     virtual void CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation,
         const float MetersToWorld, FVector& ViewLocation) override;
@@ -141,12 +139,12 @@ public:
     assuming that current yaw is forward direction and assuming
     current position as 0 point. */
     virtual void ResetOrientation(float yaw) override;
-    void ResetOrientation(bool adjustOrientation, float yaw);
+    void ResetOrientation(bool bAdjustOrientation, float yaw);
     virtual void ResetPosition() override;
     virtual void ResetOrientationAndPosition(float yaw = 0.f) override;
-    void SetCurrentHmdOrientationAndPositionAsBase();
 
-    inline float GetWorldToMetersScale() {
+    inline float GetWorldToMetersScale()
+    {
         return WorldToMetersScale;
     }
 
@@ -161,18 +159,21 @@ public:
     bool IsInitialized() const;
 
 private:
-    void GetMonitorInfo(IHeadMountedDisplay::MonitorInfo& MonitorDesc) const;
+    void UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
     void UpdateHeadPose();
 
     IRendererModule* RendererModule;
 
     /** Player's orientation tracking */
     mutable FQuat CurHmdOrientation;
+    mutable FVector CurHmdPosition;
+
+    /** Player's orientation tracking (on render thread) */
+    mutable FQuat CurHmdOrientationRT;
 
     FRotator DeltaControlRotation; // same as DeltaControlOrientation but as rotator
     FQuat DeltaControlOrientation; // same as DeltaControlRotation but as quat
 
-    mutable FVector CurHmdPosition;
 
     mutable FQuat LastHmdOrientation; // contains last APPLIED ON GT HMD orientation
     FVector LastHmdPosition;		  // contains last APPLIED ON GT HMD position
@@ -183,6 +184,7 @@ private:
 
     /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
     float WorldToMetersScale; // @todo: isn't this meters to world units scale?
+    float mScreenScale = 1.0f;
 
     bool bHmdPosTracking;
     bool bHaveVisionTracking;

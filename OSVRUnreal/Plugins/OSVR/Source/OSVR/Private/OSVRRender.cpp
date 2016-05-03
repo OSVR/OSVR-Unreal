@@ -33,38 +33,36 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
-    if (GIsEditor || !mCustomPresent || !mCustomPresent->IsInitialized()) {
-        const uint32 viewportWidth = backBuffer->GetSizeX();
-        const uint32 viewportHeight = backBuffer->GetSizeY();
+    const uint32 viewportWidth = backBuffer->GetSizeX();
+    const uint32 viewportHeight = backBuffer->GetSizeY();
 
-        SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
-        rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
+    SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
+    rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
 
-        rhiCmdList.SetBlendState(TStaticBlendState<>::GetRHI());
-        rhiCmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
-        rhiCmdList.SetDepthStencilState(TStaticDepthStencilState<false, CF_Always>::GetRHI());
+    rhiCmdList.SetBlendState(TStaticBlendState<>::GetRHI());
+    rhiCmdList.SetRasterizerState(TStaticRasterizerState<>::GetRHI());
+    rhiCmdList.SetDepthStencilState(TStaticDepthStencilState<false, CF_Always>::GetRHI());
 
-        const auto featureLevel = GMaxRHIFeatureLevel;
-        auto shaderMap = GetGlobalShaderMap(featureLevel);
+    const auto featureLevel = GMaxRHIFeatureLevel;
+    auto shaderMap = GetGlobalShaderMap(featureLevel);
 
-        TShaderMapRef<FScreenVS> vertexShader(shaderMap);
-        TShaderMapRef<FScreenPS> pixelShader(shaderMap);
+    TShaderMapRef<FScreenVS> vertexShader(shaderMap);
+    TShaderMapRef<FScreenPS> pixelShader(shaderMap);
 
-        static FGlobalBoundShaderState boundShaderState;
-        SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
+    static FGlobalBoundShaderState boundShaderState;
+    SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
-        pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
-        RendererModule->DrawRectangle(
-            rhiCmdList,
-            0, 0, // X, Y
-            viewportWidth, viewportHeight, // SizeX, SizeY
-            0.0f, 0.0f, // U, V
-            1.0f, 1.0f, // SizeU, SizeV
-            FIntPoint(viewportWidth, viewportHeight), // TargetSize
-            FIntPoint(1, 1), // TextureSize
-            *vertexShader,
-            EDRF_Default);
-    }
+    pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+    RendererModule->DrawRectangle(
+        rhiCmdList,
+        0, 0, // X, Y
+        viewportWidth, viewportHeight, // SizeX, SizeY
+        0.0f, 0.0f, // U, V
+        1.0f, 1.0f, // SizeU, SizeV
+        FIntPoint(viewportWidth, viewportHeight), // TargetSize
+        FIntPoint(1, 1), // TextureSize
+        *vertexShader,
+        EDRF_Default);
 }
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
@@ -92,51 +90,68 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 	// intentionally left blank
 }
 
-// @todo: Why is this function never called?
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    if (mCustomPresent) {
+    if (mCustomPresent)
+    {
         mCustomPresent->Initialize();
     }
-    // steamVR updates the current pose here, should we?
+
+    FQuat lastHmdOrientation, hmdOrientation;
+    FVector lastHmdPosition, hmdPosition;
+    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+    CurHmdOrientationRT = hmdOrientation;
+    const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
+    const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
+
+    ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
 {
-    // @todo
-
+    check(IsInRenderingThread());
+    const FQuat deltaOriention = View.BaseHmdOrientation.Inverse() * CurHmdOrientationRT;
+    View.ViewRotation = FRotator(View.ViewRotation.Quaternion() * deltaOriention);
+    View.UpdateViewMatrix();
 }
 
 void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)
 {
     check(IsInGameThread());
     
-    if (!IsStereoEnabled()) {
+    if (!IsStereoEnabled())
+    {
         return;
     }
     
-    if (mCustomPresent) {
-        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize()) {
+    if (mCustomPresent)
+    {
+        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
+        {
             mCustomPresent = nullptr;
         }
-        if (mCustomPresent && mCustomPresent->IsInitialized()) {
+        if (mCustomPresent && mCustomPresent->IsInitialized())
+        {
             mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
         }
-    } else {
+    }
+    else
+    {
         auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         InOutSizeX = leftEye.X + rightEye.X;
         InOutSizeY = leftEye.Y;
+        InOutSizeX = int(float(InOutSizeX) * mScreenScale);
+        InOutSizeY = int(float(InOutSizeY) * mScreenScale);
     }
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), width: %d"), InOutSizeX);
-    //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::CalculateRenderTargetSize(), height: %d"), InOutSizeY);
 }
 
-
-bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport) {
+bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport)
+{
     check(IsInGameThread());
-    if (IsStereoEnabled()) {
+    if (IsStereoEnabled())
+    {
         const uint32 inSizeX = viewport.GetSizeXY().X;
         const uint32 inSizeY = viewport.GetSizeXY().Y;
         FIntPoint renderTargetSize;
@@ -145,7 +160,8 @@ bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport) {
 
         uint32 newSizeX = inSizeX, newSizeY = inSizeY;
         CalculateRenderTargetSize(viewport, newSizeX, newSizeY);
-        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y) {
+        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y)
+        {
             return true;
         }
     }
@@ -157,13 +173,16 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
     check(IsInGameThread());
 
     auto viewportRHI = InViewport.GetViewportRHI().GetReference();
-    if ((GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget)) {
+    if ((GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget))
+    {
         viewportRHI->SetCustomPresent(nullptr);
         return;
     }
 
-    if (mCustomPresent && mCustomPresent->IsInitialized()) {
-        if (!mCustomPresent->UpdateViewport(InViewport, viewportRHI)) {
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
+        if (!mCustomPresent->UpdateViewport(InViewport, viewportRHI))
+        {
             delete mCustomPresent;
             mCustomPresent = nullptr;
         }
@@ -173,7 +192,8 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
 bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
 {
     check(index == 0);
-    if (mCustomPresent && mCustomPresent->IsInitialized()) {
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
     return false;

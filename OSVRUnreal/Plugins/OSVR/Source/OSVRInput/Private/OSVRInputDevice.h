@@ -57,7 +57,7 @@ public:
     */
     virtual bool GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const override;
 
-#if OSVR_UNREAL_3_11
+#if OSVR_UNREAL_4_11
     virtual ETrackingStatus GetControllerTrackingStatus(const int32, const EControllerHand) const override;
 #endif
 
@@ -80,13 +80,14 @@ public:
     void EventReport(const FKey& Key, const FVector& Translation, const FQuat& Orientation);
 
 private:
-    std::map<std::string, OSVR_ClientInterface> interfaces;
-    std::vector<OSVRButton> osvrButtons;
+    TMap<FString, OSVR_ClientInterface> interfaces;
+    TArray<TSharedPtr<OSVRButton> > osvrButtons;
     OSVR_ClientContext context;
-    TSharedRef< FGenericApplicationMessageHandler > MessageHandler;
+    FCriticalSection* contextMutex;
+    TSharedRef<FGenericApplicationMessageHandler> MessageHandler;
     OSVR_ClientInterface leftHand;
     OSVR_ClientInterface rightHand;
-    bool leftHandValid = false;
-    bool rightHandValid = false;
-    bool contextValid = false;
+    bool bLeftHandValid = false;
+    bool bRightHandValid = false;
+    bool bContextValid = false;
 };

@@ -25,18 +25,27 @@
 // @todo OpenGL implementation
 class FCurrentCustomPresent : public FOSVRCustomPresent<void*>
 {
+public:
+    FCurrentCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
+        FOSVRCustomPresent(clientContext, screenScale)
+    {
+    }
+
 protected:
-    //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override {
+    //virtual osvr::renderkit::GraphicsLibrary CreateGraphicsLibrary() override
+    //{
     //    osvr::renderkit::GraphicsLibrary ret;
     //    // OpenGL path not implemented yet
     //    return ret;
     //}
 
-    virtual std::string GetGraphicsLibraryName() override {
-        return "OpenGL";
+    virtual FString GetGraphicsLibraryName() override
+    {
+        return FString("OpenGL");
     }
 
-    virtual bool ShouldFlipY() override {
+    virtual bool ShouldFlipY() override
+    {
         return false;
     }
 
