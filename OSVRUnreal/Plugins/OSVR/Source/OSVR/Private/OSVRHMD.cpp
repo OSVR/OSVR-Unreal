@@ -22,6 +22,8 @@
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
 
+#include "Runtime/Core/Public/Misc/DateTime.h"
+
 #if WITH_EDITOR
 #include "Editor/UnrealEd/Classes/Editor/EditorEngine.h"
 #endif
@@ -36,10 +38,6 @@
 #endif
 
 #include <osvr/Util/MatrixConventionsC.h>
-#include <cmath>
-#include <vector>
-#include <chrono>
-#include <thread>
 
 DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
@@ -645,9 +643,9 @@ FOSVRHMD::FOSVRHMD()
         }
         else
         {
-            auto begin = std::chrono::system_clock::now();
-            auto end = begin + std::chrono::milliseconds(1000);
-            while (!bDisplayConfigOK && std::chrono::system_clock::now() < end)
+            auto begin = FDateTime::Now().GetSecond();
+            auto end = begin + 3;
+            while (!bDisplayConfigOK && FDateTime::Now().GetSecond() < end)
             {
                 bDisplayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
                 if (!bDisplayConfigOK)
@@ -659,7 +657,7 @@ FOSVRHMD::FOSVRHMD()
                         break;
                     }
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                FPlatformProcess::Sleep(0.2f);
             }
             bDisplayConfigOK = bDisplayConfigOK && !bFailure;
             if (!bDisplayConfigOK)
