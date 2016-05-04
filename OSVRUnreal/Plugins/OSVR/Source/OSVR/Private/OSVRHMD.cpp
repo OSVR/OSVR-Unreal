@@ -401,6 +401,16 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
 
     if (sceneViewport)
     {
+        // the render targets may be larger or smaller than the display resolution
+        // due to renderOverfillFactor and renderOversampleFactor settings
+        // The viewports should match the render target size not the display size
+        if (mCustomPresent)
+        {
+            uint32 iWidth, iHeight;
+            mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
+            width = float(iWidth);
+            height = float(iHeight);
+        }
         sceneViewport->SetViewportSize(width, height);
     }
 
