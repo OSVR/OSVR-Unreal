@@ -408,8 +408,8 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
         {
             uint32 iWidth, iHeight;
             mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
-            width = float(iWidth);
-            height = float(iHeight);
+            width = float(iWidth) * (1.0f / this->mScreenScale);
+            height = float(iHeight) * (1.0f / this->mScreenScale);
         }
         sceneViewport->SetViewportSize(width, height);
     }
