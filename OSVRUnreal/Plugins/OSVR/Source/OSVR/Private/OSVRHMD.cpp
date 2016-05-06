@@ -38,6 +38,7 @@
 #endif
 
 #include <osvr/Util/MatrixConventionsC.h>
+#include <osvr/ClientKit/ParametersC.h>
 
 DEFINE_LOG_CATEGORY(OSVRHMDLog);
 
@@ -80,6 +81,42 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
     return EHMDDeviceType::DT_ES2GenericStereoMesh;
 }
 
+/**
+ * This is more of a temporary workaround to an issue with getting the render target
+ * size from the RenderManager. On the game thread, we can't get the render target sizes
+ * unless we have already initialized the render manager, which we can only do on the render
+ * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
+ * them from any thread with access to the client context.
+ */
+static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
+{
+    auto clientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
+    size_t length;
+    osvrClientGetStringParameterLength(clientContext, "/renderManagerConfig", &length);
+    if (length > 0)
+    {
+        char* renderManagerConfigStr = new char[length];
+        osvrClientGetStringParameter(clientContext, "/renderManagerConfig", renderManagerConfigStr, length);
+
+        auto reader = TJsonReaderFactory<>::Create(renderManagerConfigStr);
+        TSharedPtr<FJsonObject> jsonObject;
+        if (FJsonSerializer::Deserialize(reader, jsonObject))
+        {
+            auto subObj = jsonObject->GetObjectField("renderManagerConfig");
+            double renderOverfillFactor = subObj->GetNumberField("renderOverfillFactor");
+            double renderOversampleFactor = subObj->GetNumberField("renderOversampleFactor");
+            width = windowWidth * renderOverfillFactor * renderOversampleFactor;
+            height = windowHeight * renderOverfillFactor * renderOversampleFactor;
+        }
+        delete[] renderManagerConfigStr;
+    }
+    else
+    {
+        width = windowWidth;
+        height = windowHeight;
+    }
+}
+
 bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 {
     auto entryPoint = IOSVR::Get().GetEntryPoint();
@@ -92,12 +129,14 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
         OSVR_ViewportDimension width = (OSVR_ViewportDimension)leftEye.X + (OSVR_ViewportDimension)rightEye.X;
         OSVR_ViewportDimension height = (OSVR_ViewportDimension)leftEye.Y;
 
+        float fWidth, fHeight;
+        GetRenderTargetSize_GameThread(width, height, fWidth, fHeight);
         MonitorDesc.MonitorName = "OSVR-Display"; //@TODO
         MonitorDesc.MonitorId = 0;				  //@TODO
         MonitorDesc.DesktopX = 0;
         MonitorDesc.DesktopY = 0;
-        MonitorDesc.ResolutionX = width;
-        MonitorDesc.ResolutionY = height;
+        MonitorDesc.ResolutionX = fWidth;
+        MonitorDesc.ResolutionY = fHeight;
         return true;
     }
     else
@@ -401,17 +440,47 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
 
     if (sceneViewport)
     {
-        // the render targets may be larger or smaller than the display resolution
-        // due to renderOverfillFactor and renderOversampleFactor settings
-        // The viewports should match the render target size not the display size
-        if (mCustomPresent)
+        auto window = sceneViewport->FindWindow();
+        if (bStereo)
         {
-            uint32 iWidth, iHeight;
-            mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
-            width = float(iWidth) * (1.0f / this->mScreenScale);
-            height = float(iHeight) * (1.0f / this->mScreenScale);
+            // the render targets may be larger or smaller than the display resolution
+            // due to renderOverfillFactor and renderOversampleFactor settings
+            // The viewports should match the render target size not the display size
+            //if (mCustomPresent)
+            //{
+                //uint32 iWidth, iHeight;
+                //mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
+                //width = float(iWidth) * (1.0f / this->mScreenScale);
+                //height = float(iHeight) * (1.0f / this->mScreenScale);
+            //}
+            //else
+            //{
+                // temporary workaround. The above code doesn't work because when the game
+                // is packaged, mCustomPresent is not initialized before this call. In the editor, it is.
+                // calling CalculateRenderTargetSize when mCustomPresent isn't initialized
+                // results in Initialize being called, which has to be done on the render thread.
+                // The proper fix is to move the render target size API from render manager to OSVR-Core
+                // so we don't need a graphics context to calculate them. In the meantime, we'll
+                // implement this temporary workaround (parse the renderManagerConfig manually and
+                // calculate the render target sizes ourselves).
+                GetRenderTargetSize_GameThread(width, height, width, height);
+            //}
+
+            sceneViewport->SetViewportSize(width, height);
+            if (window.IsValid())
+            {
+                window->SetViewportSizeDrivenByWindow(false);
+            }
         }
-        sceneViewport->SetViewportSize(width, height);
+        else
+        {
+            if (window.IsValid())
+            {
+                auto size = sceneViewport->FindWindow()->GetSizeInScreen();
+                sceneViewport->SetViewportSize(size.X, size.Y);
+                window->SetViewportSizeDrivenByWindow(true);
+            }
+        }
     }
 
     GEngine->bForceDisableFrameRateSmoothing = bStereo;
@@ -698,6 +767,14 @@ FOSVRHMD::FOSVRHMD()
     // our version of connected is that the client context is ok (server is running)
     // and the display config is ok (/me/head exists and received a pose)
     bHmdConnected = bClientContextOK && bDisplayConfigOK && bDisplayConfigMatchesUnrealExpectations;
+
+    // Workaround for EnableStereo never getting called by the engine.
+    // @todo is this the right workaround? Should we force these on somewhere else?
+    if (bHmdConnected)
+    {
+        EnableHMD(true);
+        EnableStereo(true);
+    }
 }
 
 FOSVRHMD::~FOSVRHMD()
