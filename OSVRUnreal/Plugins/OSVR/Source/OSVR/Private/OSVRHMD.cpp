@@ -440,7 +440,9 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
 
     if (sceneViewport)
     {
+#if !WITH_EDITOR
         auto window = sceneViewport->FindWindow();
+#endif
         if (bStereo)
         {
             // the render targets may be larger or smaller than the display resolution
@@ -467,11 +469,14 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             //}
 
             sceneViewport->SetViewportSize(width, height);
+#if !WITH_EDITOR
             if (window.IsValid())
             {
                 window->SetViewportSizeDrivenByWindow(false);
             }
+#endif
         }
+#if !WITH_EDITOR
         else
         {
             if (window.IsValid())
@@ -481,6 +486,7 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
                 window->SetViewportSizeDrivenByWindow(true);
             }
         }
+#endif
     }
 
     GEngine->bForceDisableFrameRateSmoothing = bStereo;
