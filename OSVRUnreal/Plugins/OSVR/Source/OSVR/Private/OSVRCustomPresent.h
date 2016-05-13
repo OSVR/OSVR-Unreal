@@ -32,15 +32,36 @@ public:
     FOSVRCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
         FRHICustomPresent(nullptr)
     {
+        // If we are passed in a client context to use, we don't own it, so
+        // we won't shut it down when we're done with it. Otherwise we will.
+        // @todo - we're not currently using the passed-in clientContext, so
+        // for now we always own it.
+        //bOwnClientContext = (clientContext == nullptr);
+        bOwnClientContext = true;
         mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
         mScreenScale = screenScale;
     }
 
     virtual ~FOSVRCustomPresent()
     {
+        OSVR_ReturnCode rc;
         if (mRenderManager)
         {
-            osvrDestroyRenderManager(mRenderManager);
+            rc = osvrDestroyRenderManager(mRenderManager);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("[OSVR] Failed to destroy the render manager in ~FOSVRCustomPresent()."));
+            }
+        }
+
+        // only shut down the client context if we own it (currently always)
+        if (bOwnClientContext && mClientContext)
+        {
+            rc = osvrClientShutdown(mClientContext);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("[OSVR] Failed to shut down client context in ~FOSVRCustomPresent()."));
+            }
         }
     }
 
@@ -91,6 +112,7 @@ protected:
 
     bool bRenderBuffersNeedToUpdate = true;
     bool bInitialized = false;
+    bool bOwnClientContext = true;
     float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;

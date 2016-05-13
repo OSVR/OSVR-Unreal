@@ -161,6 +161,8 @@ public:
 private:
     void UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
     void UpdateHeadPose();
+    void StartCustomPresent();
+    void StopCustomPresent();
 
     IRendererModule* RendererModule;
 

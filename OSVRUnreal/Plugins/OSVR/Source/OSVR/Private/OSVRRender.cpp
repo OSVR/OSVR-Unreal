@@ -173,7 +173,7 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
     check(IsInGameThread());
 
     auto viewportRHI = InViewport.GetViewportRHI().GetReference();
-    if ((GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget))
+    if (!mCustomPresent || (GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget))
     {
         viewportRHI->SetCustomPresent(nullptr);
         return;

@@ -49,11 +49,30 @@ DEFINE_LOG_CATEGORY(OSVRHMDLog);
 void FOSVRHMD::OnBeginPlay()
 {
     bPlaying = true;
+    StartCustomPresent();
 }
 
 void FOSVRHMD::OnEndPlay()
 {
     bPlaying = false;
+    StopCustomPresent();
+}
+
+void FOSVRHMD::StartCustomPresent()
+{
+#if PLATFORM_WINDOWS
+    if (!mCustomPresent && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
+    {
+        // currently, FCustomPresent creates its own client context, so no need to
+        // synchronize with the one from FOSVREntryPoint.
+        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+    }
+#endif
+}
+
+void FOSVRHMD::StopCustomPresent()
+{
+    mCustomPresent = nullptr;
 }
 
 bool FOSVRHMD::IsHMDConnected()
@@ -692,14 +711,7 @@ FOSVRHMD::FOSVRHMD()
         mScreenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
     }
 
-#if PLATFORM_WINDOWS
-    if (IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
-    {
-        // currently, FCustomPresent creates its own client context, so no need to
-        // synchronize with the one from FOSVREntryPoint.
-        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
-    }
-#endif
+    StartCustomPresent();
 
     // enable vsync
     IConsoleVariable* CVSyncVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.VSync"));
