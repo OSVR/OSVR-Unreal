@@ -64,6 +64,12 @@ public:
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
     {
+        // @todo how should we determine SRGB?
+        const bool bSRGB = false;
+        const DXGI_FORMAT platformResourceFormat = (DXGI_FORMAT)GPixelFormats[format].PlatformFormat;
+        const DXGI_FORMAT platformShaderResourceFormat = FindShaderResourceDXGIFormat(platformResourceFormat, bSRGB);
+        const DXGI_FORMAT platformRenderTargetFormat = FindShaderResourceDXGIFormat(platformResourceFormat, bSRGB);
+
         FScopeLock lock(&mOSVRMutex);
         if (IsInitialized())
         {
@@ -74,12 +80,13 @@ public:
             memset(&textureDesc, 0, sizeof(textureDesc));
             textureDesc.Width = sizeX;
             textureDesc.Height = sizeY;
-            textureDesc.MipLevels = 1;
+            textureDesc.MipLevels = numMips;
             textureDesc.ArraySize = 1;
             //textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            textureDesc.SampleDesc.Count = 1;
-            textureDesc.SampleDesc.Quality = 0;
+            //textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            textureDesc.Format = platformResourceFormat;
+            textureDesc.SampleDesc.Count = numSamples;
+            textureDesc.SampleDesc.Quality = numSamples > 0 ? D3D11_STANDARD_MULTISAMPLE_PATTERN : 0;
             textureDesc.Usage = D3D11_USAGE_DEFAULT;
             // We need it to be both a render target and a shader resource
             textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -97,7 +104,8 @@ public:
             memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
             // This must match what was created in the texture to be rendered
             //renderTargetViewDesc.Format = renderTextureDesc.Format;
-            renderTargetViewDesc.Format = textureDesc.Format;
+            //renderTargetViewDesc.Format = textureDesc.Format;
+            renderTargetViewDesc.Format = platformRenderTargetFormat;
             renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
             renderTargetViewDesc.Texture2D.MipSlice = 0;
 
@@ -124,7 +132,8 @@ public:
             renderTargetViews.Add(renderTargetView);
             D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
             memset(&shaderResourceViewDesc, 0, sizeof(shaderResourceViewDesc));
-            shaderResourceViewDesc.Format = textureDesc.Format;
+            //shaderResourceViewDesc.Format = textureDesc.Format;
+            shaderResourceViewDesc.Format = platformShaderResourceFormat;
             shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             shaderResourceViewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
             shaderResourceViewDesc.Texture2D.MostDetailedMip = textureDesc.MipLevels - 1;
@@ -298,10 +307,6 @@ protected:
         check(IsInitialized());
         if (bRenderBuffersNeedToUpdate)
         {
-            uint32 width;
-            uint32 height;
-            // @todo: can't call this here, we're in the wrong thread.
-            CalculateRenderTargetSizeImpl(width, height);
 
             //check(mRenderTexture);
             //SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));

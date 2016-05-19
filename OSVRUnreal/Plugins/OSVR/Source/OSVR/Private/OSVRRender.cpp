@@ -93,7 +93,7 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    if (mCustomPresent)
+    if (mCustomPresent && !mCustomPresent->IsInitialized())
     {
         mCustomPresent->Initialize();
     }

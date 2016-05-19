@@ -440,30 +440,49 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
     // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
     // We may revisit once display plugins are added to OSVR-Core.
 #if !PLATFORM_ANDROID
-    FSystemResolution::RequestResolutionChange(width, height, bStereo ? EWindowMode::WindowedMirror : EWindowMode::Windowed);
+    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed);
 #endif
+
+    GetRenderTargetSize_GameThread(width, height, width, height);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor)
     {
+        //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR getting UGameEngine::SceneViewport viewport"));
         UGameEngine* gameEngine = Cast<UGameEngine>(GEngine);
         sceneViewport = gameEngine->SceneViewport.Get();
     }
 #if WITH_EDITOR
     else
     {
-        UEditorEngine* editorEngine = Cast<UEditorEngine>(GEngine);
-        sceneViewport = (FSceneViewport*)(editorEngine->GetPIEViewport());
+        //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR getting editor viewport"));
+        UEditorEngine* editorEngine = CastChecked<UEditorEngine>(GEngine);
+        sceneViewport = (FSceneViewport*)editorEngine->GetPIEViewport();
+        if (sceneViewport == nullptr || !sceneViewport->IsStereoRenderingAllowed())
+        {
+            sceneViewport = (FSceneViewport*)editorEngine->GetActiveViewport();
+            if (sceneViewport != nullptr && !sceneViewport->IsStereoRenderingAllowed())
+            {
+                sceneViewport = nullptr;
+            }
+        }
     }
 #endif
 
-    if (sceneViewport)
+    if (!sceneViewport)
     {
+        UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR scene viewport does not exist"));
+        return false;
+    }
+    else
+    {
+        //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR scene viewport exists"));
 #if !WITH_EDITOR
         auto window = sceneViewport->FindWindow();
 #endif
         if (bStereo)
         {
+            //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR bStereo was true"));
             // the render targets may be larger or smaller than the display resolution
             // due to renderOverfillFactor and renderOversampleFactor settings
             // The viewports should match the render target size not the display size
@@ -484,9 +503,9 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
                 // so we don't need a graphics context to calculate them. In the meantime, we'll
                 // implement this temporary workaround (parse the renderManagerConfig manually and
                 // calculate the render target sizes ourselves).
-                GetRenderTargetSize_GameThread(width, height, width, height);
+                
             //}
-
+            //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR Actually set viewport size"));
             sceneViewport->SetViewportSize(width, height);
 #if !WITH_EDITOR
             if (window.IsValid())
@@ -788,11 +807,11 @@ FOSVRHMD::FOSVRHMD()
 
     // Workaround for EnableStereo never getting called by the engine.
     // @todo is this the right workaround? Should we force these on somewhere else?
-    if (bHmdConnected)
-    {
-        EnableHMD(true);
-        EnableStereo(true);
-    }
+    //if (bHmdConnected) 
+    //{
+    //    EnableHMD(true);
+    //    EnableStereo(true);
+    //}
 }
 
 FOSVRHMD::~FOSVRHMD()
