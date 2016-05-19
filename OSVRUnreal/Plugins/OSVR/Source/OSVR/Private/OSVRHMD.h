@@ -41,8 +41,13 @@ class FOSVRHMD : public IHeadMountedDisplay, public ISceneViewExtension, public 
 {
 public:
 
+#if OSVR_UNREAL_4_12
+    virtual void OnBeginPlay(FWorldContext& InWorldContext) override;
+    virtual void OnEndPlay(FWorldContext& InWorldContext) override;
+#else
     virtual void OnBeginPlay() override;
     virtual void OnEndPlay() override;
+#endif
     virtual bool IsHMDConnected() override;
     virtual bool IsHMDEnabled() const override;
     virtual void EnableHMD(bool bEnable = true) override;
@@ -77,7 +82,9 @@ public:
     virtual bool IsChromaAbCorrectionEnabled() const override;
 
     virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override;
+#if !OSVR_UNREAL_4_12
     virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
+#endif
 
     virtual bool IsPositionalTrackingEnabled() const override;
     virtual bool EnablePositionalTracking(bool bEnable) override;

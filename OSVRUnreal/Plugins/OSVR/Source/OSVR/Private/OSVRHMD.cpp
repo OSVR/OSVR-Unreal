@@ -46,13 +46,21 @@ DEFINE_LOG_CATEGORY(OSVRHMDLog);
 // IHeadMountedDisplay Implementation
 //---------------------------------------------------
 
+#if OSVR_UNREAL_4_12
+void FOSVRHMD::OnBeginPlay(FWorldContext& InWorldContext)
+#else
 void FOSVRHMD::OnBeginPlay()
+#endif
 {
     bPlaying = true;
     StartCustomPresent();
 }
 
+#if OSVR_UNREAL_4_12
+void FOSVRHMD::OnEndPlay(FWorldContext& InWorldContext)
+#else
 void FOSVRHMD::OnEndPlay()
+#endif
 {
     bPlaying = false;
     StopCustomPresent();
@@ -403,10 +411,12 @@ bool FOSVRHMD::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
     return false;
 }
 
+#if !OSVR_UNREAL_4_12
 void FOSVRHMD::OnScreenModeChange(EWindowMode::Type WindowMode)
 {
     EnableStereo(WindowMode != EWindowMode::Windowed);
 }
+#endif
 
 bool FOSVRHMD::IsPositionalTrackingEnabled() const
 {
@@ -465,8 +475,8 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             {
                 sceneViewport = nullptr;
             }
-        }
     }
+}
 #endif
 
     if (!sceneViewport)
@@ -488,22 +498,22 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             // The viewports should match the render target size not the display size
             //if (mCustomPresent)
             //{
-                //uint32 iWidth, iHeight;
-                //mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
-                //width = float(iWidth) * (1.0f / this->mScreenScale);
-                //height = float(iHeight) * (1.0f / this->mScreenScale);
+            //uint32 iWidth, iHeight;
+            //mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
+            //width = float(iWidth) * (1.0f / this->mScreenScale);
+            //height = float(iHeight) * (1.0f / this->mScreenScale);
             //}
             //else
             //{
-                // temporary workaround. The above code doesn't work because when the game
-                // is packaged, mCustomPresent is not initialized before this call. In the editor, it is.
-                // calling CalculateRenderTargetSize when mCustomPresent isn't initialized
-                // results in Initialize being called, which has to be done on the render thread.
-                // The proper fix is to move the render target size API from render manager to OSVR-Core
-                // so we don't need a graphics context to calculate them. In the meantime, we'll
-                // implement this temporary workaround (parse the renderManagerConfig manually and
-                // calculate the render target sizes ourselves).
-                
+            // temporary workaround. The above code doesn't work because when the game
+            // is packaged, mCustomPresent is not initialized before this call. In the editor, it is.
+            // calling CalculateRenderTargetSize when mCustomPresent isn't initialized
+            // results in Initialize being called, which has to be done on the render thread.
+            // The proper fix is to move the render target size API from render manager to OSVR-Core
+            // so we don't need a graphics context to calculate them. In the meantime, we'll
+            // implement this temporary workaround (parse the renderManagerConfig manually and
+            // calculate the render target sizes ourselves).
+
             //}
             //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR Actually set viewport size"));
             sceneViewport->SetViewportSize(width, height);
@@ -804,14 +814,6 @@ FOSVRHMD::FOSVRHMD()
     // our version of connected is that the client context is ok (server is running)
     // and the display config is ok (/me/head exists and received a pose)
     bHmdConnected = bClientContextOK && bDisplayConfigOK && bDisplayConfigMatchesUnrealExpectations;
-
-    // Workaround for EnableStereo never getting called by the engine.
-    // @todo is this the right workaround? Should we force these on somewhere else?
-    //if (bHmdConnected) 
-    //{
-    //    EnableHMD(true);
-    //    EnableStereo(true);
-    //}
 }
 
 FOSVRHMD::~FOSVRHMD()
