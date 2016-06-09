@@ -264,10 +264,8 @@ void FOSVRHMD::SetInterpupillaryDistance(float NewInterpupillaryDistance)
 
 void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const
 {
-    FVector2D FOVs = HMDDescription.GetFov(OSVRHMDDescription::LEFT_EYE);
-
-    OutHFOVInDegrees = FOVs.X;
-    OutVFOVInDegrees = FOVs.Y;
+    OutHFOVInDegrees = 0.0f;
+    OutVFOVInDegrees = 0.0f;
 }
 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)

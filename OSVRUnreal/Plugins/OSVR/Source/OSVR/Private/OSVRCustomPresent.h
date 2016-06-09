@@ -116,6 +116,7 @@ protected:
     float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
+    OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) = 0;
 

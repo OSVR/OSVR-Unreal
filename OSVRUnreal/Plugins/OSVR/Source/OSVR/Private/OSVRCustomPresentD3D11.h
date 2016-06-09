@@ -165,9 +165,25 @@ public:
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
 
+        if (eye == 0) {
+            if (mCachedRenderInfoCollection) {
+                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
+                check(rc == OSVR_RETURN_SUCCESS);
+            }
+            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+
         OSVR_RenderInfoD3D11 renderInfo;
-        rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, eye, mRenderParams, &renderInfo);
+        rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
+
+        rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
+        check(rc == OSVR_RETURN_SUCCESS);
+
+        //OSVR_RenderInfoD3D11 renderInfo;
+        //rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, eye, mRenderParams, &renderInfo);
+        //check(rc == OSVR_RETURN_SUCCESS);
 
         left = renderInfo.projection.left / renderInfo.projection.nearClip;
         right = renderInfo.projection.right / renderInfo.projection.nearClip;
