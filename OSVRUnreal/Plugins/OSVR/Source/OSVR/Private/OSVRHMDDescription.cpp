@@ -16,6 +16,7 @@
 
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMDDescription.h"
+#include <osvr/RenderKit/RenderKitGraphicsTransformsC.h>
 
 #include "Json.h"
 
@@ -258,16 +259,59 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     // no reference to far clipping plane. This looks nothing like glFrustum.
     // matches their occulus rift calculation in the parts that they correct for unreal though
     // ([3][3] = 0, [2][3] = 1, [2][2] = 0, [3][3] = GNearClippingPlane)
-    float zNear = GNearClippingPlane;
-    float sumRightLeft = static_cast<float>(right + left);
-    float sumTopBottom = static_cast<float>(top + bottom);
-    float inverseRightLeft = 1.0f / static_cast<float>(right - left);
-    float inverseTopBottom = 1.0f / static_cast<float>(top - bottom);
-    FPlane row1(2.0f * inverseRightLeft, 0.0f, 0.0f, 0.0f);
-    FPlane row2(0.0f, 2.0f * inverseTopBottom, 0.0f, 0.0f);
-    FPlane row3(sumRightLeft * inverseRightLeft, sumTopBottom * inverseTopBottom, 0.0f, 1.0f);
-    FPlane row4(0.0f, 0.0f, zNear, 0.0f);
+
+    // attempts 3-6 (original, attempts 1 and 2, but with inverted bottom/top/left/right, this is what steamVR does)
+    bottom *= -1.0f;
+    top *= -1.0f;
+    right *= -1.0f;
+    left *= -1.0f;
+
+    // original code
+    //float sumRightLeft = static_cast<float>(right + left);
+    //float sumTopBottom = static_cast<float>(top + bottom);
+    //float inverseRightLeft = 1.0f / static_cast<float>(right - left);
+    //float inverseTopBottom = 1.0f / static_cast<float>(top - bottom);
+    //FPlane row1(2.0f * inverseRightLeft, 0.0f, 0.0f, 0.0f);
+    //FPlane row2(0.0f, 2.0f * inverseTopBottom, 0.0f, 0.0f);
+    //FPlane row3((sumRightLeft * inverseRightLeft), (sumTopBottom * inverseTopBottom), 0.0f, 1.0f);
+    //FPlane row4(0.0f, 0.0f, zNear, 0.0f);
+
+    // attempt 1 (LH D3D off-axis formula)
+    //FPlane row1(2.0f * zNear / (right - left), 0, 0, 0);
+    //FPlane row2(0, 2.0f * zNear / (top - bottom), 0, 0);
+    //FPlane row3((left + right) / (left - right), (top + bottom) / (bottom - top), zFar / (zFar - zNear), 1);
+    //FPlane row4(0, 0, zNear * zFar / (zNear - zFar), 0);
+    
+    // attempt 2 (OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
+    float zNear = 0.1f;
+    float zFar = 100.0f;
+
+    OSVR_ProjectionMatrix projection;
+    projection.left = left;
+    projection.right = right;
+    projection.top = top;
+    projection.bottom = bottom;
+    projection.nearClip = zNear;
+    projection.farClip = zFar;
+    float p[16];
+    OSVR_Projection_to_D3D(p, projection);
+
+    FPlane row1(p[0], p[1], p[2], p[3]);
+    FPlane row2(p[4], p[5], p[6], p[7]);
+    FPlane row3(p[8], p[9], p[10], p[11]);
+    FPlane row4(p[12], p[13], p[14], p[15]);
     FMatrix ret = FMatrix(row1, row2, row3, row4);
+
+    ret.M[3][3] = 0.0f;
+    ret.M[2][3] = -1.0f;
+    ret.M[2][2] = 0.0f;
+    ret.M[3][2] = GNearClippingPlane;
+
+    // attempt 7 - adjustment suggested on a forum post for an off-axis projection
+    //ret *= 1.0f / ret.M[0][0];
+    //ret.M[3][2] = GNearClippingPlane;
+
+    // attempt 8, 9 was adding a 180 degree rotation around the x and y axis, respectively
     return ret;
 }
 

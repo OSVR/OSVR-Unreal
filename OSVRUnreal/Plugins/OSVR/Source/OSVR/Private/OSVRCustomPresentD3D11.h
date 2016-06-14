@@ -165,7 +165,10 @@ public:
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
 
-        if (eye == 0) {
+        // this method gets called with alternating eyes starting with the left. We get the render info when
+        // the left eye (index 0) is requested (releasing the old one, if any),
+        // and re-use the same collection when the right eye (index 0) is requested
+        if (eye == 0 || !mCachedRenderInfoCollection) {
             if (mCachedRenderInfoCollection) {
                 rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
                 check(rc == OSVR_RETURN_SUCCESS);
@@ -176,9 +179,6 @@ public:
 
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
-        check(rc == OSVR_RETURN_SUCCESS);
-
-        rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
         check(rc == OSVR_RETURN_SUCCESS);
 
         //OSVR_RenderInfoD3D11 renderInfo;
