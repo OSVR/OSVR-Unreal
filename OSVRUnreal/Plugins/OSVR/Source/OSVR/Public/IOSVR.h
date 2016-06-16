@@ -20,7 +20,7 @@
 #include "IHeadMountedDisplayModule.h"
 
 #define OSVR_UNREAL_4_11 1
-#define OSVR_UNREAL_4_12 0
+#define OSVR_UNREAL_4_12 1
 
 class OSVREntryPoint;
 class FOSVRHMD;

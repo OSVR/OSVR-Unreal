@@ -261,10 +261,13 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     // ([3][3] = 0, [2][3] = 1, [2][2] = 0, [3][3] = GNearClippingPlane)
 
     // attempts 3-6 (original, attempts 1 and 2, but with inverted bottom/top/left/right, this is what steamVR does)
-    bottom *= -1.0f;
-    top *= -1.0f;
-    right *= -1.0f;
-    left *= -1.0f;
+    //bottom *= -1.0f;
+    //top *= -1.0f;
+    //right *= -1.0f;
+    //left *= -1.0f;
+    //float zNear = GNearClippingPlane;
+    float zNear = 0.1f;
+    float zFar = 10000.0f;
 
     // original code
     //float sumRightLeft = static_cast<float>(right + left);
@@ -275,7 +278,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     //FPlane row2(0.0f, 2.0f * inverseTopBottom, 0.0f, 0.0f);
     //FPlane row3((sumRightLeft * inverseRightLeft), (sumTopBottom * inverseTopBottom), 0.0f, 1.0f);
     //FPlane row4(0.0f, 0.0f, zNear, 0.0f);
-
+    
     // attempt 1 (LH D3D off-axis formula)
     //FPlane row1(2.0f * zNear / (right - left), 0, 0, 0);
     //FPlane row2(0, 2.0f * zNear / (top - bottom), 0, 0);
@@ -283,9 +286,6 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     //FPlane row4(0, 0, zNear * zFar / (zNear - zFar), 0);
     
     // attempt 2 (OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
-    float zNear = 0.1f;
-    float zFar = 100.0f;
-
     OSVR_ProjectionMatrix projection;
     projection.left = left;
     projection.right = right;
@@ -303,7 +303,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     FMatrix ret = FMatrix(row1, row2, row3, row4);
 
     ret.M[3][3] = 0.0f;
-    ret.M[2][3] = -1.0f;
+    ret.M[2][3] = 1.0f;
     ret.M[2][2] = 0.0f;
     ret.M[3][2] = GNearClippingPlane;
 

@@ -165,6 +165,7 @@ public:
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
 
+        mRenderParams.farClipDistanceMeters = 10000.0f;
         // this method gets called with alternating eyes starting with the left. We get the render info when
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
@@ -185,10 +186,10 @@ public:
         //rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, eye, mRenderParams, &renderInfo);
         //check(rc == OSVR_RETURN_SUCCESS);
 
-        left = renderInfo.projection.left / renderInfo.projection.nearClip;
-        right = renderInfo.projection.right / renderInfo.projection.nearClip;
-        top = renderInfo.projection.top / renderInfo.projection.nearClip;
-        bottom = renderInfo.projection.bottom / renderInfo.projection.nearClip;
+        left = renderInfo.projection.left;// / renderInfo.projection.nearClip;
+        right = renderInfo.projection.right;// / renderInfo.projection.nearClip;
+        top = renderInfo.projection.top;// / renderInfo.projection.nearClip;
+        bottom = renderInfo.projection.bottom;// / renderInfo.projection.nearClip;
     }
 
 protected:
