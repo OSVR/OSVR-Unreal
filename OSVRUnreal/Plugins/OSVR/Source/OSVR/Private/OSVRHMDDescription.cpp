@@ -16,7 +16,7 @@
 
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMDDescription.h"
-#include <osvr/RenderKit/RenderKitGraphicsTransformsC.h>
+#include <osvr/RenderKit/RenderManagerC.h>
 
 #include "Json.h"
 
@@ -253,7 +253,7 @@ FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
     return FVector2D();
 }
 
-FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, double bottom, double top, double nearClip, double farClip) const
+FMatrix OSVRHMDDescription::GetProjectionMatrix(float left, float right, float bottom, float top, float nearClip, float farClip) const
 {
     // original code
     //float sumRightLeft = static_cast<float>(right + left);
@@ -267,14 +267,17 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     
     // OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
     OSVR_ProjectionMatrix projection;
-    projection.left = left;
-    projection.right = right;
-    projection.top = top;
-    projection.bottom = bottom;
-    projection.nearClip = nearClip;
-    projection.farClip = farClip;
+    projection.left = static_cast<double>(left);
+    projection.right = static_cast<double>(right);
+    projection.top = static_cast<double>(top);
+    projection.bottom = static_cast<double>(bottom);
+    projection.nearClip = static_cast<double>(nearClip);
+    // @todo Since farClip may be FLT_MAX, round-trip casting to double
+    // and back (via the OSVR_Projection_to_Unreal call) it should
+    // be checked for conversion issues.
+    projection.farClip = static_cast<double>(farClip);
     float p[16];
-    OSVR_Projection_to_D3D(p, projection);
+    OSVR_Projection_to_Unreal(p, projection);
 
     FPlane row1(p[0], p[1], p[2], p[3]);
     FPlane row2(p[4], p[5], p[6], p[7]);
@@ -282,10 +285,10 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     FPlane row4(p[12], p[13], p[14], p[15]);
     FMatrix ret = FMatrix(row1, row2, row3, row4);
 
-    ret.M[3][3] = 0.0f;
-    ret.M[2][3] = 1.0f;
-    ret.M[2][2] = 0.0f;
-    ret.M[3][2] = nearClip;
+    //ret.M[3][3] = 0.0f;
+    //ret.M[2][3] = 1.0f;
+    //ret.M[2][2] = 0.0f;
+    //ret.M[3][2] = nearClip;
 
     // This was suggested by Nick at Epic, but doesn't seem to work? Black screen.
     //ret.M[2][2] = nearClip / (nearClip - farClip);
@@ -298,7 +301,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
 }
 
 // implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.
-FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig, double nearClip, double farClip) const
+FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig, float nearClip, float farClip) const
 {
     OSVR_EyeCount eye = (Eye == LEFT_EYE ? 0 : 1);
     double left, right, bottom, top;
@@ -309,7 +312,12 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig dis
     // The steam plugin inverts the clipping planes here, but that doesn't appear to
     // be necessary for the OSVR calculated planes.
 
-    return GetProjectionMatrix(left, right, bottom, top, nearClip, farClip);
+    return GetProjectionMatrix(
+        static_cast<float>(left),
+        static_cast<float>(right),
+        static_cast<float>(bottom),
+        static_cast<float>(top),
+        nearClip, farClip);
 }
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const

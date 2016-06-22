@@ -642,11 +642,11 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     FScopeLock lock(mutex);
 
     FMatrix ret;
-    double nearClip = GNearClippingPlane;
-    double farClip = 1000000.0;
+    float nearClip = GNearClippingPlane;
+    float farClip = TNumericLimits< float >::Max();
     if (mCustomPresent)
     {
-        double left, right, bottom, top;
+        float left, right, bottom, top;
         mCustomPresent->GetProjectionMatrix(
             StereoPassType == eSSP_LEFT_EYE ? 0 : 1,
             left, right, bottom, top, nearClip, farClip);

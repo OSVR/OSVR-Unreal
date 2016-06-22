@@ -159,14 +159,14 @@ public:
     }
 
 
-    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top, double nearClip, double farClip) override
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) override
     {
         OSVR_ReturnCode rc;
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
 
-        mRenderParams.nearClipDistanceMeters = nearClip;
-        mRenderParams.farClipDistanceMeters = farClip;
+        mRenderParams.nearClipDistanceMeters = static_cast<double>(nearClip);
+        mRenderParams.farClipDistanceMeters = static_cast<double>(farClip);
 
         // this method gets called with alternating eyes starting with the left. We get the render info when
         // the left eye (index 0) is requested (releasing the old one, if any),
@@ -187,10 +187,10 @@ public:
         // previously we divided these by renderInfo.projection.nearClip but we need
         // to pass these unmodified through to the OSVR_Projection_to_D3D call (and OpenGL
         // equivalent)
-        left = renderInfo.projection.left;
-        right = renderInfo.projection.right;
-        top = renderInfo.projection.top;
-        bottom = renderInfo.projection.bottom;
+        left = static_cast<float>(renderInfo.projection.left);
+        right = static_cast<float>(renderInfo.projection.right);
+        top = static_cast<float>(renderInfo.projection.top);
+        bottom = static_cast<float>(renderInfo.projection.bottom);
     }
 
 protected:
