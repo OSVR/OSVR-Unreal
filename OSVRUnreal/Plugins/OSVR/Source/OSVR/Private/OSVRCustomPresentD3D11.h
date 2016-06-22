@@ -159,13 +159,15 @@ public:
     }
 
 
-    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top) override
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top, double nearClip, double farClip) override
     {
         OSVR_ReturnCode rc;
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
 
-        mRenderParams.farClipDistanceMeters = 10000.0f;
+        mRenderParams.nearClipDistanceMeters = nearClip;
+        mRenderParams.farClipDistanceMeters = farClip;
+
         // this method gets called with alternating eyes starting with the left. We get the render info when
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
@@ -182,14 +184,13 @@ public:
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
 
-        //OSVR_RenderInfoD3D11 renderInfo;
-        //rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, eye, mRenderParams, &renderInfo);
-        //check(rc == OSVR_RETURN_SUCCESS);
-
-        left = renderInfo.projection.left;// / renderInfo.projection.nearClip;
-        right = renderInfo.projection.right;// / renderInfo.projection.nearClip;
-        top = renderInfo.projection.top;// / renderInfo.projection.nearClip;
-        bottom = renderInfo.projection.bottom;// / renderInfo.projection.nearClip;
+        // previously we divided these by renderInfo.projection.nearClip but we need
+        // to pass these unmodified through to the OSVR_Projection_to_D3D call (and OpenGL
+        // equivalent)
+        left = renderInfo.projection.left;
+        right = renderInfo.projection.right;
+        top = renderInfo.projection.top;
+        bottom = renderInfo.projection.bottom;
     }
 
 protected:

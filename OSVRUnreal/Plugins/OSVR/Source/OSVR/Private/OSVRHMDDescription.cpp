@@ -253,22 +253,8 @@ FVector2D OSVRHMDDescription::GetFov(EEye Eye) const
     return FVector2D();
 }
 
-FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, double bottom, double top) const
+FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, double bottom, double top, double nearClip, double farClip) const
 {
-    // sanity check: what is going on with this projection matrix?
-    // no reference to far clipping plane. This looks nothing like glFrustum.
-    // matches their occulus rift calculation in the parts that they correct for unreal though
-    // ([3][3] = 0, [2][3] = 1, [2][2] = 0, [3][3] = GNearClippingPlane)
-
-    // attempts 3-6 (original, attempts 1 and 2, but with inverted bottom/top/left/right, this is what steamVR does)
-    //bottom *= -1.0f;
-    //top *= -1.0f;
-    //right *= -1.0f;
-    //left *= -1.0f;
-    //float zNear = GNearClippingPlane;
-    float zNear = 0.1f;
-    float zFar = 10000.0f;
-
     // original code
     //float sumRightLeft = static_cast<float>(right + left);
     //float sumTopBottom = static_cast<float>(top + bottom);
@@ -279,20 +265,14 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     //FPlane row3((sumRightLeft * inverseRightLeft), (sumTopBottom * inverseTopBottom), 0.0f, 1.0f);
     //FPlane row4(0.0f, 0.0f, zNear, 0.0f);
     
-    // attempt 1 (LH D3D off-axis formula)
-    //FPlane row1(2.0f * zNear / (right - left), 0, 0, 0);
-    //FPlane row2(0, 2.0f * zNear / (top - bottom), 0, 0);
-    //FPlane row3((left + right) / (left - right), (top + bottom) / (bottom - top), zFar / (zFar - zNear), 1);
-    //FPlane row4(0, 0, zNear * zFar / (zNear - zFar), 0);
-    
-    // attempt 2 (OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
+    // OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
     OSVR_ProjectionMatrix projection;
     projection.left = left;
     projection.right = right;
     projection.top = top;
     projection.bottom = bottom;
-    projection.nearClip = zNear;
-    projection.farClip = zFar;
+    projection.nearClip = nearClip;
+    projection.farClip = farClip;
     float p[16];
     OSVR_Projection_to_D3D(p, projection);
 
@@ -305,18 +285,20 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(double left, double right, doubl
     ret.M[3][3] = 0.0f;
     ret.M[2][3] = 1.0f;
     ret.M[2][2] = 0.0f;
-    ret.M[3][2] = GNearClippingPlane;
+    ret.M[3][2] = nearClip;
 
-    // attempt 7 - adjustment suggested on a forum post for an off-axis projection
+    // This was suggested by Nick at Epic, but doesn't seem to work? Black screen.
+    //ret.M[2][2] = nearClip / (nearClip - farClip);
+    //ret.M[3][2] = -nearClip * nearClip / (nearClip - farClip);
+
+    // Adjustment suggested on a forum post for an off-axis projection. Doesn't work.
     //ret *= 1.0f / ret.M[0][0];
     //ret.M[3][2] = GNearClippingPlane;
-
-    // attempt 8, 9 was adding a 180 degree rotation around the x and y axis, respectively
     return ret;
 }
 
 // implemented to match the steamvr projection calculation but with OSVR calculated clipping planes.
-FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const
+FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig, double nearClip, double farClip) const
 {
     OSVR_EyeCount eye = (Eye == LEFT_EYE ? 0 : 1);
     double left, right, bottom, top;
@@ -327,7 +309,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig dis
     // The steam plugin inverts the clipping planes here, but that doesn't appear to
     // be necessary for the OSVR calculated planes.
 
-    return GetProjectionMatrix(left, right, bottom, top);
+    return GetProjectionMatrix(left, right, bottom, top, nearClip, farClip);
 }
 
 float OSVRHMDDescription::GetInterpupillaryDistance() const

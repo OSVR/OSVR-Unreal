@@ -644,11 +644,13 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     FMatrix ret;
     if (mCustomPresent)
     {
+        double nearClip = GNearClippingPlane;
+        double farClip = 1000000.0;
         double left, right, bottom, top;
         mCustomPresent->GetProjectionMatrix(
             StereoPassType == eSSP_LEFT_EYE ? 0 : 1,
-            left, right, bottom, top);
-        ret = HMDDescription.GetProjectionMatrix(left, right, bottom, top);
+            left, right, bottom, top, nearClip, farClip);
+        ret = HMDDescription.GetProjectionMatrix(left, right, bottom, top, nearClip, farClip);
     }
     else
     {
