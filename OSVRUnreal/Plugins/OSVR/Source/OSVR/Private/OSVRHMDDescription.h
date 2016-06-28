@@ -53,8 +53,8 @@ public:
 	FVector2D GetFov(EEye Eye) const;
     FVector2D GetFov(OSVR_EyeCount Eye) const;
 	FVector GetLocation(EEye Eye) const;
-    FMatrix GetProjectionMatrix(double left, double right, double bottom, double top) const;
-	FMatrix GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig) const;
+    FMatrix GetProjectionMatrix(float left, float right, float bottom, float top, float nearClip, float farClip) const;
+	FMatrix GetProjectionMatrix(EEye Eye, OSVR_DisplayConfig displayConfig, float nearClip, float farClip) const;
     bool OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayConfig);
 
 	// Helper function

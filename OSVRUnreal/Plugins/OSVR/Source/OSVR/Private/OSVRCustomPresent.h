@@ -92,7 +92,7 @@ public:
         return bInitialized;
     }
 
-    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, double &left, double &right, double &bottom, double &top) = 0;
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
@@ -116,6 +116,7 @@ protected:
     float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
+    OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) = 0;
 

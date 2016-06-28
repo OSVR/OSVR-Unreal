@@ -1,8 +1,15 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.11",
+	"EngineAssociation": "4.12",
 	"Category": "",
 	"Description": "",
+	"Modules": [
+		{
+			"Name": "OSVRUnreal",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "OculusRift",

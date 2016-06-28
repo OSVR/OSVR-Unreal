@@ -264,10 +264,8 @@ void FOSVRHMD::SetInterpupillaryDistance(float NewInterpupillaryDistance)
 
 void FOSVRHMD::GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const
 {
-    FVector2D FOVs = HMDDescription.GetFov(OSVRHMDDescription::LEFT_EYE);
-
-    OutHFOVInDegrees = FOVs.X;
-    OutVFOVInDegrees = FOVs.Y;
+    OutHFOVInDegrees = 0.0f;
+    OutVFOVInDegrees = 0.0f;
 }
 
 void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVector& CurrentPosition)
@@ -644,19 +642,21 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     FScopeLock lock(mutex);
 
     FMatrix ret;
+    float nearClip = GNearClippingPlane;
+    float farClip = TNumericLimits< float >::Max();
     if (mCustomPresent)
     {
-        double left, right, bottom, top;
+        float left, right, bottom, top;
         mCustomPresent->GetProjectionMatrix(
             StereoPassType == eSSP_LEFT_EYE ? 0 : 1,
-            left, right, bottom, top);
-        ret = HMDDescription.GetProjectionMatrix(left, right, bottom, top);
+            left, right, bottom, top, nearClip, farClip);
+        ret = HMDDescription.GetProjectionMatrix(left, right, bottom, top, nearClip, farClip);
     }
     else
     {
         ret = HMDDescription.GetProjectionMatrix(
             StereoPassType == eSSP_LEFT_EYE ? OSVRHMDDescription::LEFT_EYE : OSVRHMDDescription::RIGHT_EYE,
-            DisplayConfig);
+            DisplayConfig, nearClip, farClip);
     }
 
     return ret;
