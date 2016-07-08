@@ -26,11 +26,7 @@
 
 #include <osvr/ClientKit/DisplayC.h>
 
-#if PLATFORM_WINDOWS
-#include "OSVRCustomPresentD3D11.h"
-#else
-#include "OSVRCustomPresentOpenGL.h"
-#endif
+#include "OSVRCustomPresent.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDLog, Log, All);
 
@@ -207,5 +203,5 @@ private:
 
     OSVRHMDDescription HMDDescription;
     OSVR_DisplayConfig DisplayConfig;
-    TRefCountPtr<FCurrentCustomPresent> mCustomPresent;
+    TRefCountPtr<FOSVRCustomPresent> mCustomPresent;
 };

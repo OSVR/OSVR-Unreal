@@ -18,3 +18,4 @@
 #include "OSVRCustomPresent.h"
 
 DEFINE_LOG_CATEGORY(FOSVRCustomPresentLog);
+
