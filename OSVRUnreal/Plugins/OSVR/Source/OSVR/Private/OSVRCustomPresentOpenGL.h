@@ -16,10 +16,23 @@
 
 #pragma once
 
+
 #include "IOSVR.h"
 #include "OSVRCustomPresent.h"
-
 #include <osvr/RenderKit/RenderManagerC.h>
+#include <osvr/util/PlatformConfig.h>
+
+#if OSVR_ANDROID
+// @todo this may not work - if not, what headers is unreal expecting?
+#define OSVR_RM_USE_OPENGLES20 1
+#else
+// you can't include <GL/gl.h> and <GL/glcorearb.h> in the same source file,
+// and unreal is going to include <GL/glcorearb.h>
+#define OSVR_RM_SKIP_GL_INCLUDE 1
+#define OSVR_RM_SKIP_GLEXT_INCLUDE 1
+#include <GL/glcorearb.h>
+#endif
+
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
 
 #include "OpenGLDrvPrivate.h"
