@@ -46,13 +46,13 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  2. Run the ImportFromSDK.cmd script and specify the SDK paths as it prompts you.   
   * NOTE: It's easiest to drag the folders to the console window when it prompts you for SDK paths, as this will automatically wrap the paths in quotes as needed. If you enter them in manually, please use quotes around any paths with spaces in them.
  3. Check that the OSVR-Core and Render Manager binaries have been copied to the correct place in OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin, include, and lib.
- 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins directory to your existing project's directory.
+ 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnrea/Source and OSVRUnreal/Plugins directories to your existing project's top-level directory.
  5. Temporarily rename the Plugins folder something else, like Plugins_. This will allow you to open the project in the editor without first building the plugin. Without this step, the editor will complain about the OSVR module being missing.
  6. Open the existing project in the Unreal editor.
  7. Rename the Plugins_ folder back to Plugins.
  8. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
   * NOTE: if your project is a pure blueprint project, you may need to add a dummy C++ game module to your project to get Unreal to generate a Visual Studio project for you. Otherwise it may complain about there not being any code to compile (having local plugins isn't enough).
- 9. Open the generated or refreshed Visual Studio project and rebuild using the Development Editor build configuration.
+ 9. Open the generated or refreshed Visual Studio project and rebuild using the Development Editor build configuration.  The file will be in the project's top-level directory.  Make sure to select Win64 as the target.
  10. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64 and YourProject/Binaries/Android/armeabi-v7a. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries.
 
  > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
