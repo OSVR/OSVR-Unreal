@@ -80,7 +80,9 @@ public:
         return true;
     }
 
-    // implement this in the sub-class
+    // Initializes RenderManager but does not open the displays
+    // Can be called from the render thread or game thread.
+    // @todo: this call should be lazy, then IsInitialized can be removed.
     virtual bool Initialize()
     {
         FScopeLock lock(&mOSVRMutex);
@@ -92,6 +94,16 @@ public:
         return bInitialized;
     }
 
+    virtual bool LazyOpenDisplay()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        if(IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();    
+        }
+        return bDisplayOpen;
+    }
+    
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
     {
         OSVR_ReturnCode rc;
@@ -158,6 +170,7 @@ protected:
 
     bool bRenderBuffersNeedToUpdate = true;
     bool bInitialized = false;
+    bool bDisplayOpen = false;
     bool bOwnClientContext = true;
     float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
@@ -167,7 +180,8 @@ protected:
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) = 0;
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
-
+    virtual bool LazyOpenDisplayImpl() = 0;
+    
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()
     {

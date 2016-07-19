@@ -93,11 +93,17 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    if (mCustomPresent && !mCustomPresent->IsInitialized())
+    if (mCustomPresent)
     {
-        mCustomPresent->Initialize();
+        // @todo make Initialize lazy and remove this if block
+        if(!mCustomPresent->IsInitialized())
+        {
+            mCustomPresent->Initialize();
+        }
+         
+        mCustomPresent->LazyOpenDisplay();
     }
-
+    
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
     UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
@@ -192,6 +198,7 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
 bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
 {
     check(index == 0);
+    check(IsInRenderingThread());
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);

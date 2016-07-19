@@ -224,22 +224,29 @@ protected:
                 return false;
             }
 
-            OSVR_OpenResultsD3D11 results;
-            rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
-            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
-            {
-                UE_LOG(FOSVRCustomPresentLog, Warning,
-                    TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
-                return false;
-            }
-
-            // @todo: create the textures?
+            // The display is not opened here, but in a separate call (LazyOpenDisplay)
+            // because we may be in the game thread here
 
             bInitialized = true;
         }
         return true;
     }
 
+    virtual bool LazyOpenDisplayImpl() override
+    {
+        // we can assume we're initialized and running on the rendering thread
+        // and we haven't already opened the display here (done in parent class)
+        OSVR_OpenResultsD3D11 results;
+        rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
+        if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
+            return false;
+        }
+        return true;
+    }
+    
     virtual void FinishRendering() override
     {
         check(IsInitialized());

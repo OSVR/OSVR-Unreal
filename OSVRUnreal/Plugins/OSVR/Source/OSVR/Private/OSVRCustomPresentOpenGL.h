@@ -202,23 +202,29 @@ protected:
                 UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("osvrRenderManagerGetDoingOkay call failed. Perhaps there was an error during initialization?"));
                 return false;
             }
-
-            OSVR_OpenResultsOpenGL results;
-            rc = osvrRenderManagerOpenDisplayOpenGL(mRenderManagerOpenGL, &results);
-            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
-            {
-                UE_LOG(FOSVRCustomPresentLog, Warning,
-                    TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
-                return false;
-            }
-
-            // @todo: create the textures?
-
+            
+            // We don't open the display here, because this might be called from the game thread
+            // LazyOpenDisplay needs to be called on the rendering thread to open the display
             bInitialized = true;
         }
         return true;
     }
 
+    virtual bool LazyOpenDisplayImpl() override
+    {
+        // we can assume we're initialized and running on the rendering thread
+        // and we haven't already opened the display here (done in parent class)
+        OSVR_OpenResultsOpenGL results;
+        rc = osvrRenderManagerOpenDisplayOpenGL(mRenderManagerOpenGL, &results);
+        if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
+            return false;
+        }
+        return true;
+    }
+    
     virtual void FinishRendering() override
     {
         check(IsInitialized());
