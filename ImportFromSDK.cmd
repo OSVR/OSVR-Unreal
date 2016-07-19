@@ -20,15 +20,9 @@ IF %2.==. (
 )
 
 IF %3.==. (
-	set /p rm64bit=Type DirectRender 64bit SDK root dir:
-) ELSE (
-	set rm64bit=%~3
-)
-
-IF %4.==. (
 	set /p osvrAndroid=Type OSVR Android SDK root dir:
 ) ELSE (
-	set osvrAndroid=%~4
+	set osvrAndroid=%~3
 )
 
 set rm32bit=%rm64bit%
@@ -53,7 +47,7 @@ goto :eof
 rem Architecture-independent files
 setlocal
 set SRC=%1
-set SRC_RM=%2
+set SRC_RM=%src%
 set DEST_ROOT=%3
 xcopy %SRC%\include\osvr\ClientKit "%DEST_ROOT%\include\osvr\ClientKit" /S /I /y
 xcopy %SRC%\include\osvr\Util "%DEST_ROOT%\include\osvr\Util" /S /I /y
@@ -117,7 +111,7 @@ set BITS=%4
 for %%F in (%SRC%\bin\osvrClientKit.dll,%SRC%\bin\osvrClient.dll,%SRC%\bin\osvrUtil.dll,%SRC%\bin\osvrCommon.dll) do (
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
-for %%F in (%SRC_RM%\osvrRenderManager.dll,%SRC_RM%\d3dcompiler_47.dll,%SRC_RM%\glew32.dll,%SRC_RM%\SDL2.dll) do (
+for %%F in (%SRC_RM%\bin\osvrRenderManager.dll,%SRC_RM%\bin\d3dcompiler_47.dll,%SRC_RM%\bin\glew32.dll,%SRC_RM%\bin\SDL2.dll) do (
   echo xcopy %%F "%DEST%\Win%BITS%\" /Y
   xcopy %%F "%DEST%\Win%BITS%\" /Y
 )
