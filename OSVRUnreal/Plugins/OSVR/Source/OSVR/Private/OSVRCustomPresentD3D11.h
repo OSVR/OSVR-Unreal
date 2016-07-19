@@ -237,7 +237,7 @@ protected:
         // we can assume we're initialized and running on the rendering thread
         // and we haven't already opened the display here (done in parent class)
         OSVR_OpenResultsD3D11 results;
-        rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
+        OSVR_ReturnCode rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
         if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
         {
             UE_LOG(FOSVRCustomPresentLog, Warning,

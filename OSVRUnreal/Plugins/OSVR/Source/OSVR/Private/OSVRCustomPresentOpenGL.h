@@ -82,7 +82,7 @@ protected:
                 glDeleteTextures(1, &RenderTargetTexture);
             }
             RenderTargetTexture = 0;
-            osvrRenderManagerCreateColorBufferOpenGL(sizeX, sizeY, &RenderTargetTexture);
+            osvrRenderManagerCreateColorBufferOpenGL(sizeX, sizeY, GL_BGRA, &RenderTargetTexture);
 
             //SetRenderTargetTexture(D3DTexture);
 
@@ -215,7 +215,7 @@ protected:
         // we can assume we're initialized and running on the rendering thread
         // and we haven't already opened the display here (done in parent class)
         OSVR_OpenResultsOpenGL results;
-        rc = osvrRenderManagerOpenDisplayOpenGL(mRenderManagerOpenGL, &results);
+        OSVR_ReturnCode rc = osvrRenderManagerOpenDisplayOpenGL(mRenderManagerOpenGL, &results);
         if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
         {
             UE_LOG(FOSVRCustomPresentLog, Warning,
@@ -228,21 +228,21 @@ protected:
     virtual void FinishRendering() override
     {
         check(IsInitialized());
-        UpdateRenderBuffers();
-        // all of the render manager samples keep the flipY at the default false,
-        // for both OpenGL and DirectX. Is this even needed anymore?
-        OSVR_ReturnCode rc;
-        OSVR_RenderManagerPresentState presentState;
-        rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
-        check(rc == OSVR_RETURN_SUCCESS);
-        check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
-        for (size_t i = 0; i < mRenderBuffers.Num(); i++)
-        {
-            rc = osvrRenderManagerPresentRenderBufferOpenGL(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
-            check(rc == OSVR_RETURN_SUCCESS);
-        }
-        rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
-        check(rc == OSVR_RETURN_SUCCESS);
+        //UpdateRenderBuffers();
+        //// all of the render manager samples keep the flipY at the default false,
+        //// for both OpenGL and DirectX. Is this even needed anymore?
+        //OSVR_ReturnCode rc;
+        //OSVR_RenderManagerPresentState presentState;
+        //rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
+        //check(rc == OSVR_RETURN_SUCCESS);
+        //check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
+        //for (size_t i = 0; i < mRenderBuffers.Num(); i++)
+        //{
+        //    rc = osvrRenderManagerPresentRenderBufferOpenGL(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
+        //    check(rc == OSVR_RETURN_SUCCESS);
+        //}
+        //rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
+        //check(rc == OSVR_RETURN_SUCCESS);
     }
 
     virtual void UpdateRenderBuffers() override

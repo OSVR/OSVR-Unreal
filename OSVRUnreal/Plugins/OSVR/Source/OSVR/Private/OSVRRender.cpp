@@ -201,6 +201,8 @@ bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 si
     check(IsInRenderingThread());
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
+        bool displayOpen = mCustomPresent->LazyOpenDisplay();
+        check(displayOpen);
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
     return false;
