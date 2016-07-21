@@ -38,6 +38,106 @@
 #include "OpenGLDrvPrivate.h"
 #include "OpenGLResources.h"
 
+//==========================================================================
+// Toolkit object to handle our window creation needs.  We pass it down to
+// the RenderManager to override its window and context creation behavior,
+// since we are using the Unreal window/context creation.
+
+class FUnrealOSVRRenderManagerOpenGLToolkit {
+private:
+    OSVR_OpenGLToolkitFunctions toolkit;
+    
+    // eliminate force to bool performance warning.
+    static inline OSVR_CBool ConvertBool(bool bValue)
+    {
+        return bValue ? OSVR_TRUE : OSVR_FALSE;
+    }
+
+    static inline bool ConvertBool(OSVR_CBool bValue)
+    {
+        return bValue == OSVR_TRUE ? true : false;
+    }
+
+    static void createImpl(void* data) {
+    }
+    static void destroyImpl(void* data) {
+        delete ((FUnrealOSVRRenderManagerOpenGLToolkit*)data);
+    }
+    static OSVR_CBool addOpenGLContextImpl(void* data, const OSVR_OpenGLContextParams* p) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->addOpenGLContext(p));
+    }
+    static OSVR_CBool removeOpenGLContextsImpl(void* data) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->removeOpenGLContexts());
+    }
+    static OSVR_CBool makeCurrentImpl(void* data, size_t display) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->makeCurrent(display));
+    }
+    static OSVR_CBool swapBuffersImpl(void* data, size_t display) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->swapBuffers(display));
+    }
+    static OSVR_CBool setVerticalSyncImpl(void* data, OSVR_CBool verticalSync) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->setVerticalSync(ConvertBool(verticalSync)));
+    }
+    static OSVR_CBool handleEventsImpl(void* data) {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->handleEvents());
+    }
+
+public:
+    FUnrealOSVRRenderManagerOpenGLToolkit() {
+        memset(&toolkit, 0, sizeof(toolkit));
+        toolkit.size = sizeof(toolkit);
+        toolkit.data = this;
+
+        toolkit.create = createImpl;
+        toolkit.destroy = destroyImpl;
+        toolkit.addOpenGLContext = addOpenGLContextImpl;
+        toolkit.removeOpenGLContexts = removeOpenGLContextsImpl;
+        toolkit.makeCurrent = makeCurrentImpl;
+        toolkit.swapBuffers = swapBuffersImpl;
+        toolkit.setVerticalSync = setVerticalSyncImpl;
+        toolkit.handleEvents = handleEventsImpl;
+    }
+
+    ~FUnrealOSVRRenderManagerOpenGLToolkit() {
+    }
+
+    const OSVR_OpenGLToolkitFunctions* getToolkit() const { return &toolkit; }
+
+    bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
+        // @todo change resolution and move the window here?
+        // We may need to just record the params and respond to them later,
+        // since this call has to be done on the game thread, but it's called on the
+        // window thread.
+
+        //FSystemResolution::RequestResolutionChange(p->width, p->height, EWindowMode::Windowed);
+        return true;
+    }
+
+    bool removeOpenGLContexts() {
+        return true;
+    }
+
+    bool makeCurrent(size_t display) {
+        // we are always current, since unreal creates our context
+        // beforehand
+        return true;
+    }
+
+    bool swapBuffers(size_t display) {
+        // unreal does this for us
+        return true;
+    }
+
+    bool setVerticalSync(bool verticalSync) {
+        // @todo ???
+        return true;
+    }
+    bool handleEvents() {
+        // @todo ???
+        return true;
+    }
+};
+
 class FOpenGLCustomPresent : public FOSVRCustomPresent
 {
 public:
@@ -73,37 +173,12 @@ protected:
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
     {
-        FScopeLock lock(&mOSVRMutex);
-        if (IsInitialized())
-        {
-            // create the color buffer
-            if (RenderTargetTexture > 0)
-            {
-                glDeleteTextures(1, &RenderTargetTexture);
-            }
-            RenderTargetTexture = 0;
-            osvrRenderManagerCreateColorBufferOpenGL(sizeX, sizeY, GL_BGRA, &RenderTargetTexture);
+        // For OpenGL, we allow RenderManager to create our render textures for us and then
+        // we pass that texture id in on the first RenderTexture_RenderThread call.
 
-            //SetRenderTargetTexture(D3DTexture);
-
-            auto GLRHI = static_cast<FOpenGLDynamicRHI*>(GDynamicRHI);
-            GLenum target = numSamples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
-            GLenum attachment = GL_NONE;
-            bool bAllocatedStorage = false;
-            numMips = 1;
-            uint8* textureRange = nullptr;
-
-            auto targetableTexture = new FOpenGLTexture2D(
-                GLRHI, RenderTargetTexture, target, attachment, sizeX, sizeY, 0, numMips, numSamples, 1, EPixelFormat(format), false,
-                bAllocatedStorage, flags, textureRange, FClearValueBinding::Black);
-
-            outTargetableTexture = targetableTexture->GetTexture2D();
-            outShaderResourceTexture = targetableTexture->GetTexture2D();
-            mRenderTexture = targetableTexture;
-            bRenderBuffersNeedToUpdate = true;
-            UpdateRenderBuffers();
-            return true;
-        }
+        // signal UpdateRenderBuffers to register the new render buffer when we
+        // next get it passed in via LazySetSrcTexture
+        bRenderBuffersNeedToUpdate = true;
         return false;
     }
 
@@ -137,14 +212,14 @@ protected:
             rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &renderInfoCollection);
             check(rc == OSVR_RETURN_SUCCESS);
 
-            OSVR_RenderInfoCount numRenderInfo;
+            OSVR_RenderInfoCount numRenderInfo = { 0 };
             rc = osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
             check(rc == OSVR_RETURN_SUCCESS);
 
             mRenderInfos.Empty();
             for (size_t i = 0; i < numRenderInfo; i++)
             {
-                OSVR_RenderInfoOpenGL renderInfo;
+                OSVR_RenderInfoOpenGL renderInfo = { 0 };
                 rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(renderInfoCollection, i, &renderInfo);
                 check(rc == OSVR_RETURN_SUCCESS);
 
@@ -225,24 +300,40 @@ protected:
         return true;
     }
     
+    virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) override
+    {
+        auto textureOpenGL = static_cast<FOpenGLTexture2D*>(&(*srcTexture));
+        RenderTargetTexture = textureOpenGL->Resource;
+        mRenderTexture = srcTexture; // @todo do we need mRenderTexture?
+        UpdateRenderBuffers();
+        return true;
+    }
+
     virtual void FinishRendering() override
     {
         check(IsInitialized());
-        //UpdateRenderBuffers();
-        //// all of the render manager samples keep the flipY at the default false,
-        //// for both OpenGL and DirectX. Is this even needed anymore?
-        //OSVR_ReturnCode rc;
-        //OSVR_RenderManagerPresentState presentState;
-        //rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
-        //check(rc == OSVR_RETURN_SUCCESS);
-        //check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
-        //for (size_t i = 0; i < mRenderBuffers.Num(); i++)
-        //{
-        //    rc = osvrRenderManagerPresentRenderBufferOpenGL(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
-        //    check(rc == OSVR_RETURN_SUCCESS);
-        //}
-        //rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
-        //check(rc == OSVR_RETURN_SUCCESS);
+        UpdateRenderBuffers();
+
+        // all of the render manager samples keep the flipY at the default false,
+        // for both OpenGL and DirectX. Is this even needed anymore?
+        OSVR_ReturnCode rc;
+        OSVR_RenderManagerPresentState presentState;
+        rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
+        check(rc == OSVR_RETURN_SUCCESS);
+        check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
+        for (size_t i = 0; i < mRenderBuffers.Num(); i++)
+        {
+            auto renderBuffer = mRenderBuffers[i];
+            auto renderInfo = mRenderInfos[i];
+            auto viewportDescription = mViewportDescriptions[i];
+            rc = osvrRenderManagerPresentRenderBufferOpenGL(presentState, renderBuffer, renderInfo, viewportDescription);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+
+        // @todo: figure out why this call is failing (release DLLs make debugging
+        // difficult here - can't determine which failure branch is being taken).
+        rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
+        check(rc == OSVR_RETURN_SUCCESS);
     }
 
     virtual void UpdateRenderBuffers() override
@@ -306,7 +397,10 @@ protected:
     virtual OSVR_GraphicsLibraryOpenGL CreateGraphicsLibrary()
     {
         OSVR_GraphicsLibraryOpenGL ret = { 0 };
-        // @todo: anything needed here?
+        // @todo figure out why this toolkit doesn't get passed back when
+        // we get the render info from the collection API.
+        auto toolkit = new FUnrealOSVRRenderManagerOpenGLToolkit();
+        ret.toolkit = toolkit->getToolkit();
         return ret;
     }
 };

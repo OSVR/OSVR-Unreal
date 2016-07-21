@@ -33,6 +33,18 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
+        // we have to call this in 3 places because Unreal makes calls in
+        // a different order in the editor vs standalone vs packaged.
+        mCustomPresent->LazyOpenDisplay();
+
+        // the current custom present implementation may be allowing Unreal to
+        // allocate its render textures. If so, this is the first time we get
+        // access to the texture that was created.
+        mCustomPresent->LazySetSrcTexture(srcTexture);
+    }
+
     const uint32 viewportWidth = backBuffer->GetSizeX();
     const uint32 viewportHeight = backBuffer->GetSizeY();
 

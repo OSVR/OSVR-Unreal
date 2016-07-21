@@ -247,6 +247,13 @@ protected:
         return true;
     }
     
+    virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) override
+    {
+        // The Direct3D11 implementation can allocate the texture right away,
+        // so we don't need to defer setting this.
+        return true;
+    }
+
     virtual void FinishRendering() override
     {
         check(IsInitialized());

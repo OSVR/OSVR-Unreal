@@ -94,6 +94,12 @@ public:
         return bInitialized;
     }
 
+    virtual bool LazySetSrcTexture(FTexture2DRHIParamRef srcTexture)
+    {
+        FScopeLock lock(&mOSVRMutex);
+        return LazySetSrcTextureImpl(srcTexture);
+    }
+
     virtual bool LazyOpenDisplay()
     {
         FScopeLock lock(&mOSVRMutex);
@@ -181,6 +187,7 @@ protected:
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
     virtual bool LazyOpenDisplayImpl() = 0;
+    virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) = 0;
     
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()
