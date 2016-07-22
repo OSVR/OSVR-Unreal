@@ -35,10 +35,6 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     check(IsInRenderingThread());
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
-        // we have to call this in 3 places because Unreal makes calls in
-        // a different order in the editor vs standalone vs packaged.
-        mCustomPresent->LazyOpenDisplay();
-
         // the current custom present implementation may be allowing Unreal to
         // allocate its render textures. If so, this is the first time we get
         // access to the texture that was created.
@@ -65,6 +61,8 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
     pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+
+    // @todo: do we need to ask mCustomPresent whether we should draw the preview or not?
     RendererModule->DrawRectangle(
         rhiCmdList,
         0, 0, // X, Y
@@ -75,6 +73,11 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
         FIntPoint(1, 1), // TextureSize
         *vertexShader,
         EDRF_Default);
+
+    if (mCustomPresent)
+    {
+        mCustomPresent->RenderTexture_RenderThread(rhiCmdList, backBuffer, srcTexture);
+    }
 }
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const
@@ -112,8 +115,6 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
         {
             mCustomPresent->Initialize();
         }
-         
-        mCustomPresent->LazyOpenDisplay();
     }
     
     FQuat lastHmdOrientation, hmdOrientation;
@@ -213,8 +214,6 @@ bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 si
     check(IsInRenderingThread());
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
-        bool displayOpen = mCustomPresent->LazyOpenDisplay();
-        check(displayOpen);
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
     return false;

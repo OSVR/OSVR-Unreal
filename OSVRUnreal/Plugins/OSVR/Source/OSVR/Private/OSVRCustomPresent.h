@@ -76,8 +76,30 @@ public:
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
         InitializeImpl();
+        if (!bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();
+            check(bDisplayOpen);
+        }
+        
+        // @todo This is giving us a black screen.
         FinishRendering();
         return true;
+    }
+
+    virtual void RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture)
+    {
+        check(IsInRenderingThread());
+        FScopeLock lock(&mOSVRMutex);
+        InitializeImpl();
+        if (!bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();
+            check(bDisplayOpen);
+        }
+
+        // @todo This is giving us a black screen.
+        FinishRendering();
     }
 
     // Initializes RenderManager but does not open the displays

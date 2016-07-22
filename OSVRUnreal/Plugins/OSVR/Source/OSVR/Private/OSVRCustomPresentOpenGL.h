@@ -38,15 +38,44 @@
 #include "OpenGLDrvPrivate.h"
 #include "OpenGLResources.h"
 
+class FUnrealBackBufferContainer
+{
+private:
+    FRHICommandListImmediate* mRHICmdList;
+    FTexture2DRHIParamRef mBackBuffer;
+
+public:
+    FRHICommandListImmediate* getRHICmdList()
+    {
+        return mRHICmdList;
+    }
+
+    void setRHICmdList(FRHICommandListImmediate* rhiCmdList)
+    {
+        mRHICmdList = rhiCmdList;
+    }
+
+    FTexture2DRHIParamRef getBackBuffer()
+    {
+        return mBackBuffer;
+    }
+
+    void setBackBuffer(FTexture2DRHIParamRef backBuffer)
+    {
+        mBackBuffer = backBuffer;
+    }
+};
+
+
 //==========================================================================
 // Toolkit object to handle our window creation needs.  We pass it down to
 // the RenderManager to override its window and context creation behavior,
 // since we are using the Unreal window/context creation.
-
 class FUnrealOSVRRenderManagerOpenGLToolkit {
 private:
     OSVR_OpenGLToolkitFunctions toolkit;
-    
+    FUnrealBackBufferContainer* mBackBufferContainer;
+
     // eliminate force to bool performance warning.
     static inline OSVR_CBool ConvertBool(bool bValue)
     {
@@ -58,32 +87,49 @@ private:
         return bValue == OSVR_TRUE ? true : false;
     }
 
-    static void createImpl(void* data) {
+    static void createImpl(void* data)
+    {
     }
-    static void destroyImpl(void* data) {
+
+    static void destroyImpl(void* data)
+    {
         delete ((FUnrealOSVRRenderManagerOpenGLToolkit*)data);
     }
-    static OSVR_CBool addOpenGLContextImpl(void* data, const OSVR_OpenGLContextParams* p) {
+
+    static OSVR_CBool addOpenGLContextImpl(void* data, const OSVR_OpenGLContextParams* p)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->addOpenGLContext(p));
     }
-    static OSVR_CBool removeOpenGLContextsImpl(void* data) {
+
+    static OSVR_CBool removeOpenGLContextsImpl(void* data)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->removeOpenGLContexts());
     }
-    static OSVR_CBool makeCurrentImpl(void* data, size_t display) {
+
+    static OSVR_CBool makeCurrentImpl(void* data, size_t display)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->makeCurrent(display));
     }
-    static OSVR_CBool swapBuffersImpl(void* data, size_t display) {
+
+    static OSVR_CBool swapBuffersImpl(void* data, size_t display)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->swapBuffers(display));
     }
-    static OSVR_CBool setVerticalSyncImpl(void* data, OSVR_CBool verticalSync) {
+
+    static OSVR_CBool setVerticalSyncImpl(void* data, OSVR_CBool verticalSync)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->setVerticalSync(ConvertBool(verticalSync)));
     }
-    static OSVR_CBool handleEventsImpl(void* data) {
+
+    static OSVR_CBool handleEventsImpl(void* data)
+    {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->handleEvents());
     }
 
 public:
-    FUnrealOSVRRenderManagerOpenGLToolkit() {
+    FUnrealOSVRRenderManagerOpenGLToolkit(FUnrealBackBufferContainer* backBufferContainer)
+        : mBackBufferContainer(backBufferContainer)
+    {
         memset(&toolkit, 0, sizeof(toolkit));
         toolkit.size = sizeof(toolkit);
         toolkit.data = this;
@@ -98,12 +144,17 @@ public:
         toolkit.handleEvents = handleEventsImpl;
     }
 
-    ~FUnrealOSVRRenderManagerOpenGLToolkit() {
+    ~FUnrealOSVRRenderManagerOpenGLToolkit()
+    {
     }
 
-    const OSVR_OpenGLToolkitFunctions* getToolkit() const { return &toolkit; }
+    const OSVR_OpenGLToolkitFunctions* getToolkit() const
+    {
+        return &toolkit;
+    }
 
-    bool addOpenGLContext(const OSVR_OpenGLContextParams* p) {
+    bool addOpenGLContext(const OSVR_OpenGLContextParams* p)
+    {
         // @todo change resolution and move the window here?
         // We may need to just record the params and respond to them later,
         // since this call has to be done on the game thread, but it's called on the
@@ -113,26 +164,41 @@ public:
         return true;
     }
 
-    bool removeOpenGLContexts() {
+    bool removeOpenGLContexts()
+    {
         return true;
     }
 
-    bool makeCurrent(size_t display) {
+    bool makeCurrent(size_t display)
+    {
         // we are always current, since unreal creates our context
         // beforehand
+        auto backBuffer = mBackBufferContainer->getBackBuffer();
+        auto& rhiCmdList = *mBackBufferContainer->getRHICmdList();
+
+        SetRenderTarget(*(mBackBufferContainer->getRHICmdList()), mBackBufferContainer->getBackBuffer(), FTextureRHIRef());
+        const uint32 viewportWidth = backBuffer->GetSizeX();
+        const uint32 viewportHeight = backBuffer->GetSizeY();
+
+        SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
+        rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
         return true;
     }
 
-    bool swapBuffers(size_t display) {
+    bool swapBuffers(size_t display)
+    {
         // unreal does this for us
         return true;
     }
 
-    bool setVerticalSync(bool verticalSync) {
+    bool setVerticalSync(bool verticalSync)
+    {
         // @todo ???
         return true;
     }
-    bool handleEvents() {
+
+    bool handleEvents()
+    {
         // @todo ???
         return true;
     }
@@ -152,6 +218,11 @@ public:
         {
             glDeleteTextures(1, &RenderTargetTexture);
         }
+
+        if (mBackBufferContainer)
+        {
+            delete mBackBufferContainer;
+        }
     }
 
 protected:
@@ -160,6 +231,7 @@ protected:
     TArray<OSVR_RenderInfoOpenGL> mRenderInfos;
     OSVR_RenderManagerOpenGL mRenderManagerOpenGL = nullptr;
     GLuint RenderTargetTexture = 0;
+    FUnrealBackBufferContainer* mBackBufferContainer = nullptr;
 
     virtual FString GetGraphicsLibraryName() override
     {
@@ -309,6 +381,30 @@ protected:
         return true;
     }
 
+    virtual bool Present(int32 &inOutSyncInterval) override
+    {
+        // turn this into a no-op for now, we do it in RenderTexture_RenderThread
+        return true;
+    }
+
+    virtual void RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) override
+    {
+        check(IsInRenderingThread());
+        FScopeLock lock(&mOSVRMutex);
+        auto bb = getBackBufferContainer();
+        bb->setRHICmdList(&rhiCmdList);
+        bb->setBackBuffer(backBuffer);
+        InitializeImpl();
+        if (!bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();
+            check(bDisplayOpen);
+        }
+
+        // @todo This is giving us a black screen.
+        FinishRendering();
+    }
+
     virtual void FinishRendering() override
     {
         check(IsInitialized());
@@ -394,12 +490,21 @@ protected:
         }
     }
 
+    virtual FUnrealBackBufferContainer* getBackBufferContainer()
+    {
+        if (!mBackBufferContainer)
+        {
+            mBackBufferContainer = new FUnrealBackBufferContainer();
+        }
+        return mBackBufferContainer;
+    }
+
     virtual OSVR_GraphicsLibraryOpenGL CreateGraphicsLibrary()
     {
         OSVR_GraphicsLibraryOpenGL ret = { 0 };
         // @todo figure out why this toolkit doesn't get passed back when
         // we get the render info from the collection API.
-        auto toolkit = new FUnrealOSVRRenderManagerOpenGLToolkit();
+        auto toolkit = new FUnrealOSVRRenderManagerOpenGLToolkit(getBackBufferContainer());
         ret.toolkit = toolkit->getToolkit();
         return ret;
     }
