@@ -38,9 +38,14 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
         // the current custom present implementation may be allowing Unreal to
         // allocate its render textures. If so, this is the first time we get
         // access to the texture that was created.
-        mCustomPresent->LazySetSrcTexture(srcTexture);
+        mCustomPresent->RenderTexture_RenderThread(rhiCmdList, backBuffer, srcTexture);
     }
 
+    // @todo should we add an FCustomPresent function
+    // to ask if we should draw the preview? The OpenGL
+    // custom present can draw distortion directly into
+    // the preview window for instance, making this
+    // redundant.
     const uint32 viewportWidth = backBuffer->GetSizeX();
     const uint32 viewportHeight = backBuffer->GetSizeY();
 
@@ -73,11 +78,6 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
         FIntPoint(1, 1), // TextureSize
         *vertexShader,
         EDRF_Default);
-
-    if (mCustomPresent)
-    {
-        mCustomPresent->RenderTexture_RenderThread(rhiCmdList, backBuffer, srcTexture);
-    }
 }
 
 void FOSVRHMD::GetEyeRenderParams_RenderThread(const struct FRenderingCompositePassContext& Context, FVector2D& EyeToSrcUVScaleValue, FVector2D& EyeToSrcUVOffsetValue) const

@@ -38,32 +38,9 @@
 #include "OpenGLDrvPrivate.h"
 #include "OpenGLResources.h"
 
-class FUnrealBackBufferContainer
+typedef struct FUnrealBackBufferContainer
 {
-private:
-    FRHICommandListImmediate* mRHICmdList;
-    FTexture2DRHIParamRef mBackBuffer;
-
-public:
-    FRHICommandListImmediate* getRHICmdList()
-    {
-        return mRHICmdList;
-    }
-
-    void setRHICmdList(FRHICommandListImmediate* rhiCmdList)
-    {
-        mRHICmdList = rhiCmdList;
-    }
-
-    FTexture2DRHIParamRef getBackBuffer()
-    {
-        return mBackBuffer;
-    }
-
-    void setBackBuffer(FTexture2DRHIParamRef backBuffer)
-    {
-        mBackBuffer = backBuffer;
-    }
+    GLint displayFrameBuffer;
 };
 
 
@@ -126,6 +103,11 @@ private:
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->handleEvents());
     }
 
+    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut)
+    {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut));
+    }
+
 public:
     FUnrealOSVRRenderManagerOpenGLToolkit(FUnrealBackBufferContainer* backBufferContainer)
         : mBackBufferContainer(backBufferContainer)
@@ -142,6 +124,7 @@ public:
         toolkit.swapBuffers = swapBuffersImpl;
         toolkit.setVerticalSync = setVerticalSyncImpl;
         toolkit.handleEvents = handleEventsImpl;
+        toolkit.getDisplayFrameBuffer = getDisplayFrameBufferImpl;
     }
 
     ~FUnrealOSVRRenderManagerOpenGLToolkit()
@@ -173,15 +156,6 @@ public:
     {
         // we are always current, since unreal creates our context
         // beforehand
-        auto backBuffer = mBackBufferContainer->getBackBuffer();
-        auto& rhiCmdList = *mBackBufferContainer->getRHICmdList();
-
-        SetRenderTarget(*(mBackBufferContainer->getRHICmdList()), mBackBufferContainer->getBackBuffer(), FTextureRHIRef());
-        const uint32 viewportWidth = backBuffer->GetSizeX();
-        const uint32 viewportHeight = backBuffer->GetSizeY();
-
-        SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
-        rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
         return true;
     }
 
@@ -200,6 +174,12 @@ public:
     bool handleEvents()
     {
         // @todo ???
+        return true;
+    }
+
+    bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut)
+    {
+        (*displayFrameBufferOut) = mBackBufferContainer->displayFrameBuffer;
         return true;
     }
 };
@@ -381,33 +361,26 @@ protected:
         return true;
     }
 
-    virtual bool Present(int32 &inOutSyncInterval) override
-    {
-        // turn this into a no-op for now, we do it in RenderTexture_RenderThread
-        return true;
-    }
-
     virtual void RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) override
     {
         check(IsInRenderingThread());
-        FScopeLock lock(&mOSVRMutex);
-        auto bb = getBackBufferContainer();
-        bb->setRHICmdList(&rhiCmdList);
-        bb->setBackBuffer(backBuffer);
-        InitializeImpl();
-        if (!bDisplayOpen)
-        {
-            bDisplayOpen = LazyOpenDisplayImpl();
-            check(bDisplayOpen);
-        }
-
-        // @todo This is giving us a black screen.
-        FinishRendering();
+        LazySetSrcTexture(srcTexture);
     }
 
     virtual void FinishRendering() override
     {
         check(IsInitialized());
+
+        // @todo: this needs to be more robust.
+        // Can we find this by inspection of the view somehow?
+        // After the first call, the framebuffer ends up set to
+        // 0 before entering this function, but 0 is not the
+        // framebuffer for the window.
+        if (mBackBufferContainer->displayFrameBuffer < 0)
+        {
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &mBackBufferContainer->displayFrameBuffer);
+        }
+
         UpdateRenderBuffers();
 
         // all of the render manager samples keep the flipY at the default false,
@@ -495,6 +468,7 @@ protected:
         if (!mBackBufferContainer)
         {
             mBackBufferContainer = new FUnrealBackBufferContainer();
+            mBackBufferContainer->displayFrameBuffer = -1;
         }
         return mBackBufferContainer;
     }
