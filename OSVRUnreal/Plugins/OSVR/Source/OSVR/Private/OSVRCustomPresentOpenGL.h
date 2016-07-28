@@ -41,6 +41,8 @@
 typedef struct FUnrealBackBufferContainer
 {
     GLint displayFrameBuffer;
+    int width;
+    int height;
 };
 
 
@@ -108,6 +110,11 @@ private:
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut));
     }
 
+    static OSVR_CBool getDisplaySizeOverrideImpl(void* data, size_t display, int* width, int* height)
+    {
+        return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->getDisplaySizeOverride(display, width, height));
+    }
+
 public:
     FUnrealOSVRRenderManagerOpenGLToolkit(FUnrealBackBufferContainer* backBufferContainer)
         : mBackBufferContainer(backBufferContainer)
@@ -125,6 +132,7 @@ public:
         toolkit.setVerticalSync = setVerticalSyncImpl;
         toolkit.handleEvents = handleEventsImpl;
         toolkit.getDisplayFrameBuffer = getDisplayFrameBufferImpl;
+        toolkit.getDisplaySizeOverride = getDisplaySizeOverrideImpl;
     }
 
     ~FUnrealOSVRRenderManagerOpenGLToolkit()
@@ -180,6 +188,13 @@ public:
     bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut)
     {
         (*displayFrameBufferOut) = mBackBufferContainer->displayFrameBuffer;
+        return true;
+    }
+
+    bool getDisplaySizeOverride(size_t display, int* width, int* height)
+    {
+        (*width) = mBackBufferContainer->width;
+        (*height) = mBackBufferContainer->height;
         return true;
     }
 };
@@ -469,6 +484,8 @@ protected:
         {
             mBackBufferContainer = new FUnrealBackBufferContainer();
             mBackBufferContainer->displayFrameBuffer = -1;
+            mBackBufferContainer->width = 1280;
+            mBackBufferContainer->height = 720;
         }
         return mBackBufferContainer;
     }
