@@ -9,11 +9,28 @@
 
 ## Unreal Engine Plugin for OSVR
 
+This OSVR plugin is now integrated in the official Unreal Engine 4.12.x release. To use
+it, simply enable the OSVR plugin from your project's plugin page - it is listed
+in the Virtual Reality section.
+
+The code for the plugin is maintained at <https://github.com/OSVR/OSVR-Unreal>
+and source code drops are sent from here to the Unreal engine code, so community
+contributions should be made there first.
+
 The `OSVRUnreal` folder contains a sample application using the plugin from source, for ease of development.
 
 The plugin itself is inside `OSVRUnreal/Plugins/OSVR`.
 
-Currently works with Unreal Engine 4.10.x. If you are still on 4.9.x, there is a ue4_9 branch, but it is recommended that you move to 4.10.x as soon as possible. Changes from master may not be merged into that branch on a regular basis except by request.
+Currently works with Unreal Engine 4.12.x. If you are on 4.11.x or 4.10.x,
+you may need to modify `IOSVR.h` to change `OSVR_UNREAL_4_12` to 0 (for 4.11)
+and additionally `OSVR_UNREAL_4_11` to 0, if targeting unreal 4.10. However, 4.10 and 4.11
+support will be limited, going forward (community contributions always welcome).
+
+## Using the Plugin From Source
+To update your game to the latest OSVR-Unreal plugin source, you need to install
+the plugin as a local plugin in your project, just as was done prior to the official
+release of the built-in plugin. You will need to disable the built-in plugin first,
+if you previously enabled it.
 
 ### Dependencies
 You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:

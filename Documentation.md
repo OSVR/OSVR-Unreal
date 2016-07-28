@@ -43,3 +43,11 @@ The OSVR-Unreal plugin looks at the following interface paths and maps them to t
 
 ## Blueprint API
 The original OSVR Blueprint API is being redesigned. The original OSVR Blueprint API should be considered deprecated. It has been archived in /Archive if you need it. To use the original blueprint API, copy the contents of the /Archive/Plugins directory to the OSVRUnreal/Plugins directory, and set `OSVR_DEPRECATED_BLUEPRINT_API_ENABLED` to 1 in `/OSVRUnreal/Plugins/OSVR/Source/Private/OSVRPrivatePCH.h`.
+
+## Server Auto-start
+OSVR-Unreal automatically starts the OSVR server during initialization, if it is not already running.
+The auto-start API that the plugin uses is driven on Windows, Mac, and Linux by the `OSVR_SERVER_ROOT`
+environment variable. The windows OSVR SDK and runtime installers automatically set this
+environment variable during installation but you can set it to any server directory you wish.
+To turn off auto-start in OSVR-Unreal and other OSVR applications, simply remove
+the `OSVR_SERVER_ROOT` environment variable.
