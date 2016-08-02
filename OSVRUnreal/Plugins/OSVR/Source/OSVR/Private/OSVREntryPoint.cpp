@@ -29,6 +29,12 @@ DEFINE_LOG_CATEGORY(OSVREntryPointLog);
 
 OSVREntryPoint::OSVREntryPoint()
 {
+    // avoid BuildCookRun hangs
+    if (IsRunningCommandlet() || IsRunningDedicatedServer())
+    {
+        return;
+    }
+
     osvrClientAttemptServerAutoStart();
 
     osvrClientContext = osvrClientInit("com.osvr.unreal.plugin");
