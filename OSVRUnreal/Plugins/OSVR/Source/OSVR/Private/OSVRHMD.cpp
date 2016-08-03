@@ -115,9 +115,9 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
  * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
  * them from any thread with access to the client context.
  */
-static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
+void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
 {
-    auto clientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
+    auto clientContext = mOSVREntryPoint->GetClientContext();
     size_t length;
     osvrClientGetStringParameterLength(clientContext, "/renderManagerConfig", &length);
     if (length > 0)
@@ -146,8 +146,7 @@ static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight
 
 bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
     if (IsInitialized()
         && osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS)
     {
@@ -187,9 +186,8 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
 {
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-    auto clientContext = entryPoint->GetClientContext();
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    auto clientContext = mOSVREntryPoint->GetClientContext();
 
     returnCode = osvrClientUpdate(clientContext);
     check(returnCode == OSVR_RETURN_SUCCESS);
@@ -637,8 +635,7 @@ namespace
 
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    auto mutex = entryPoint->GetClientContextMutex();
+    auto mutex = mOSVREntryPoint->GetClientContextMutex();
     FScopeLock lock(mutex);
 
     FMatrix ret;
@@ -705,8 +702,9 @@ bool FOSVRHMD::IsHeadTrackingAllowed() const
     return GEngine->IsStereoscopic3D();
 }
 
-FOSVRHMD::FOSVRHMD()
-    : LastHmdOrientation(FQuat::Identity),
+FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPoint) :
+    mOSVREntryPoint(entryPoint),
+    LastHmdOrientation(FQuat::Identity),
     CurHmdOrientation(FQuat::Identity),
     DeltaControlRotation(FRotator::ZeroRotator),
     DeltaControlOrientation(FQuat::Identity),
@@ -723,9 +721,8 @@ FOSVRHMD::FOSVRHMD()
 {
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-    auto osvrClientContext = entryPoint->GetClientContext();
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    auto osvrClientContext = mOSVREntryPoint->GetClientContext();
 
     // Prevents debugger hangs that sometimes occur with only one monitor.
 #if OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE
@@ -818,8 +815,7 @@ FOSVRHMD::FOSVRHMD()
 
 FOSVRHMD::~FOSVRHMD()
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
     EnablePositionalTracking(false);
 }
 
