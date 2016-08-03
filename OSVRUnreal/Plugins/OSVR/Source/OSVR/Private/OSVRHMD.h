@@ -157,7 +157,7 @@ public:
 
 public:
     /** Constructor */
-    FOSVRHMD();
+    FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPoint);
 
     /** Destructor */
     virtual ~FOSVRHMD();
@@ -170,7 +170,9 @@ private:
     void UpdateHeadPose();
     void StartCustomPresent();
     void StopCustomPresent();
+    void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height);
 
+    TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;
     IRendererModule* RendererModule;
 
     /** Player's orientation tracking */
