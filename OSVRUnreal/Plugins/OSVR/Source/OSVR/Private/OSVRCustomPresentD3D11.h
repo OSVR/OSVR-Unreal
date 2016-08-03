@@ -298,7 +298,7 @@ protected:
         rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
         check(rc == OSVR_RETURN_SUCCESS);
         check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
-        for (size_t i = 0; i < mRenderBuffers.Num(); i++)
+        for (int32 i = 0; i < mRenderBuffers.Num(); i++)
         {
             rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
             check(rc == OSVR_RETURN_SUCCESS);
@@ -373,7 +373,7 @@ protected:
                 hr = osvrRenderManagerStartRegisterRenderBuffers(&state);
                 check(hr == OSVR_RETURN_SUCCESS);
 
-                for (size_t i = 0; i < mRenderBuffers.Num(); i++)
+                for (int32 i = 0; i < mRenderBuffers.Num(); i++)
                 {
                     hr = osvrRenderManagerRegisterRenderBufferD3D11(state, mRenderBuffers[i]);
                     check(hr == OSVR_RETURN_SUCCESS);
