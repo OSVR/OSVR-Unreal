@@ -32,6 +32,7 @@ OSVREntryPoint::OSVREntryPoint()
     // avoid BuildCookRun hangs
     if (IsRunningCommandlet() || IsRunningDedicatedServer())
     {
+        UE_LOG(OSVREntryPointLog, Display, TEXT("OSVREntryPoint::OSVREntryPoint(): running as commandlet or dedicated server - skipping client context startup."));
         return;
     }
 
@@ -77,7 +78,11 @@ OSVREntryPoint::~OSVREntryPoint()
     InterfaceCollection = nullptr;
 #endif
 
-    osvrClientShutdown(osvrClientContext);
+    if (osvrClientContext)
+    {
+       osvrClientShutdown(osvrClientContext);
+    }
+
     osvrClientReleaseAutoStartedServer();
 }
 
