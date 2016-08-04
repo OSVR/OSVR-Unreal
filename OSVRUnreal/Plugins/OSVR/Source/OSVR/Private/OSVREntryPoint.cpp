@@ -44,7 +44,7 @@ OSVREntryPoint::OSVREntryPoint()
         bool bClientContextOK = false;
         bool bFailure = false;
         auto begin = FDateTime::Now().GetSecond();
-        auto end = begin + 3;
+        auto end = begin + 10;
         while (FDateTime::Now().GetSecond() < end && !bClientContextOK && !bFailure)
         {
             bClientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
