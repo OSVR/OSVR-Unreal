@@ -44,7 +44,7 @@ OSVREntryPoint::OSVREntryPoint()
         bool bClientContextOK = false;
         bool bFailure = false;
         auto begin = FDateTime::Now().GetSecond();
-        auto end = begin + 3;
+        auto end = begin + 10;
         while (FDateTime::Now().GetSecond() < end && !bClientContextOK && !bFailure)
         {
             bClientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
@@ -53,7 +53,7 @@ OSVREntryPoint::OSVREntryPoint()
                 bFailure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
                 if (bFailure)
                 {
-                    UE_LOG(OSVREntryPointLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                    UE_LOG(OSVREntryPointLog, Display, TEXT("osvrClientUpdate failed during startup. Treating this as if the HMD is not connected.));
                     break;
                 }
                 FPlatformProcess::Sleep(0.2f);
@@ -61,7 +61,7 @@ OSVREntryPoint::OSVREntryPoint()
         }
         if (!bClientContextOK)
         {
-            UE_LOG(OSVREntryPointLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
+            UE_LOG(OSVREntryPointLog, Display, TEXT("OSVR client context could not connect. Most likely the server isn't running. Treating this as if the HMD is not connected."));
         }
     }
 
