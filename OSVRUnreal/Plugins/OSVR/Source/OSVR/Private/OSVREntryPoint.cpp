@@ -53,7 +53,7 @@ OSVREntryPoint::OSVREntryPoint()
                 bFailure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
                 if (bFailure)
                 {
-                    UE_LOG(OSVREntryPointLog, Display, TEXT("osvrClientUpdate failed during startup. Treating this as if the HMD is not connected.));
+                    UE_LOG(OSVREntryPointLog, Display, TEXT("osvrClientUpdate failed during startup. Treating this as if the HMD is not connected."));
                     break;
                 }
                 FPlatformProcess::Sleep(0.2f);
