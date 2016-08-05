@@ -73,7 +73,7 @@ void FOSVRHMD::StartCustomPresent()
     {
         // currently, FCustomPresent creates its own client context, so no need to
         // synchronize with the one from FOSVREntryPoint.
-        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/);
     }
 #endif
 }
@@ -496,8 +496,9 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             //{
             //uint32 iWidth, iHeight;
             //mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
-            //width = float(iWidth) * (1.0f / this->mScreenScale);
-            //height = float(iHeight) * (1.0f / this->mScreenScale);
+            //float screenScale = GetScreenScale();
+            //width = float(iWidth) * (1.0f / screenScale);
+            //height = float(iHeight) * (1.0f / screenScale);
             //}
             //else
             //{
@@ -538,15 +539,28 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
     return bStereoEnabled;
 }
 
+float FOSVRHMD::GetScreenScale() const
+{
+    static IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
+    float screenScale = 1.0f;
+    if (CVScreenPercentage)
+    {
+        screenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
+    }
+    return screenScale;
+}
+
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
+    float screenScale = GetScreenScale();
+
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
-        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
         // FCustomPresent is expected to account for screenScale,
         // so we need to back it out here
-        SizeX = int(float(SizeX) * (1.0f / mScreenScale));
-        SizeY = int(float(SizeY) * (1.0f / mScreenScale));
+        SizeX = int(float(SizeX) * (1.0f / screenScale));
+        SizeY = int(float(SizeY) * (1.0f / screenScale));
     }
     else
     {
@@ -730,12 +744,6 @@ FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPo
 #endif
 
     EnablePositionalTracking(true);
-
-    IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
-    if (CVScreenPercentage)
-    {
-        mScreenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
-    }
 
     StartCustomPresent();
 

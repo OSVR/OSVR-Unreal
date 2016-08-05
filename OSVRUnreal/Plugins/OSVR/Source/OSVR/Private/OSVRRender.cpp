@@ -35,6 +35,8 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     check(IsInRenderingThread());
     const uint32 viewportWidth = backBuffer->GetSizeX();
     const uint32 viewportHeight = backBuffer->GetSizeY();
+    const uint32 textureWidth = srcTexture->GetSizeX();
+    const uint32 textureHeight = srcTexture->GetSizeY();
 
     SetRenderTarget(rhiCmdList, backBuffer, FTextureRHIRef());
     rhiCmdList.SetViewport(0, 0, 0, viewportWidth, viewportHeight, 1.0f);
@@ -119,12 +121,13 @@ void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, 
 void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)
 {
     check(IsInGameThread());
-    
+
     if (!IsStereoEnabled())
     {
         return;
     }
     
+    float screenScale = GetScreenScale();
     if (mCustomPresent)
     {
         if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
@@ -133,7 +136,7 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         }
         if (mCustomPresent && mCustomPresent->IsInitialized())
         {
-            mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY);
+            mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY, screenScale);
         }
     }
     else
@@ -142,8 +145,8 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         InOutSizeX = leftEye.X + rightEye.X;
         InOutSizeY = leftEye.Y;
-        InOutSizeX = int(float(InOutSizeX) * mScreenScale);
-        InOutSizeY = int(float(InOutSizeY) * mScreenScale);
+        InOutSizeX = int(float(InOutSizeX) * screenScale);
+        InOutSizeY = int(float(InOutSizeY) * screenScale);
     }
 }
 
