@@ -130,8 +130,18 @@ void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHei
         if (FJsonSerializer::Deserialize(reader, jsonObject))
         {
             auto subObj = jsonObject->GetObjectField("renderManagerConfig");
-            double renderOverfillFactor = subObj->GetNumberField("renderOverfillFactor");
-            double renderOversampleFactor = subObj->GetNumberField("renderOversampleFactor");
+            double renderOverfillFactor = 1.0f;
+            double renderOversampleFactor = 1.0f;
+
+            if (subObj->HasTypedField<EJson::Number>("renderOverfillFactor"))
+            {
+                renderOverfillFactor = subObj->GetNumberField("renderOverfillFactor");
+            }
+            if (subObj->HasTypedField<EJson::Number>("renderOversampleFactor"))
+            {
+                renderOversampleFactor = subObj->GetNumberField("renderOversampleFactor");
+            }
+
             width = windowWidth * renderOverfillFactor * renderOversampleFactor;
             height = windowHeight * renderOverfillFactor * renderOversampleFactor;
         }
@@ -443,13 +453,14 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
     auto width = leftEye.X + rightEye.X;
     auto height = leftEye.Y;
 
+    GetRenderTargetSize_GameThread(width, height, width, height);
+
     // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
     // We may revisit once display plugins are added to OSVR-Core.
 #if !PLATFORM_ANDROID
-    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed);
+    FSystemResolution::RequestResolutionChange(width, height, EWindowMode::Windowed);
 #endif
 
-    GetRenderTargetSize_GameThread(width, height, width, height);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor)
