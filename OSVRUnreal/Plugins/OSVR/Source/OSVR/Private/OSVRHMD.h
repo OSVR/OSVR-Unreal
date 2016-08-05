@@ -171,6 +171,7 @@ private:
     void StartCustomPresent();
     void StopCustomPresent();
     void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height);
+    float GetScreenScale() const;
 
     TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;
     IRendererModule* RendererModule;
@@ -195,7 +196,6 @@ private:
 
     /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
     float WorldToMetersScale; // @todo: isn't this meters to world units scale?
-    float mScreenScale = 1.0f;
 
     bool bHmdPosTracking;
     bool bHaveVisionTracking;

@@ -29,8 +29,8 @@
 class FCurrentCustomPresent : public FOSVRCustomPresent<ID3D11Device>
 {
 public:
-    FCurrentCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
-        FOSVRCustomPresent(clientContext, screenScale)
+    FCurrentCustomPresent(OSVR_ClientContext clientContext) :
+        FOSVRCustomPresent(clientContext)
     {
     }
 
@@ -201,7 +201,7 @@ protected:
     TArray<OSVR_RenderInfoD3D11> mRenderInfos;
     OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
 
-    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) override
+    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) override
     {
         if (InitializeImpl())
         {
@@ -229,8 +229,8 @@ protected:
             check(mRenderInfos.Num() == 2);
             check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
 
-            mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * mScreenScale);
-            mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * mScreenScale);
+            mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * screenScale);
+            mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * screenScale);
             mRenderInfos[1].viewport.width = mRenderInfos[0].viewport.width;
             mRenderInfos[1].viewport.height = mRenderInfos[0].viewport.height;
             mRenderInfos[1].viewport.left = mRenderInfos[0].viewport.width;
