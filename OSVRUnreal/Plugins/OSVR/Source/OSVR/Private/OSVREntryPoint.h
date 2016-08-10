@@ -29,6 +29,8 @@ public:
 	OSVREntryPoint();
 	virtual ~OSVREntryPoint();
 
+	void Initialize();
+
 	virtual void Tick(float DeltaTime) override;
 
 	virtual bool IsTickable() const override
@@ -66,9 +68,14 @@ public:
 	OSVRInterfaceCollection* GetInterfaceCollection();
 #endif
 
+protected:
+	void LoadFromIni();
+	void SaveToIni();
+
 private:
     OSVR_ClientContext osvrClientContext = nullptr;
     FCriticalSection mContextMutex;
+    int InitTimeoutSeconds = 10;
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
