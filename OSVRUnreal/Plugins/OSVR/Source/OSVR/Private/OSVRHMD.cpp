@@ -21,6 +21,8 @@
 #include "SharedPointer.h"
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
+#include "OSVRCustomPresentOpenGL.h"
+#include "OSVRCustomPresentD3D11.h"
 
 #include "Runtime/Core/Public/Misc/DateTime.h"
 
@@ -32,6 +34,7 @@
 #include "AllowWindowsPlatformTypes.h"
 #include <osvr/Util/ReturnCodesC.h>
 #include <osvr/RenderKit/RenderManagerD3D11C.h>
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #include "HideWindowsPlatformTypes.h"
 #else
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
@@ -69,11 +72,19 @@ void FOSVRHMD::OnEndPlay()
 void FOSVRHMD::StartCustomPresent()
 {
 #if PLATFORM_WINDOWS
-    if (!mCustomPresent && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
+    if (!mCustomPresent)
     {
-        // currently, FCustomPresent creates its own client context, so no need to
-        // synchronize with the one from FOSVREntryPoint.
-        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+        if (IsOpenGLPlatform(GMaxRHIShaderPlatform))
+        {
+            mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+        }
+        else
+        {
+
+            // currently, FCustomPresent creates its own client context, so no need to
+            // synchronize with the one from FOSVREntryPoint.
+            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+        }
     }
 #endif
 }

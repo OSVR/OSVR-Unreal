@@ -33,6 +33,19 @@ void FOSVRHMD::DrawDistortionMesh_RenderThread(FRenderingCompositePassContext& C
 void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) const
 {
     check(IsInRenderingThread());
+    if (mCustomPresent && mCustomPresent->IsInitialized())
+    {
+        // the current custom present implementation may be allowing Unreal to
+        // allocate its render textures. If so, this is the first time we get
+        // access to the texture that was created.
+        mCustomPresent->RenderTexture_RenderThread(rhiCmdList, backBuffer, srcTexture);
+    }
+
+    // @todo should we add an FCustomPresent function
+    // to ask if we should draw the preview? The OpenGL
+    // custom present can draw distortion directly into
+    // the preview window for instance, making this
+    // redundant.
     const uint32 viewportWidth = backBuffer->GetSizeX();
     const uint32 viewportHeight = backBuffer->GetSizeY();
 
@@ -53,6 +66,8 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
     pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+
+    // @todo: do we need to ask mCustomPresent whether we should draw the preview or not?
     RendererModule->DrawRectangle(
         rhiCmdList,
         0, 0, // X, Y
@@ -93,11 +108,15 @@ void FOSVRHMD::GetTimewarpMatrices_RenderThread(const struct FRenderingComposite
 void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneViewFamily& ViewFamily)
 {
     check(IsInRenderingThread());
-    if (mCustomPresent && !mCustomPresent->IsInitialized())
+    if (mCustomPresent)
     {
-        mCustomPresent->Initialize();
+        // @todo make Initialize lazy and remove this if block
+        if(!mCustomPresent->IsInitialized())
+        {
+            mCustomPresent->Initialize();
+        }
     }
-
+    
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
     UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
@@ -192,6 +211,7 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
 bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples)
 {
     check(index == 0);
+    check(IsInRenderingThread());
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);

@@ -26,40 +26,12 @@
 #include "HideWindowsPlatformTypes.h"
 #include "Runtime/Windows/D3D11RHI/Private/D3D11RHIPrivate.h"
 
-class FCurrentCustomPresent : public FOSVRCustomPresent<ID3D11Device>
+class FDirect3D11CustomPresent : public FOSVRCustomPresent//<ID3D11Device>
 {
 public:
-    FCurrentCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
+    FDirect3D11CustomPresent(OSVR_ClientContext clientContext, float screenScale) :
         FOSVRCustomPresent(clientContext, screenScale)
     {
-    }
-
-    virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) override
-    {
-        FScopeLock lock(&mOSVRMutex);
-
-        check(IsInGameThread());
-        if (!IsInitialized())
-        {
-            UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("UpdateViewport called but custom present is not initialized - doing nothing"));
-            return false;
-        }
-        else
-        {
-            check(InViewportRHI);
-            //const FTexture2DRHIRef& rt = InViewport.GetRenderTargetTexture();
-            //check(IsValidRef(rt));
-            //SetRenderTargetTexture((ID3D11Texture2D*)rt->GetNativeResource()); // @todo: do we need to do this?
-            auto oldCustomPresent = InViewportRHI->GetCustomPresent();
-            if (oldCustomPresent != this)
-            {
-                InViewportRHI->SetCustomPresent(this);
-            }
-            // UpdateViewport is called before we're initialized, so we have to
-            // defer updates to the render buffers until we're in the render thread.
-            //bRenderBuffersNeedToUpdate = true;
-            return true;
-        }
     }
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
@@ -74,7 +46,7 @@ public:
         if (IsInitialized())
         {
             auto d3d11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
-            auto graphicsDevice = GetGraphicsDevice();
+            auto graphicsDevice = GetGraphicsDevice<ID3D11Device>();
             HRESULT hr;
             D3D11_TEXTURE2D_DESC textureDesc;
             memset(&textureDesc, 0, sizeof(textureDesc));
@@ -158,28 +130,17 @@ public:
         return false;
     }
 
+protected:
+    ID3D11Texture2D* RenderTargetTexture = NULL;
+    ID3D11RenderTargetView* RenderTargetView = NULL;
 
-    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) override
+    TArray<OSVR_RenderBufferD3D11> mRenderBuffers;
+    TArray<OSVR_RenderInfoD3D11> mRenderInfos;
+    OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
+
+    virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) override
     {
         OSVR_ReturnCode rc;
-        rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
-        check(rc == OSVR_RETURN_SUCCESS);
-
-        mRenderParams.nearClipDistanceMeters = static_cast<double>(nearClip);
-        mRenderParams.farClipDistanceMeters = static_cast<double>(farClip);
-
-        // this method gets called with alternating eyes starting with the left. We get the render info when
-        // the left eye (index 0) is requested (releasing the old one, if any),
-        // and re-use the same collection when the right eye (index 0) is requested
-        if (eye == 0 || !mCachedRenderInfoCollection) {
-            if (mCachedRenderInfoCollection) {
-                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
-                check(rc == OSVR_RETURN_SUCCESS);
-            }
-            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
-        }
-
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
@@ -192,14 +153,6 @@ public:
         top = static_cast<float>(renderInfo.projection.top);
         bottom = static_cast<float>(renderInfo.projection.bottom);
     }
-
-protected:
-    ID3D11Texture2D* RenderTargetTexture = NULL;
-    ID3D11RenderTargetView* RenderTargetView = NULL;
-
-    TArray<OSVR_RenderBufferD3D11> mRenderBuffers;
-    TArray<OSVR_RenderInfoD3D11> mRenderInfos;
-    OSVR_RenderManagerD3D11 mRenderManagerD3D11 = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) override
     {
@@ -271,19 +224,33 @@ protected:
                 return false;
             }
 
-            OSVR_OpenResultsD3D11 results;
-            rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
-            if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
-            {
-                UE_LOG(FOSVRCustomPresentLog, Warning,
-                    TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
-                return false;
-            }
-
-            // @todo: create the textures?
+            // The display is not opened here, but in a separate call (LazyOpenDisplay)
+            // because we may be in the game thread here
 
             bInitialized = true;
         }
+        return true;
+    }
+
+    virtual bool LazyOpenDisplayImpl() override
+    {
+        // we can assume we're initialized and running on the rendering thread
+        // and we haven't already opened the display here (done in parent class)
+        OSVR_OpenResultsD3D11 results;
+        OSVR_ReturnCode rc = osvrRenderManagerOpenDisplayD3D11(mRenderManagerD3D11, &results);
+        if (rc == OSVR_RETURN_FAILURE || results.status == OSVR_OPEN_STATUS_FAILURE)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("osvrRenderManagerOpenDisplayD3D11 call failed, or the result status was OSVR_OPEN_STATUS_FAILURE. Potential causes could be that the display is already open in direct mode with another app, or the display does not support direct mode"));
+            return false;
+        }
+        return true;
+    }
+    
+    virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) override
+    {
+        // The Direct3D11 implementation can allocate the texture right away,
+        // so we don't need to defer setting this.
         return true;
     }
 
@@ -333,7 +300,7 @@ protected:
             D3D11_TEXTURE2D_DESC renderTextureDesc;
             RenderTargetTexture->GetDesc(&renderTextureDesc);
 
-            auto graphicsDevice = GetGraphicsDevice();
+            auto graphicsDevice = GetGraphicsDevice<ID3D11Device>();
 
             //D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
             //memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
@@ -409,7 +376,7 @@ protected:
         OSVR_GraphicsLibraryD3D11 ret;
         // Put the device and context into a structure to let RenderManager
         // know to use this one rather than creating its own.
-        ret.device = GetGraphicsDevice();
+        ret.device = GetGraphicsDevice<ID3D11Device>();
         ID3D11DeviceContext *ctx = NULL;
         ret.device->GetImmediateContext(&ctx);
         check(ctx);
