@@ -55,6 +55,8 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
     pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+    rhiCmdList.Clear(true, FLinearColor::Black, true, 0, true, 0, FIntRect());
+
     RendererModule->DrawRectangle(
         rhiCmdList,
         0, 0, // X, Y
@@ -178,7 +180,10 @@ void FOSVRHMD::UpdateViewport(bool bUseSeparateRenderTarget, const FViewport& In
     auto viewportRHI = InViewport.GetViewportRHI().GetReference();
     if (!mCustomPresent || (GIsEditor && !bPlaying) || (!IsStereoEnabled() && !bUseSeparateRenderTarget))
     {
-        viewportRHI->SetCustomPresent(nullptr);
+        if (viewportRHI)
+        {
+            viewportRHI->SetCustomPresent(nullptr);
+        }
         return;
     }
 
