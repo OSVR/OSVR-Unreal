@@ -174,40 +174,40 @@ private:
     float GetScreenScale() const;
 
     TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;
-    IRendererModule* RendererModule;
+    IRendererModule* RendererModule = nullptr;
 
     /** Player's orientation tracking */
-    mutable FQuat CurHmdOrientation;
-    mutable FVector CurHmdPosition;
+    mutable FQuat CurHmdOrientation = FQuat::Identity;
+    mutable FVector CurHmdPosition = FVector::ZeroVector;
 
     /** Player's orientation tracking (on render thread) */
-    mutable FQuat CurHmdOrientationRT;
+    mutable FQuat CurHmdOrientationRT = FQuat::Identity;
 
-    FRotator DeltaControlRotation; // same as DeltaControlOrientation but as rotator
-    FQuat DeltaControlOrientation; // same as DeltaControlRotation but as quat
+    FRotator DeltaControlRotation = FRotator::ZeroRotator; // same as DeltaControlOrientation but as rotator
+    FQuat DeltaControlOrientation = FQuat::Identity; // same as DeltaControlRotation but as quat
 
 
-    mutable FQuat LastHmdOrientation; // contains last APPLIED ON GT HMD orientation
-    FVector LastHmdPosition;		  // contains last APPLIED ON GT HMD position
+    mutable FQuat LastHmdOrientation = FQuat::Identity; // contains last APPLIED ON GT HMD orientation
+    FVector LastHmdPosition = FVector::ZeroVector;		  // contains last APPLIED ON GT HMD position
 
                                       /** HMD base values, specify forward orientation and zero pos offset */
-    FQuat BaseOrientation; // base orientation
-    FVector BasePosition;
+    FQuat BaseOrientation = FQuat::Identity; // base orientation
+    FVector BasePosition = FVector::ZeroVector;
 
     /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
-    float WorldToMetersScale; // @todo: isn't this meters to world units scale?
+    float WorldToMetersScale = 100.0f; // @todo: isn't this meters to world units scale?
 
-    bool bHmdPosTracking;
-    bool bHaveVisionTracking;
+    bool bHmdPosTracking = false;
+    bool bHaveVisionTracking = false;
 
-    bool bStereoEnabled;
-    bool bHmdEnabled;
-    bool bHmdConnected;
-    bool bHmdOverridesApplied;
+    bool bStereoEnabled = false;
+    bool bHmdEnabled = false;
+    bool bHmdConnected = false;
+    bool bHmdOverridesApplied = false;
     bool bWaitedForClientStatus = false;
     bool bPlaying = false;
 
     OSVRHMDDescription HMDDescription;
-    OSVR_DisplayConfig DisplayConfig;
+    OSVR_DisplayConfig DisplayConfig = nullptr;
     TRefCountPtr<FCurrentCustomPresent> mCustomPresent;
 };

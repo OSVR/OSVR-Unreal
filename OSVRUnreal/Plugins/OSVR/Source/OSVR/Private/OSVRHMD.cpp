@@ -446,7 +446,17 @@ bool FOSVRHMD::IsStereoEnabled() const
 
 bool FOSVRHMD::EnableStereo(bool bStereo)
 {
-    bStereoEnabled = (IsHMDEnabled()) ? bStereo : false;
+    if (bStereo == bStereoEnabled)
+    {
+        return bStereoEnabled;
+    }
+
+    bStereoEnabled = IsHMDConnected() ? bStereo : false;
+    if (bStereoEnabled)
+    {
+        // We appear to be the only thing that actually calls EnableHMD
+        EnableHMD(true);
+    }
 
     auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
@@ -724,25 +734,19 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const
 {
-    return GEngine->IsStereoscopic3D();
+#if WITH_EDITOR
+    if (GIsEditor)
+    {
+        UEditorEngine* EdEngine = Cast<UEditorEngine>(GEngine);
+        bool ret = /*Session->IsActive() && */(!EdEngine || (GEnableVREditorHacks || EdEngine->bUseVRPreviewForPlayWorld) || GetDefault<ULevelEditorPlaySettings>()->ViewportGetsHMDControl) && GEngine->IsStereoscopic3D();
+        return ret;                   
+    }
+#endif
+    return GEngine && GEngine->IsStereoscopic3D();
 }
 
 FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPoint) :
-    mOSVREntryPoint(entryPoint),
-    LastHmdOrientation(FQuat::Identity),
-    CurHmdOrientation(FQuat::Identity),
-    DeltaControlRotation(FRotator::ZeroRotator),
-    DeltaControlOrientation(FQuat::Identity),
-    CurHmdPosition(FVector::ZeroVector),
-    BaseOrientation(FQuat::Identity),
-    BasePosition(FVector::ZeroVector),
-    WorldToMetersScale(100.0f),
-    bHmdPosTracking(false),
-    bHaveVisionTracking(false),
-    bStereoEnabled(true),
-    bHmdEnabled(true),
-    bHmdOverridesApplied(false),
-    DisplayConfig(nullptr)
+    mOSVREntryPoint(entryPoint)
 {
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
