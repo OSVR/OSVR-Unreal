@@ -95,12 +95,13 @@ bool FOSVRHMD::IsHMDEnabled() const
 
 void FOSVRHMD::EnableHMD(bool bEnable)
 {
-    bHmdEnabled = bEnable;
-
-    if (!bHmdEnabled)
+    // Make EnableHMD idempotent so that it and EnableStereo can call each other
+    if (bHmdEnabled == bEnable)
     {
-        EnableStereo(false);
+        return;
     }
+    bHmdEnabled = bEnable;
+    EnableStereo(bHmdEnabled);
 }
 
 EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
@@ -446,16 +447,25 @@ bool FOSVRHMD::IsStereoEnabled() const
 
 bool FOSVRHMD::EnableStereo(bool bStereo)
 {
-    if (bStereo == bStereoEnabled)
+    bool bNewSteroEnabled = IsHMDConnected() ? bStereo : false;
+    if (bNewSteroEnabled == bStereoEnabled)
     {
         return bStereoEnabled;
     }
+    bStereoEnabled = bNewSteroEnabled;
 
-    bStereoEnabled = IsHMDConnected() ? bStereo : false;
     if (bStereoEnabled)
     {
-        // We appear to be the only thing that actually calls EnableHMD
-        EnableHMD(true);
+        StartCustomPresent();
+    }
+    else
+    {
+        StopCustomPresent();
+    }
+
+    if (bHmdEnabled != bStereoEnabled)
+    {
+        EnableHMD(bStereoEnabled);
     }
 
     auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
