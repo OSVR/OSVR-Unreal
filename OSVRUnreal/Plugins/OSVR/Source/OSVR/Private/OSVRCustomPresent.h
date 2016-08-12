@@ -18,8 +18,6 @@
 
 #include "IOSVR.h"
 #include <osvr/RenderKit/RenderManagerC.h>
-#include <vector>
-#include <string>
 
 DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 
