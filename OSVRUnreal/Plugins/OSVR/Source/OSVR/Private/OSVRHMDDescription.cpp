@@ -20,8 +20,6 @@
 
 #include "Json.h"
 
-#include <cmath>
-
 DEFINE_LOG_CATEGORY(OSVRHMDDescriptionLog);
 
 
@@ -129,7 +127,7 @@ bool OSVRHMDDescription::InitIPD(OSVR_DisplayConfig displayConfig)
     double dy = leftEye.translation.data[1] - rightEye.translation.data[1];
     double dz = leftEye.translation.data[2] - rightEye.translation.data[2];
 
-    m_ipd = std::sqrt(dx * dx + dy * dy + dz * dz);
+    m_ipd = FMath::Sqrt(dx * dx + dy * dy + dz * dz);
     return true;
 }
 
@@ -182,8 +180,8 @@ bool OSVRHMDDescription::InitFOV(OSVR_DisplayConfig displayConfig)
             return false;
         }
 
-        double horizontalFOV = FMath::RadiansToDegrees(std::atan(std::abs(left)) + std::atan(std::abs(right)));
-        double verticalFOV = FMath::RadiansToDegrees(std::atan(std::abs(top)) + std::atan(std::abs(bottom)));
+        double horizontalFOV = FMath::RadiansToDegrees(FMath::Atan(FMath::Abs(left)) + FMath::Atan(FMath::Abs(right)));
+        double verticalFOV = FMath::RadiansToDegrees(FMath::Atan(FMath::Abs(top)) + FMath::Atan(FMath::Abs(bottom)));
         Data->Fov[eye].Set(horizontalFOV, verticalFOV);
     }
     return true;
