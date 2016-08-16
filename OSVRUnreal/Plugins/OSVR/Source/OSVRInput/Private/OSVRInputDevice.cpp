@@ -311,7 +311,8 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
             OSVR_TimeValue tvalue;
             if (osvrGetPoseState(iface, &tvalue, &state) == OSVR_RETURN_SUCCESS)
             {
-                float worldToMetersScale = mOSVRHMD->GetWorldToMetersScale();
+                // @todo: how do we get the world to meters scale without the HMD?
+                float worldToMetersScale = mOSVRHMD.IsValid() ? mOSVRHMD->GetWorldToMetersScale() : 100.0f;
                 OutPosition = OSVR2FVector(state.translation, worldToMetersScale);
                 OutOrientation = OSVR2FQuat(state.rotation).Rotator();
                 bRet = true;
