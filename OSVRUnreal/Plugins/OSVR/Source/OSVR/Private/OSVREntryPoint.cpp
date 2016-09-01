@@ -29,32 +29,12 @@ DEFINE_LOG_CATEGORY(OSVREntryPointLog);
 
 OSVREntryPoint::OSVREntryPoint()
 {
-}
-
-void OSVREntryPoint::Initialize()
-{
-    // avoid double initialization
-    if (osvrClientContext != nullptr)
-    {
-        // too spammy to log here
-        return;
-    }
-
-    // hack: to avoid delay on OSVR server connection attempt when not using OSVR, don't initialize if nohmd command line param specified
-    if (FParse::Param(FCommandLine::Get(), TEXT("nohmd")))
-    {
-        // too spammy to log here
-        return;
-    }
-
     // avoid BuildCookRun hangs
     if (IsRunningCommandlet() || IsRunningDedicatedServer())
     {
-        UE_LOG(OSVREntryPointLog, Display, TEXT("OSVREntryPoint::Initialize(): running as commandlet or dedicated server - skipping client context startup."));
+        UE_LOG(OSVREntryPointLog, Display, TEXT("OSVREntryPoint::OSVREntryPoint(): running as commandlet or dedicated server - skipping client context startup."));
         return;
     }
-
-	LoadFromIni();
 
     osvrClientAttemptServerAutoStart();
 
@@ -64,7 +44,7 @@ void OSVREntryPoint::Initialize()
         bool bClientContextOK = false;
 		bool bFailure = false;
 		auto begin = FDateTime::Now().GetTicks();
-		auto end = begin + InitTimeoutSeconds * ETimespan::TicksPerSecond;
+		auto end = begin + 10 * ETimespan::TicksPerSecond;
 		while (FDateTime::Now().GetTicks() < end && !bClientContextOK && !bFailure)
         {
             bClientContextOK = osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
@@ -73,7 +53,7 @@ void OSVREntryPoint::Initialize()
                 bFailure = osvrClientUpdate(osvrClientContext) == OSVR_RETURN_FAILURE;
                 if (bFailure)
                 {
-                    UE_LOG(OSVREntryPointLog, Warning, TEXT("osvrClientUpdate failed during startup. Treating this as \"HMD not connected\""));
+                    UE_LOG(OSVREntryPointLog, Display, TEXT("osvrClientUpdate failed during startup. Treating this as if the HMD is not connected."));
                     break;
                 }
                 FPlatformProcess::Sleep(0.2f);
@@ -81,12 +61,8 @@ void OSVREntryPoint::Initialize()
         }
         if (!bClientContextOK)
         {
-            UE_LOG(OSVREntryPointLog, Warning, TEXT("OSVR client context did not initialize correctly. Most likely the server isn't running. Treating this as if the HMD is not connected."));
+            UE_LOG(OSVREntryPointLog, Display, TEXT("OSVR client context could not connect. Most likely the server isn't running. Treating this as if the HMD is not connected."));
         }
-		else
-		{
-			UE_LOG(OSVREntryPointLog, Display, TEXT("OSVR initialized."));
-		}
     }
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
@@ -108,24 +84,16 @@ OSVREntryPoint::~OSVREntryPoint()
     }
 
     osvrClientReleaseAutoStartedServer();
-
-	SaveToIni();
 }
 
 void OSVREntryPoint::Tick(float DeltaTime)
 {
     FScopeLock lock(this->GetClientContextMutex());
-	if (osvrClientContext != nullptr)
-	{
-		osvrClientUpdate(osvrClientContext);
-	}
+    osvrClientUpdate(osvrClientContext);
 }
 
 bool OSVREntryPoint::IsOSVRConnected()
 {
-	// initialize if not already done, otherwise nothing extra happens
-	Initialize();
-
     return osvrClientContext && osvrClientCheckStatus(osvrClientContext) == OSVR_RETURN_SUCCESS;
 }
 
@@ -135,20 +103,3 @@ OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
     return InterfaceCollection.Get();
 }
 #endif
-
-void OSVREntryPoint::LoadFromIni()
-{
-    const TCHAR* OSVRSettings = TEXT("OSVR.Settings");
-    int32 i;
-
-    if (GConfig->GetInt(OSVRSettings, TEXT("InitTimeoutSeconds"), i, GEngineIni))
-    {
-        InitTimeoutSeconds = i;
-    }
-}
-
-void OSVREntryPoint::SaveToIni()
-{
-    const TCHAR* OSVRSettings = TEXT("OSVR.Settings");
-    GConfig->SetInt(OSVRSettings, TEXT("InitTimeoutSeconds"), InitTimeoutSeconds, GEngineIni);
-}
