@@ -40,13 +40,6 @@ void OSVREntryPoint::Initialize()
         return;
     }
 
-    // hack: to avoid delay on OSVR server connection attempt when not using OSVR, don't initialize if nohmd command line param specified
-    if (FParse::Param(FCommandLine::Get(), TEXT("nohmd")))
-    {
-        // too spammy to log here
-        return;
-    }
-
     // avoid BuildCookRun hangs
     if (IsRunningCommandlet() || IsRunningDedicatedServer())
     {
@@ -55,6 +48,13 @@ void OSVREntryPoint::Initialize()
     }
 
 	LoadFromIni();
+
+	// hack: to avoid delay on OSVR server connection attempt when not using OSVR, don't initialize if nohmd command line param specified and SkipIfNoHMDCommandLine config is true
+	if (SkipIfNoHMDCommandLine && FParse::Param(FCommandLine::Get(), TEXT("nohmd")))
+	{
+		// too spammy to log here
+		return;
+	}
 
     osvrClientAttemptServerAutoStart();
 
@@ -138,17 +138,24 @@ OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
 
 void OSVREntryPoint::LoadFromIni()
 {
-    const TCHAR* OSVRSettings = TEXT("OSVR.Settings");
-    int32 i;
+    const TCHAR* OSVRSettings = TEXT("c");
 
-    if (GConfig->GetInt(OSVRSettings, TEXT("InitTimeoutSeconds"), i, GEngineIni))
+	int32 myInt = 0;
+    if (GConfig->GetInt(OSVRSettings, TEXT("InitTimeoutSeconds"), myInt, GEngineIni))
     {
-        InitTimeoutSeconds = i;
+        InitTimeoutSeconds = myInt;
     }
+
+	bool myBool = false;
+	if (GConfig->GetBool(OSVRSettings, TEXT("SkipIfNoHMDCommandLine"), myBool, GEngineIni))
+	{
+		SkipIfNoHMDCommandLine = myBool;
+	}
 }
 
 void OSVREntryPoint::SaveToIni()
 {
     const TCHAR* OSVRSettings = TEXT("OSVR.Settings");
     GConfig->SetInt(OSVRSettings, TEXT("InitTimeoutSeconds"), InitTimeoutSeconds, GEngineIni);
+	GConfig->SetBool(OSVRSettings, TEXT("SkipIfNoHMDCommandLine"), SkipIfNoHMDCommandLine, GEngineIni);
 }

@@ -76,6 +76,7 @@ private:
     OSVR_ClientContext osvrClientContext = nullptr;
     FCriticalSection mContextMutex;
     int InitTimeoutSeconds = 10;
+	bool SkipIfNoHMDCommandLine = false;
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 	TSharedPtr< OSVRInterfaceCollection > InterfaceCollection;
