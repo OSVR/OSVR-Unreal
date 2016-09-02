@@ -22,7 +22,10 @@
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
 #include "OSVRCustomPresentOpenGL.h"
+
+#if PLATFORM_WINDOWS
 #include "OSVRCustomPresentD3D11.h"
+#endif
 
 #include "Runtime/Core/Public/Misc/DateTime.h"
 
@@ -71,13 +74,17 @@ void FOSVRHMD::OnEndPlay()
 
 void FOSVRHMD::StartCustomPresent()
 {
-#if PLATFORM_WINDOWS
     if (!mCustomPresent)
     {
         if (IsOpenGLPlatform(GMaxRHIShaderPlatform))
         {
+            // @todo temporarily turn off OpenGL support for windows because we don't 
+            // put the window in the right spot yet for extended mode.
+#if !PLATFORM_WINDOWS
             mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+#endif
         }
+#if PLATFORM_WINDOWS
         else
         {
 
@@ -85,8 +92,8 @@ void FOSVRHMD::StartCustomPresent()
             // synchronize with the one from FOSVREntryPoint.
             mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
         }
-    }
 #endif
+    }
 }
 
 void FOSVRHMD::StopCustomPresent()
