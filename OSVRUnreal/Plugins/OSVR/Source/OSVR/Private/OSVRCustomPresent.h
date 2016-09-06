@@ -18,8 +18,6 @@
 
 #include "IOSVR.h"
 #include <osvr/RenderKit/RenderManagerC.h>
-#include <vector>
-#include <string>
 
 DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 
@@ -29,7 +27,7 @@ class FOSVRCustomPresent : public FRHICustomPresent
 public:
     FTexture2DRHIRef mRenderTexture;
   
-    FOSVRCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
+    FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
     {
         // If we are passed in a client context to use, we don't own it, so
@@ -39,7 +37,6 @@ public:
         //bOwnClientContext = (clientContext == nullptr);
         bOwnClientContext = true;
         mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
-        mScreenScale = screenScale;
     }
 
     virtual ~FOSVRCustomPresent()
@@ -175,10 +172,10 @@ public:
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
-    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY)
+    virtual bool CalculateRenderTargetSize(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale)
     {
         FScopeLock lock(&mOSVRMutex);
-        return CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY);
+        return CalculateRenderTargetSizeImpl(InOutSizeX, InOutSizeY, screenScale);
     }
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) = 0;
@@ -192,12 +189,11 @@ protected:
     bool bInitialized = false;
     bool bDisplayOpen = false;
     bool bOwnClientContext = true;
-    float mScreenScale = 1.0f;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
     OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
 
-    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) = 0;
+    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
     virtual bool LazyOpenDisplayImpl() = 0;

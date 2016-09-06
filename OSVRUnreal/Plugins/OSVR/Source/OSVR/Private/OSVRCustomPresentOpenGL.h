@@ -202,8 +202,8 @@ public:
 class FOpenGLCustomPresent : public FOSVRCustomPresent
 {
 public:
-    FOpenGLCustomPresent(OSVR_ClientContext clientContext, float screenScale) :
-        FOSVRCustomPresent(clientContext, screenScale)
+    FOpenGLCustomPresent(OSVR_ClientContext clientContext) :
+        FOSVRCustomPresent(clientContext)
     {
     }
 
@@ -265,7 +265,7 @@ protected:
         bottom = static_cast<float>(renderInfo.projection.bottom);
     }
 
-    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY) override
+    virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) override
     {
         if (InitializeImpl())
         {
@@ -300,8 +300,8 @@ protected:
             check(mRenderInfos.Num() == 2);
             check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
 
-            mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * mScreenScale);
-            mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * mScreenScale);
+            mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * screenScale);
+            mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * screenScale);
             mRenderInfos[1].viewport.width = mRenderInfos[0].viewport.width;
             mRenderInfos[1].viewport.height = mRenderInfos[0].viewport.height;
             mRenderInfos[1].viewport.left = mRenderInfos[0].viewport.width;

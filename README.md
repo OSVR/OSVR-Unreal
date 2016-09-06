@@ -33,11 +33,12 @@ release of the built-in plugin. You will need to disable the built-in plugin fir
 if you previously enabled it.
 
 ### Dependencies
-You need OSVR-Core (32-bit and 64-bit) and Render Manager. Prebuilt binaries are available here:
- > http://osvr.github.io/using/
 
-You will also need the OSVR-Android binaries. Prebuild binaries are available here:
- > http://resource.osvr.com/public_download/artifacts/osvr-android-ndk/osvr-android-ndk.tar.bz2
+ 1. You need OSVR SDK (32-bit and 64-bit).
+  * Prebuilt binaries are available here: http://osvr.github.io/using/
+  * NOTE: Installing the 64-bit version currently uninstalls the 32-bit version.  A workaround is to install the 32-bit version, copy the SDK directory to a temp dir, install the 64-bit version, then copy the temp 32-bit SDK directory back into place.
+ 2. You will also need the OSVR-Android binaries.
+  * Prebuild binaries are available here: http://resource.osvr.com/public_download/artifacts/osvr-android-ndk/osvr-android-ndk.tar.bz2
 
 ### Integrating the plugin from source with an existing project
 The current recommended way to integrate the OSVR Unreal plugin with an existing project is directly from source.
@@ -45,17 +46,14 @@ The current recommended way to integrate the OSVR Unreal plugin with an existing
  1. Clone the OSVR-Unreal source code, or download a zip from github.
  2. Run the ImportFromSDK.cmd script and specify the SDK paths as it prompts you.   
   * NOTE: It's easiest to drag the folders to the console window when it prompts you for SDK paths, as this will automatically wrap the paths in quotes as needed. If you enter them in manually, please use quotes around any paths with spaces in them.
- 3. Check that the OSVR-Core and Render Manager binaries have been copied to the correct place in OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin, include, and lib.
- 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins directory to your existing project's directory.
- 5. Temporarily rename the Plugins folder something else, like Plugins_. This will allow you to open the project in the editor without first building the plugin. Without this step, the editor will complain about the OSVR module being missing.
- 6. Open the existing project in the Unreal editor.
- 7. Rename the Plugins_ folder back to Plugins.
- 8. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu.
-  * NOTE: if your project is a pure blueprint project, you may need to add a dummy C++ game module to your project to get Unreal to generate a Visual Studio project for you. Otherwise it may complain about there not being any code to compile (having local plugins isn't enough).
- 9. Open the generated or refreshed Visual Studio project and rebuild using the Development Editor build configuration.
- 10. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64 and YourProject/Binaries/Android/armeabi-v7a. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries.
-
- > Note: There is only a 64-bit installer available for RenderManager, so for now only the 64-bit Unreal targets are supported at this time.
+  * Example command line: ```ImportFromSDK.cmd "C:\Program Files (x86)\OSVR\SDK" "C:\Program Files\OSVR\SDK" D:\3rdParty\osvr-android-ndk```
+ 3. Check that the OSVR binaries have been copied to the correct place in OSVRUnreal/Plugins/OSVR/Source/OSVRClientKit/bin, include, and lib.
+ 4. You do not need to build OSVR-Unreal's project. Instead, copy the OSVRUnreal/Plugins/OSVR directory to your existing project's Plugins directory.
+ 5. You can either load your .uproject file and let UE4Editor automatically handle any Plugin rebuilding needed, or you can do it manually following the next steps.
+ 5. Select Generate Visual Studio Project, or Refresh Visual Studio Project, from the File menu of your .uproject file
+  * NOTE: if your project is a pure Blueprint project, you may need to add a dummy C++ game module to your project to get Unreal to generate a Visual Studio project for you. Otherwise it may complain about there not being any code to compile (having local plugins isn't enough).
+ 6. Open the generated or refreshed Visual Studio project and rebuild using the Development Editor build configuration.  The file will be in the project's top-level directory.  Make sure to select Win64 as the target.
+ 7. Confirm that the OSVR plugin binaries were copied correctly to YourProject/Binaries/Win64 and YourProject/Binaries/Android/armeabi-v7a. If not, you will need to copy binaries from YourProject/Plugins/OSVR/Binaries (or YourProject/Plugins/OSVR/Source/OSVRClientKit/bin if Binaries is not available) to YourProject/Binaries.
 
  > Note: Android support is currently preliminary/alpha-quality. It is not yet ready for production. If you still want to build for Android without OSVR support enabled, remove Android from the WhiteListPlatforms of both OSVR and OSVRInput modules in /OSVRUnreal/Plugins/OSVR/OSVR.uplugin.
 

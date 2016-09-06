@@ -80,8 +80,8 @@ void FOSVRHMD::StartCustomPresent()
         {
             // @todo temporarily turn off OpenGL support for windows because we don't 
             // put the window in the right spot yet for extended mode.
-#if !PLATFORM_WINDOWS
-            mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+#if !PLATFORM_WINDOWS || OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS
+            mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/);
 #endif
         }
 #if PLATFORM_WINDOWS
@@ -90,7 +90,7 @@ void FOSVRHMD::StartCustomPresent()
 
             // currently, FCustomPresent creates its own client context, so no need to
             // synchronize with the one from FOSVREntryPoint.
-            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/, mScreenScale);
+            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/);
         }
 #endif
     }
@@ -113,12 +113,13 @@ bool FOSVRHMD::IsHMDEnabled() const
 
 void FOSVRHMD::EnableHMD(bool bEnable)
 {
-    bHmdEnabled = bEnable;
-
-    if (!bHmdEnabled)
+    // Make EnableHMD idempotent so that it and EnableStereo can call each other
+    if (bHmdEnabled == bEnable)
     {
-        EnableStereo(false);
+        return;
     }
+    bHmdEnabled = bEnable;
+    EnableStereo(bHmdEnabled);
 }
 
 EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
@@ -133,9 +134,9 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
  * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
  * them from any thread with access to the client context.
  */
-static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
+void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
 {
-    auto clientContext = IOSVR::Get().GetEntryPoint()->GetClientContext();
+    auto clientContext = mOSVREntryPoint->GetClientContext();
     size_t length;
     osvrClientGetStringParameterLength(clientContext, "/renderManagerConfig", &length);
     if (length > 0)
@@ -148,8 +149,18 @@ static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight
         if (FJsonSerializer::Deserialize(reader, jsonObject))
         {
             auto subObj = jsonObject->GetObjectField("renderManagerConfig");
-            double renderOverfillFactor = subObj->GetNumberField("renderOverfillFactor");
-            double renderOversampleFactor = subObj->GetNumberField("renderOversampleFactor");
+            double renderOverfillFactor = 1.0f;
+            double renderOversampleFactor = 1.0f;
+
+            if (subObj->HasTypedField<EJson::Number>("renderOverfillFactor"))
+            {
+                renderOverfillFactor = subObj->GetNumberField("renderOverfillFactor");
+            }
+            if (subObj->HasTypedField<EJson::Number>("renderOversampleFactor"))
+            {
+                renderOversampleFactor = subObj->GetNumberField("renderOversampleFactor");
+            }
+
             width = windowWidth * renderOverfillFactor * renderOversampleFactor;
             height = windowHeight * renderOverfillFactor * renderOversampleFactor;
         }
@@ -164,8 +175,7 @@ static void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight
 
 bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
     if (IsInitialized()
         && osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS)
     {
@@ -205,9 +215,8 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
 {
     OSVR_Pose3 pose;
     OSVR_ReturnCode returnCode;
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-    auto clientContext = entryPoint->GetClientContext();
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    auto clientContext = mOSVREntryPoint->GetClientContext();
 
     returnCode = osvrClientUpdate(clientContext);
     check(returnCode == OSVR_RETURN_SUCCESS);
@@ -456,20 +465,40 @@ bool FOSVRHMD::IsStereoEnabled() const
 
 bool FOSVRHMD::EnableStereo(bool bStereo)
 {
-    bStereoEnabled = (IsHMDEnabled()) ? bStereo : false;
+    bool bNewSteroEnabled = IsHMDConnected() ? bStereo : false;
+    if (bNewSteroEnabled == bStereoEnabled)
+    {
+        return bStereoEnabled;
+    }
+    bStereoEnabled = bNewSteroEnabled;
+
+    if (bStereoEnabled)
+    {
+        StartCustomPresent();
+    }
+    else
+    {
+        StopCustomPresent();
+    }
+
+    if (bHmdEnabled != bStereoEnabled)
+    {
+        EnableHMD(bStereoEnabled);
+    }
 
     auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
     auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
     auto width = leftEye.X + rightEye.X;
     auto height = leftEye.Y;
 
+    GetRenderTargetSize_GameThread(width, height, width, height);
+
     // On Android, we currently use the resolution Unreal sets for us, bypassing OSVR
     // We may revisit once display plugins are added to OSVR-Core.
 #if !PLATFORM_ANDROID
-    FSystemResolution::RequestResolutionChange(1280, 720, EWindowMode::Windowed);
+    FSystemResolution::RequestResolutionChange(width, height, EWindowMode::Windowed);
 #endif
 
-    GetRenderTargetSize_GameThread(width, height, width, height);
 
     FSceneViewport* sceneViewport;
     if (!GIsEditor)
@@ -516,8 +545,9 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             //{
             //uint32 iWidth, iHeight;
             //mCustomPresent->CalculateRenderTargetSize(iWidth, iHeight);
-            //width = float(iWidth) * (1.0f / this->mScreenScale);
-            //height = float(iHeight) * (1.0f / this->mScreenScale);
+            //float screenScale = GetScreenScale();
+            //width = float(iWidth) * (1.0f / screenScale);
+            //height = float(iHeight) * (1.0f / screenScale);
             //}
             //else
             //{
@@ -558,15 +588,28 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
     return bStereoEnabled;
 }
 
+float FOSVRHMD::GetScreenScale() const
+{
+    static IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
+    float screenScale = 1.0f;
+    if (CVScreenPercentage)
+    {
+        screenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
+    }
+    return screenScale;
+}
+
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
+    float screenScale = GetScreenScale();
+
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
-        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY);
+        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
         // FCustomPresent is expected to account for screenScale,
         // so we need to back it out here
-        SizeX = int(float(SizeX) * (1.0f / mScreenScale));
-        SizeY = int(float(SizeY) * (1.0f / mScreenScale));
+        SizeX = int(float(SizeX) * (1.0f / screenScale));
+        SizeY = int(float(SizeY) * (1.0f / screenScale));
     }
     else
     {
@@ -655,8 +698,7 @@ namespace
 
 FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassType, const float FOV) const
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    auto mutex = entryPoint->GetClientContextMutex();
+    auto mutex = mOSVREntryPoint->GetClientContextMutex();
     FScopeLock lock(mutex);
 
     FMatrix ret;
@@ -720,30 +762,24 @@ void FOSVRHMD::SetupView(FSceneViewFamily& InViewFamily, FSceneView& InView)
 
 bool FOSVRHMD::IsHeadTrackingAllowed() const
 {
-    return GEngine->IsStereoscopic3D();
+#if WITH_EDITOR
+    if (GIsEditor)
+    {
+        UEditorEngine* EdEngine = Cast<UEditorEngine>(GEngine);
+        bool ret = /*Session->IsActive() && */(!EdEngine || (GEnableVREditorHacks || EdEngine->bUseVRPreviewForPlayWorld) || GetDefault<ULevelEditorPlaySettings>()->ViewportGetsHMDControl) && GEngine->IsStereoscopic3D();
+        return ret;                   
+    }
+#endif
+    return GEngine && GEngine->IsStereoscopic3D();
 }
 
-FOSVRHMD::FOSVRHMD()
-    : LastHmdOrientation(FQuat::Identity),
-    CurHmdOrientation(FQuat::Identity),
-    DeltaControlRotation(FRotator::ZeroRotator),
-    DeltaControlOrientation(FQuat::Identity),
-    CurHmdPosition(FVector::ZeroVector),
-    BaseOrientation(FQuat::Identity),
-    BasePosition(FVector::ZeroVector),
-    WorldToMetersScale(100.0f),
-    bHmdPosTracking(false),
-    bHaveVisionTracking(false),
-    bStereoEnabled(true),
-    bHmdEnabled(true),
-    bHmdOverridesApplied(false),
-    DisplayConfig(nullptr)
+FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPoint) :
+    mOSVREntryPoint(entryPoint)
 {
     static const FName RendererModuleName("Renderer");
     RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
-    auto osvrClientContext = entryPoint->GetClientContext();
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    auto osvrClientContext = mOSVREntryPoint->GetClientContext();
 
     // Prevents debugger hangs that sometimes occur with only one monitor.
 #if OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE
@@ -751,12 +787,6 @@ FOSVRHMD::FOSVRHMD()
 #endif
 
     EnablePositionalTracking(true);
-
-    IConsoleVariable* CVScreenPercentage = IConsoleManager::Get().FindConsoleVariable(TEXT("r.screenpercentage"));
-    if (CVScreenPercentage)
-    {
-        mScreenScale = float(CVScreenPercentage->GetInt()) / 100.0f;
-    }
 
     StartCustomPresent();
 
@@ -836,8 +866,7 @@ FOSVRHMD::FOSVRHMD()
 
 FOSVRHMD::~FOSVRHMD()
 {
-    auto entryPoint = IOSVR::Get().GetEntryPoint();
-    FScopeLock lock(entryPoint->GetClientContextMutex());
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
     EnablePositionalTracking(false);
 }
 

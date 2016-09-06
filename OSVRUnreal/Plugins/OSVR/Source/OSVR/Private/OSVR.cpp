@@ -29,7 +29,7 @@ class FOSVR : public IOSVR
 private:
     TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> hmd;
     FCriticalSection mModuleMutex;
-    TSharedPtr< class OSVREntryPoint > EntryPoint;
+    TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> EntryPoint;
     bool bModulesLoaded = false;
 public:
     /** IModuleInterface implementation */
@@ -37,7 +37,7 @@ public:
     virtual void ShutdownModule() override;
 
     /** IHeadMountedDisplayModule implementation */
-    virtual TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > CreateHeadMountedDisplay() override;
+    virtual TSharedPtr<class IHeadMountedDisplay, ESPMode::ThreadSafe> CreateHeadMountedDisplay() override;
 #if OSVR_UNREAL_4_12
     virtual bool IsHMDConnected() override;
 #endif
@@ -45,16 +45,16 @@ public:
     // Pre-init the HMD module (optional).
     //virtual void PreInit() override;
 
-    virtual OSVREntryPoint* GetEntryPoint() override;
+    virtual TSharedPtr<OSVREntryPoint, ESPMode::ThreadSafe> GetEntryPoint() override;
     virtual TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> GetHMD() override;
     virtual void LoadOSVRClientKitModule() override;
 };
 
 IMPLEMENT_MODULE(FOSVR, OSVR)
 
-OSVREntryPoint* FOSVR::GetEntryPoint()
+TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> FOSVR::GetEntryPoint()
 {
-    return EntryPoint.Get();
+    return EntryPoint;
 }
 
 TSharedPtr<FOSVRHMD, ESPMode::ThreadSafe> FOSVR::GetHMD()
@@ -129,7 +129,7 @@ TSharedPtr< class IHeadMountedDisplay, ESPMode::ThreadSafe > FOSVR::CreateHeadMo
 {
     if (EntryPoint->IsOSVRConnected())
     {
-        TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD());
+        TSharedPtr< FOSVRHMD, ESPMode::ThreadSafe > OSVRHMD(new FOSVRHMD(EntryPoint));
         if (OSVRHMD->IsInitialized() && OSVRHMD->IsHMDConnected())
         {
             hmd = OSVRHMD;
