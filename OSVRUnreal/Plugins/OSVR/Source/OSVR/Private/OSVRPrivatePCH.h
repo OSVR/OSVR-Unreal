@@ -37,6 +37,8 @@
 // in the background and no way to switch apps).
 #define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 0
 
+#define OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS 1
+
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>
 #include <osvr/ClientKit/InterfaceCallbackC.h>

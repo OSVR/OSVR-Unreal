@@ -21,6 +21,11 @@
 #include "SharedPointer.h"
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
+#include "OSVRCustomPresentOpenGL.h"
+
+#if PLATFORM_WINDOWS
+#include "OSVRCustomPresentD3D11.h"
+#endif
 
 #include "Runtime/Core/Public/Misc/DateTime.h"
 
@@ -32,6 +37,7 @@
 #include "AllowWindowsPlatformTypes.h"
 #include <osvr/Util/ReturnCodesC.h>
 #include <osvr/RenderKit/RenderManagerD3D11C.h>
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
 #include "HideWindowsPlatformTypes.h"
 #else
 #include <osvr/RenderKit/RenderManagerOpenGLC.h>
@@ -68,14 +74,26 @@ void FOSVRHMD::OnEndPlay()
 
 void FOSVRHMD::StartCustomPresent()
 {
-#if PLATFORM_WINDOWS
-    if (!mCustomPresent && IsPCPlatform(GMaxRHIShaderPlatform) && !IsOpenGLPlatform(GMaxRHIShaderPlatform))
+    if (!mCustomPresent)
     {
-        // currently, FCustomPresent creates its own client context, so no need to
-        // synchronize with the one from FOSVREntryPoint.
-        mCustomPresent = new FCurrentCustomPresent(nullptr/*osvrClientContext*/);
-    }
+        if (IsOpenGLPlatform(GMaxRHIShaderPlatform))
+        {
+            // @todo temporarily turn off OpenGL support for windows because we don't 
+            // put the window in the right spot yet for extended mode.
+#if !PLATFORM_WINDOWS || OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS
+            mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/);
 #endif
+        }
+#if PLATFORM_WINDOWS
+        else
+        {
+
+            // currently, FCustomPresent creates its own client context, so no need to
+            // synchronize with the one from FOSVREntryPoint.
+            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/);
+        }
+#endif
+    }
 }
 
 void FOSVRHMD::StopCustomPresent()

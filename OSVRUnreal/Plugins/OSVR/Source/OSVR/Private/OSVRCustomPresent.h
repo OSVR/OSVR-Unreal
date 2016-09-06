@@ -21,7 +21,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 
-template<class TGraphicsDevice>
+//template<class TGraphicsDevice>
 class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
@@ -73,11 +73,27 @@ public:
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
         InitializeImpl();
+        if (!bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();
+            check(bDisplayOpen);
+        }
+        
+        // @todo This is giving us a black screen.
         FinishRendering();
         return true;
     }
 
-    // implement this in the sub-class
+    virtual void RenderTexture_RenderThread(
+        FRHICommandListImmediate& rhiCmdList,
+        FTexture2DRHIParamRef backBuffer,
+        FTexture2DRHIParamRef srcTexture)
+    {
+    }
+
+    // Initializes RenderManager but does not open the displays
+    // Can be called from the render thread or game thread.
+    // @todo: this call should be lazy, then IsInitialized can be removed.
     virtual bool Initialize()
     {
         FScopeLock lock(&mOSVRMutex);
@@ -89,8 +105,70 @@ public:
         return bInitialized;
     }
 
-    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
-    virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI) = 0;
+    virtual bool LazySetSrcTexture(FTexture2DRHIParamRef srcTexture)
+    {
+        FScopeLock lock(&mOSVRMutex);
+        return LazySetSrcTextureImpl(srcTexture);
+    }
+
+    virtual bool LazyOpenDisplay()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        if(IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
+        {
+            bDisplayOpen = LazyOpenDisplayImpl();    
+        }
+        return bDisplayOpen;
+    }
+    
+    virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
+    {
+        OSVR_ReturnCode rc;
+        rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
+        check(rc == OSVR_RETURN_SUCCESS);
+
+        mRenderParams.nearClipDistanceMeters = static_cast<double>(nearClip);
+        mRenderParams.farClipDistanceMeters = static_cast<double>(farClip);
+
+        // this method gets called with alternating eyes starting with the left. We get the render info when
+        // the left eye (index 0) is requested (releasing the old one, if any),
+        // and re-use the same collection when the right eye (index 0) is requested
+        if (eye == 0 || !mCachedRenderInfoCollection) {
+            if (mCachedRenderInfoCollection) {
+                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
+                check(rc == OSVR_RETURN_SUCCESS);
+            }
+            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+
+        GetProjectionMatrixImpl(eye, left, right, bottom, top, nearClip, farClip);
+    }
+
+    virtual bool UpdateViewport(const FViewport& InViewport, class FRHIViewport* InViewportRHI)
+    {
+        FScopeLock lock(&mOSVRMutex);
+
+        check(IsInGameThread());
+        if (!IsInitialized())
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("UpdateViewport called but custom present is not initialized - doing nothing"));
+            return false;
+        }
+        else
+        {
+            check(InViewportRHI);
+            auto oldCustomPresent = InViewportRHI->GetCustomPresent();
+            if (oldCustomPresent != this)
+            {
+                InViewportRHI->SetCustomPresent(this);
+            }
+            // UpdateViewport is called before we're initialized, so we have to
+            // defer updates to the render buffers until we're in the render thread.
+            //bRenderBuffersNeedToUpdate = true;
+            return true;
+        }
+    }
 
     // RenderManager normalizes displays a bit. We create the render target assuming horizontal side-by-side.
     // RenderManager then rotates that render texture if needed for vertical side-by-side displays.
@@ -109,16 +187,20 @@ protected:
 
     bool bRenderBuffersNeedToUpdate = true;
     bool bInitialized = false;
+    bool bDisplayOpen = false;
     bool bOwnClientContext = true;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
     OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
-
+    virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
-
-    virtual TGraphicsDevice* GetGraphicsDevice()
+    virtual bool LazyOpenDisplayImpl() = 0;
+    virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) = 0;
+    
+    template<class TGraphicsDevice>
+    TGraphicsDevice* GetGraphicsDevice()
     {
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
