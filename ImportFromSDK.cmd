@@ -70,7 +70,7 @@ set PLUGIN_ROOT=%2
 set DEST_ROOT=%3
 set SRC_LIB=%SRC%\NDK\osvr\builds\armeabi-v7a\lib
 
-for %%F in (%SRC_LIB%\libcrystax.so,%SRC_LIB%\libfunctionality.so,%SRC_LIB%\libgnustl_shared.so,%SRC_LIB%\libjsoncpp.so,%SRC_LIB%\libosvrAnalysisPluginKit.so,%SRC_LIB%\libosvrClient.so,%SRC_LIB%\libosvrClientKit.so,%SRC_LIB%\libosvrCommon.so,%SRC_LIB%\libosvrConnection.so,%SRC_LIB%\libosvrJointClientKit.so,%SRC_LIB%\libosvrPluginHost.so,%SRC_LIB%\libosvrServer.so,%SRC_LIB%\libosvrUtil.so,%SRC_LIB%\libosvrVRPNServer.so) do (
+for %%F in (%SRC_LIB%\libcrystax.so,%SRC_LIB%\libfunctionality.so,%SRC_LIB%\libgnustl_shared.so,%SRC_LIB%\libjsoncpp.so,%SRC_LIB%\libosvrAnalysisPluginKit.so,%SRC_LIB%\libosvrClient.so,%SRC_LIB%\libosvrClientKit.so,%SRC_LIB%\libosvrCommon.so,%SRC_LIB%\libosvrConnection.so,%SRC_LIB%\libosvrJointClientKit.so,%SRC_LIB%\libosvrPluginHost.so,%SRC_LIB%\libosvrServer.so,%SRC_LIB%\libosvrUtil.so,%SRC_LIB%\libosvrVRPNServer.so,%SRC_LIB%\libosvrRenderManager.so,%SRC_LIB%\libcom_osvr_android_sensorTracker.so,%SRC_LIB%\libcom_osvr_Multiserver.so) do (
   rem echo xcopy %%F "%DEST_ROOT%\bin\Android\armeabi-v7a\" %XCOPY_ARGS%
   xcopy %%F "%DEST_ROOT%\bin\Android\armeabi-v7a\" %XCOPY_ARGS%
 )
@@ -90,8 +90,8 @@ echo Architecture-dependent files %BITS%
 echo,
 
 echo.> "%DEST_ROOT%\Win%BITS%osvr-ver.txt"
-rem echo xcopy %SRC%\bin\osvr-ver.txt "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /i %XCOPY_ARGS% 
-xcopy %SRC%\bin\osvr-ver.txt "%DEST_ROOT%\Win%BITS%osvr-ver.txt" %XCOPY_ARGS% 
+rem echo xcopy %SRC%\bin\osvr-ver.txt "%DEST_ROOT%\Win%BITS%osvr-ver.txt" /i %XCOPY_ARGS%
+xcopy %SRC%\bin\osvr-ver.txt "%DEST_ROOT%\Win%BITS%osvr-ver.txt" %XCOPY_ARGS%
 
 rem One copy to the bin directory, for use in deployment.
 call :copy_dll %SRC% %DEST_ROOT%\bin %BITS%

@@ -58,7 +58,8 @@ public class OSVRClientKit : ModuleRules
 
             PublicLibraryPaths.Add(String.Format("{0}/bin/Android/{1}", ModuleDirectory, PlatformAbbrev));
             PublicAdditionalLibraries.Add("osvrClientKit");
-
+            PublicAdditionalLibraries.Add("osvrRenderManager");
+            
             var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
             var xmlPath = Path.Combine(ModuleDirectory, "OSVR_APL.xml");
             //System.Console.WriteLine("xmlPath: {0}", xmlPath);

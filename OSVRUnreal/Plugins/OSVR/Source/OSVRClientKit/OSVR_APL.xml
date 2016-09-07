@@ -22,21 +22,27 @@
   <resourceCopies>
     <isArch arch="armeabi-v7a">
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libgnustl_shared.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libgnustl_shared.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libgnustl_shared.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libusb1.0.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libusb1.0.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libusb1.0.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libjsoncpp.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libjsoncpp.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libjsoncpp.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcrystax.so"
                 dst="$S(BuildDir)/libs/armeabi-v7a/libcrystax.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClientKit.so"
                 dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClientKit.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClient.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClient.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClient.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrCommon.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrCommon.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrCommon.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrUtil.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrUtil.so" />
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrUtil.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrRenderManager.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrRenderManager.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcom_osvr_android_sensorTracker.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libcom_osvr_android_sensorTracker.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcom_osvr_Multiserver.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libcom_osvr_Multiserver.so" />
     </isArch>
   </resourceCopies>
   <soLoadLibrary>
@@ -46,7 +52,8 @@
         <loadLibrary name="osvrCommon" failmsg="libosvrCommon.so failed to load!" />
         <loadLibrary name="osvrUtil" failmsg="libosvrUtil.so failed to load!" />
         <loadLibrary name="osvrClient" failmsg="libosvrClient.so failed to load!" />
-        <loadLibrary name="osvrClientKit" failmsg="libosvrClientKit.so failed to load!" />        
+        <loadLibrary name="osvrClientKit" failmsg="libosvrClientKit.so failed to load!" />
+        <loadLibrary name="osvrRenderManager" failmsg="libosvrRenderManager.so failed to load!" />
       </true>
     </if>
   </soLoadLibrary>
