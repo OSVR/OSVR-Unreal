@@ -37,11 +37,13 @@
 // in the background and no way to switch apps).
 #define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 0
 
-// Set to 1 to enable OpenGL RenderManager support on Windows, which is currently
-// in beta form. There are known issues:
-// - Extended mode only, but doesn't put the window onto the HMD per RenderManager settings
-// - Unreal asserts when exiting VR mode. May not be OSVR-Unreal specific?
-#define OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS 0
+#define OSVR_UNREAL_OPENGL_ENABLED 0
+
+//// Set to 1 to enable OpenGL RenderManager support on Windows, which is currently
+//// in beta form. There are known issues:
+//// - Extended mode only, but doesn't put the window onto the HMD per RenderManager settings
+//// - Unreal asserts when exiting VR mode. May not be OSVR-Unreal specific?
+//#define OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS 0
 
 #include <osvr/ClientKit/ContextC.h>
 #include <osvr/ClientKit/InterfaceC.h>

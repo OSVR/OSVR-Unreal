@@ -21,7 +21,10 @@
 #include "SharedPointer.h"
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
+
+#if OSVR_UNREAL_OPENGL_ENABLED
 #include "OSVRCustomPresentOpenGL.h"
+#endif
 
 #if PLATFORM_WINDOWS
 #include "OSVRCustomPresentD3D11.h"
@@ -34,13 +37,17 @@
 #endif
 
 #if PLATFORM_WINDOWS
-#include "AllowWindowsPlatformTypes.h"
-#include <osvr/Util/ReturnCodesC.h>
-#include <osvr/RenderKit/RenderManagerD3D11C.h>
-#include <osvr/RenderKit/RenderManagerOpenGLC.h>
-#include "HideWindowsPlatformTypes.h"
+    #include "AllowWindowsPlatformTypes.h"
+    #include <osvr/Util/ReturnCodesC.h>
+    #include <osvr/RenderKit/RenderManagerD3D11C.h>
+    #if OSVR_UNREAL_OPENGL_ENABLED
+        #include <osvr/RenderKit/RenderManagerOpenGLC.h>
+    #endif
+    #include "HideWindowsPlatformTypes.h"
 #else
-#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+    #if OSVR_UNREAL_OPENGL_ENABLED
+        #include <osvr/RenderKit/RenderManagerOpenGLC.h>
+    #endif
 #endif
 
 #include <osvr/Util/MatrixConventionsC.h>
@@ -80,7 +87,7 @@ void FOSVRHMD::StartCustomPresent()
         {
             // @todo temporarily turn off OpenGL support for windows because we don't 
             // put the window in the right spot yet for extended mode.
-#if !PLATFORM_WINDOWS || OSVR_UNREAL_OPENGL_ENABLED_ON_WINDOWS
+#if OSVR_UNREAL_OPENGL_ENABLED
             mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/);
 #endif
         }
