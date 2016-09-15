@@ -300,7 +300,20 @@ protected:
         check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
         for (int32 i = 0; i < mRenderBuffers.Num(); i++)
         {
-            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
+			// We need to handthe present call the renderInfo we used to render these current renderBuffers,
+			// not the one from initialization.
+			OSVR_RenderInfoD3D11 renderInfo;
+			if (mCachedRenderInfoCollection) {
+				// @todo I thought this code would fix it, but instead it gets a failure on the return code
+				// here, causing the main thread to exit.  The ATW thread continues to run and displays smooth
+				// updates, so we're on the right track, but something is not right.
+				rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, i, &renderInfo);
+				check(rc == OSVR_RETURN_SUCCESS);
+			} else {
+				renderInfo = mRenderInfos[i];
+			}
+
+            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], renderInfo, mViewportDescriptions[i]);
             check(rc == OSVR_RETURN_SUCCESS);
         }
         rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
