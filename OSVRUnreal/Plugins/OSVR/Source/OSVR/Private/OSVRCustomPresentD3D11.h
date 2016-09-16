@@ -260,18 +260,41 @@ protected:
         UpdateRenderBuffers();
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        OSVR_ReturnCode rc;
+        OSVR_ReturnCode rc = OSVR_RETURN_SUCCESS;
         OSVR_RenderManagerPresentState presentState;
         rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerStartPresentRenderBuffers call failed."));
+        }
         check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
         for (int32 i = 0; i < mRenderBuffers.Num(); i++)
         {
-            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
-            check(rc == OSVR_RETURN_SUCCESS);
+            OSVR_RenderInfoD3D11 renderInfo = { 0 };
+            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedDisplayRenderInfoCollection, i, &renderInfo);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed on i = %d."), i);
+                renderInfo = mRenderInfos[i];
+            }
+
+            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], renderInfo, mViewportDescriptions[i]);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerPresentRenderBufferD3D11 call failed on i = %d."), i);
+                break;
+            }
         }
+
         rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerFinishPresentRenderBuffers call failed."));
+        }
     }
 
     void SetRenderTargetTexture(ID3D11Texture2D* renderTargetTexture)
@@ -334,6 +357,10 @@ protected:
             // We need to register these new buffers.
             // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
             // if you pass it a non-empty vector here. Passing it a dummy array for now.
+            if (IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
+            {
+                bDisplayOpen = LazyOpenDisplayImpl();
+            }
 
             {
                 OSVR_RenderManagerRegisterBufferState state;

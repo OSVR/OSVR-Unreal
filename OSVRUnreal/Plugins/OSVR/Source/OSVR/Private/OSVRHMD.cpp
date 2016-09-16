@@ -245,6 +245,8 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
         lastHmdOrientation = hmdOrientation = FQuat::Identity;
         lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
     }
+
+    mCustomPresent->UpdateCachedDisplayRenderInfoCollection();
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const

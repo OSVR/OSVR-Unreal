@@ -121,6 +121,28 @@ public:
         return bDisplayOpen;
     }
     
+    virtual void UpdateCachedRenderInfoCollection()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        OSVR_ReturnCode rc;
+        if (mCachedRenderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
+    }
+
+    virtual void UpdateCachedDisplayRenderInfoCollection()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        OSVR_ReturnCode rc;
+        if (mCachedDisplayRenderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedDisplayRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedDisplayRenderInfoCollection);
+    }
+
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
     {
         OSVR_ReturnCode rc;
@@ -134,12 +156,7 @@ public:
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
         if (eye == 0 || !mCachedRenderInfoCollection) {
-            if (mCachedRenderInfoCollection) {
-                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
-                check(rc == OSVR_RETURN_SUCCESS);
-            }
-            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
+            UpdateCachedRenderInfoCollection();
         }
 
         GetProjectionMatrixImpl(eye, left, right, bottom, top, nearClip, farClip);
@@ -191,7 +208,12 @@ protected:
     bool bOwnClientContext = true;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
+
+    // This is used by GetProjectionMatrix
     OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
+
+    // This is used by 
+    OSVR_RenderInfoCollection mCachedDisplayRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
