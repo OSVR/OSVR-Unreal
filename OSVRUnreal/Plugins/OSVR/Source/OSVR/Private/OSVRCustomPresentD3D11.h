@@ -124,7 +124,6 @@ public:
             outShaderResourceTexture = targetableTexture->GetTexture2D();
             mRenderTexture = targetableTexture;
             bRenderBuffersNeedToUpdate = true;
-            UpdateRenderBuffers();
             return true;
         }
         return false;
@@ -386,12 +385,6 @@ protected:
             }
 
             // We need to register these new buffers.
-            // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
-            // if you pass it a non-empty vector here. Passing it a dummy array for now.
-            if (IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
-            {
-                bDisplayOpen = LazyOpenDisplayImpl();
-            }
 
             {
                 OSVR_RenderManagerRegisterBufferState state;
