@@ -162,25 +162,56 @@ protected:
             OSVR_ReturnCode rc;
 
             rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
-            check(rc == OSVR_RETURN_SUCCESS);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetDefaultRenderParams call failed."));
+                return false;
+            }
 
             OSVR_RenderInfoCount numRenderInfo;
-            rc = osvrRenderManagerGetNumRenderInfo(mRenderManager, mRenderParams, &numRenderInfo);
-            check(rc == OSVR_RETURN_SUCCESS);
+            OSVR_RenderInfoCollection renderInfoCollection = { 0 };
+            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &renderInfoCollection);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetRenderInfoCollection call failed."));
+                return false;
+            }
+
+            rc = osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+                return false;
+            }
+
+            if (numRenderInfo != 2)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, 
+                    TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: expecting 2 render infos from osvrRenderManagerGetNumRenderInfoInCollection. Got %d."), 
+                    numRenderInfo);
+                return false;
+            }
 
             mRenderInfos.Empty();
             for (size_t i = 0; i < numRenderInfo; i++)
             {
                 OSVR_RenderInfoD3D11 renderInfo;
-                rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, i, mRenderParams, &renderInfo);
-                check(rc == OSVR_RETURN_SUCCESS);
+                rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(renderInfoCollection, i, &renderInfo);
+                if (rc != OSVR_RETURN_SUCCESS)
+                {
+                    UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed."));
+                    return false;
+                }
 
                 mRenderInfos.Add(renderInfo);
             }
 
             // check some assumptions. Should all be the same height.
-            check(mRenderInfos.Num() == 2);
-            check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
+            if (mRenderInfos[0].viewport.height != mRenderInfos[1].viewport.height)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: viewports from both OSVR_RenderInfoD3D11's should be the same height."));
+                return false;
+            }
 
             mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * screenScale);
             mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * screenScale);
