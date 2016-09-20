@@ -105,6 +105,11 @@ public:
         return bInitialized;
     }
 
+    virtual bool IsDisplayOpen()
+    {
+        return bDisplayOpen;
+    }
+
     virtual bool LazySetSrcTexture(FTexture2DRHIParamRef srcTexture)
     {
         FScopeLock lock(&mOSVRMutex);
@@ -145,6 +150,10 @@ public:
 
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
     {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+        FScopeLock lock(&mOSVRMutex);
+
         OSVR_ReturnCode rc;
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
@@ -224,6 +233,7 @@ protected:
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()
     {
+        check(IsInRenderingThread());
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
     }

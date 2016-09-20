@@ -165,7 +165,7 @@ private:
     void UpdateHeadPose();
     void StartCustomPresent();
     void StopCustomPresent();
-    void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height);
+    void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const;
     float GetScreenScale() const;
 
     TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;

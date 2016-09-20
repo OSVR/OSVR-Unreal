@@ -36,6 +36,8 @@ public:
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
     {
+        check(IsInRenderingThread());
+
         // @todo how should we determine SRGB?
         const bool bSRGB = false;
         const DXGI_FORMAT platformResourceFormat = (DXGI_FORMAT)GPixelFormats[format].PlatformFormat;
@@ -124,6 +126,7 @@ public:
             outShaderResourceTexture = targetableTexture->GetTexture2D();
             mRenderTexture = targetableTexture;
             bRenderBuffersNeedToUpdate = true;
+            UpdateRenderBuffers();
             return true;
         }
         return false;
@@ -139,6 +142,9 @@ protected:
 
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) override
     {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+
         OSVR_ReturnCode rc;
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
@@ -155,6 +161,9 @@ protected:
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) override
     {
+        check(IsInRenderingThread());
+        check(IsInitialized());
+
         if (InitializeImpl())
         {
             // Should we create a RenderParams?
@@ -228,6 +237,8 @@ protected:
 
     virtual bool InitializeImpl() override
     {
+        check(IsInRenderingThread());
+
         if (!IsInitialized())
         {
             auto graphicsLibrary = CreateGraphicsLibrary();
@@ -264,6 +275,9 @@ protected:
 
     virtual bool LazyOpenDisplayImpl() override
     {
+        check(IsInRenderingThread());
+        check(IsInitialized());
+
         // we can assume we're initialized and running on the rendering thread
         // and we haven't already opened the display here (done in parent class)
         OSVR_OpenResultsD3D11 results;
@@ -287,7 +301,8 @@ protected:
     virtual void FinishRendering() override
     {
         check(IsInitialized());
-        UpdateRenderBuffers();
+        check(IsInRenderingThread());
+
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
         OSVR_ReturnCode rc = OSVR_RETURN_SUCCESS;
@@ -341,10 +356,15 @@ protected:
     virtual void UpdateRenderBuffers() override
     {
         HRESULT hr;
-
+        check(IsInRenderingThread());
         check(IsInitialized());
+        
         if (bRenderBuffersNeedToUpdate)
         {
+            if (!bDisplayOpen)
+            {
+                bDisplayOpen = LazyOpenDisplayImpl();
+            }
 
             //check(mRenderTexture);
             //SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));
@@ -424,6 +444,8 @@ protected:
 
     virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary()
     {
+        check(IsInRenderingThread());
+
         OSVR_GraphicsLibraryD3D11 ret;
         // Put the device and context into a structure to let RenderManager
         // know to use this one rather than creating its own.

@@ -141,7 +141,7 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
  * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
  * them from any thread with access to the client context.
  */
-void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
+void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const
 {
     auto clientContext = mOSVREntryPoint->GetClientContext();
     size_t length;
@@ -612,20 +612,24 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
 {
     float screenScale = GetScreenScale();
 
-    if (mCustomPresent && mCustomPresent->IsInitialized())
-    {
-        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
-        // FCustomPresent is expected to account for screenScale,
-        // so we need to back it out here
-        SizeX = int(float(SizeX) * (1.0f / screenScale));
-        SizeY = int(float(SizeY) * (1.0f / screenScale));
-    }
-    else
+    //if (mCustomPresent && mCustomPresent->IsInitialized() && mCustomPresent->IsDisplayOpen())
+    //{
+    //    mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
+    //    // FCustomPresent is expected to account for screenScale,
+    //    // so we need to back it out here
+    //    SizeX = int(float(SizeX) * (1.0f / screenScale));
+    //    SizeY = int(float(SizeY) * (1.0f / screenScale));
+    //}
+    //else
     {
         auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         SizeX = leftEye.X + rightEye.X;
         SizeY = leftEye.Y;
+        float newSizeX, newSizeY;
+        GetRenderTargetSize_GameThread(SizeX, SizeY, newSizeX, newSizeY);
+        SizeX = (uint32)newSizeX;
+        SizeY = (uint32)newSizeY;
     }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
@@ -713,7 +717,7 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     FMatrix ret;
     float nearClip = GNearClippingPlane;
     float farClip = TNumericLimits< float >::Max();
-    if (mCustomPresent)
+    if (mCustomPresent && mCustomPresent->IsInitialized() && mCustomPresent->IsDisplayOpen())
     {
         float left, right, bottom, top;
         mCustomPresent->GetProjectionMatrix(
