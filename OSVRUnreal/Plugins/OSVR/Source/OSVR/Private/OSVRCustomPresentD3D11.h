@@ -147,7 +147,7 @@ protected:
 
         OSVR_ReturnCode rc;
         OSVR_RenderInfoD3D11 renderInfo;
-        rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
+        rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedProjectionRenderInfoCollection, eye, &renderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
 
         // previously we divided these by renderInfo.projection.nearClip but we need
