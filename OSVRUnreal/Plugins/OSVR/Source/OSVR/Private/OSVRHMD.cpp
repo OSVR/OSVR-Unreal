@@ -220,16 +220,16 @@ void FOSVRHMD::UpdateHeadPose()
 
 void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
 {
-    OSVR_Pose3 pose;
-    OSVR_ReturnCode returnCode;
+    //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedDisplayRenderInfoCollection(true);
     auto clientContext = mOSVREntryPoint->GetClientContext();
 
-    returnCode = osvrClientUpdate(clientContext);
-    check(returnCode == OSVR_RETURN_SUCCESS);
+    //returnCode = osvrClientUpdate(clientContext);
+    //check(returnCode == OSVR_RETURN_SUCCESS);
 
-    returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-    if (returnCode == OSVR_RETURN_SUCCESS)
+    //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
+    //if (returnCode == OSVR_RETURN_SUCCESS)
     {
         LastHmdOrientation = CurHmdOrientation;
         LastHmdPosition = CurHmdPosition;
@@ -240,13 +240,13 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
         hmdOrientation = CurHmdOrientation;
         hmdPosition = CurHmdPosition;
     }
-    else
-    {
-        lastHmdOrientation = hmdOrientation = FQuat::Identity;
-        lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
-    }
+    //else
+    //{
+    //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
+    //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
+    //}
 
-    mCustomPresent->UpdateCachedDisplayRenderInfoCollection();
+    
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const

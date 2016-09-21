@@ -140,12 +140,17 @@ public:
     virtual void UpdateCachedDisplayRenderInfoCollection()
     {
         FScopeLock lock(&mOSVRMutex);
-        OSVR_ReturnCode rc;
-        if (mCachedDisplayRenderInfoCollection) {
-            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedDisplayRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
+        UpdateCachedDisplayRenderInfoCollectionImpl();
+    }
+
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollection(bool updateCache = true)
+    {
+        FScopeLock lock(&mOSVRMutex);
+        if (updateCache)
+        {
+            UpdateCachedDisplayRenderInfoCollectionImpl();
         }
-        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedDisplayRenderInfoCollection);
+        return GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl();
     }
 
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
@@ -229,7 +234,20 @@ protected:
     virtual bool InitializeImpl() = 0;
     virtual bool LazyOpenDisplayImpl() = 0;
     virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) = 0;
-    
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl() = 0;
+
+    virtual void UpdateCachedDisplayRenderInfoCollectionImpl()
+    {
+        OSVR_ReturnCode rc;
+        if (mCachedDisplayRenderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedDisplayRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedDisplayRenderInfoCollection);
+        check(rc == OSVR_RETURN_SUCCESS);
+    }
+
+
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()
     {
