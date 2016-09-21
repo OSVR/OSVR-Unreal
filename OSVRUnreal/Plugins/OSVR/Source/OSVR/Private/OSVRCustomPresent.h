@@ -105,6 +105,11 @@ public:
         return bInitialized;
     }
 
+    virtual bool IsDisplayOpen()
+    {
+        return bDisplayOpen;
+    }
+
     virtual bool LazySetSrcTexture(FTexture2DRHIParamRef srcTexture)
     {
         FScopeLock lock(&mOSVRMutex);
@@ -121,8 +126,39 @@ public:
         return bDisplayOpen;
     }
     
+    virtual void UpdateCachedRenderInfoCollection()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        OSVR_ReturnCode rc;
+        if (mCachedRenderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
+    }
+
+    virtual void UpdateCachedDisplayRenderInfoCollection()
+    {
+        FScopeLock lock(&mOSVRMutex);
+        UpdateCachedDisplayRenderInfoCollectionImpl();
+    }
+
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollection(bool updateCache = true)
+    {
+        FScopeLock lock(&mOSVRMutex);
+        if (updateCache)
+        {
+            UpdateCachedDisplayRenderInfoCollectionImpl();
+        }
+        return GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl();
+    }
+
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
     {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+        FScopeLock lock(&mOSVRMutex);
+
         OSVR_ReturnCode rc;
         rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
         check(rc == OSVR_RETURN_SUCCESS);
@@ -134,12 +170,7 @@ public:
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
         if (eye == 0 || !mCachedRenderInfoCollection) {
-            if (mCachedRenderInfoCollection) {
-                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
-                check(rc == OSVR_RETURN_SUCCESS);
-            }
-            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
+            UpdateCachedRenderInfoCollection();
         }
 
         GetProjectionMatrixImpl(eye, left, right, bottom, top, nearClip, farClip);
@@ -191,17 +222,36 @@ protected:
     bool bOwnClientContext = true;
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
+
+    // This is used by GetProjectionMatrix
     OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
+
+    // This is used by 
+    OSVR_RenderInfoCollection mCachedDisplayRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
     virtual bool LazyOpenDisplayImpl() = 0;
     virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) = 0;
-    
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl() = 0;
+
+    virtual void UpdateCachedDisplayRenderInfoCollectionImpl()
+    {
+        OSVR_ReturnCode rc;
+        if (mCachedDisplayRenderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedDisplayRenderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedDisplayRenderInfoCollection);
+        check(rc == OSVR_RETURN_SUCCESS);
+    }
+
+
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()
     {
+        check(IsInRenderingThread());
         auto ret = RHIGetNativeDevice();
         return reinterpret_cast<TGraphicsDevice*>(ret);
     }

@@ -141,7 +141,7 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
  * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
  * them from any thread with access to the client context.
  */
-void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height)
+void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const
 {
     auto clientContext = mOSVREntryPoint->GetClientContext();
     size_t length;
@@ -220,16 +220,16 @@ void FOSVRHMD::UpdateHeadPose()
 
 void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
 {
-    OSVR_Pose3 pose;
-    OSVR_ReturnCode returnCode;
+    //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedDisplayRenderInfoCollection(true);
     auto clientContext = mOSVREntryPoint->GetClientContext();
 
-    returnCode = osvrClientUpdate(clientContext);
-    check(returnCode == OSVR_RETURN_SUCCESS);
+    //returnCode = osvrClientUpdate(clientContext);
+    //check(returnCode == OSVR_RETURN_SUCCESS);
 
-    returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-    if (returnCode == OSVR_RETURN_SUCCESS)
+    //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
+    //if (returnCode == OSVR_RETURN_SUCCESS)
     {
         LastHmdOrientation = CurHmdOrientation;
         LastHmdPosition = CurHmdPosition;
@@ -240,11 +240,13 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
         hmdOrientation = CurHmdOrientation;
         hmdPosition = CurHmdPosition;
     }
-    else
-    {
-        lastHmdOrientation = hmdOrientation = FQuat::Identity;
-        lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
-    }
+    //else
+    //{
+    //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
+    //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
+    //}
+
+    
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -610,20 +612,24 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
 {
     float screenScale = GetScreenScale();
 
-    if (mCustomPresent && mCustomPresent->IsInitialized())
-    {
-        mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
-        // FCustomPresent is expected to account for screenScale,
-        // so we need to back it out here
-        SizeX = int(float(SizeX) * (1.0f / screenScale));
-        SizeY = int(float(SizeY) * (1.0f / screenScale));
-    }
-    else
+    //if (mCustomPresent && mCustomPresent->IsInitialized() && mCustomPresent->IsDisplayOpen())
+    //{
+    //    mCustomPresent->CalculateRenderTargetSize(SizeX, SizeY, screenScale);
+    //    // FCustomPresent is expected to account for screenScale,
+    //    // so we need to back it out here
+    //    SizeX = int(float(SizeX) * (1.0f / screenScale));
+    //    SizeY = int(float(SizeY) * (1.0f / screenScale));
+    //}
+    //else
     {
         auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
         auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
         SizeX = leftEye.X + rightEye.X;
         SizeY = leftEye.Y;
+        float newSizeX, newSizeY;
+        GetRenderTargetSize_GameThread(SizeX, SizeY, newSizeX, newSizeY);
+        SizeX = (uint32)newSizeX;
+        SizeY = (uint32)newSizeY;
     }
     SizeX = SizeX / 2;
     if (StereoPass == eSSP_RIGHT_EYE)
@@ -711,7 +717,7 @@ FMatrix FOSVRHMD::GetStereoProjectionMatrix(enum EStereoscopicPass StereoPassTyp
     FMatrix ret;
     float nearClip = GNearClippingPlane;
     float farClip = TNumericLimits< float >::Max();
-    if (mCustomPresent)
+    if (mCustomPresent && mCustomPresent->IsInitialized() && mCustomPresent->IsDisplayOpen())
     {
         float left, right, bottom, top;
         mCustomPresent->GetProjectionMatrix(

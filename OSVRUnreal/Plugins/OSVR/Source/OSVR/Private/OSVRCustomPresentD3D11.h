@@ -36,6 +36,8 @@ public:
 
     virtual bool AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 sizeY, uint8 format, uint32 numMips, uint32 flags, uint32 targetableTextureFlags, FTexture2DRHIRef& outTargetableTexture, FTexture2DRHIRef& outShaderResourceTexture, uint32 numSamples = 1) override
     {
+        check(IsInRenderingThread());
+
         // @todo how should we determine SRGB?
         const bool bSRGB = false;
         const DXGI_FORMAT platformResourceFormat = (DXGI_FORMAT)GPixelFormats[format].PlatformFormat;
@@ -140,6 +142,9 @@ protected:
 
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) override
     {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+
         OSVR_ReturnCode rc;
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderInfoCollection, eye, &renderInfo);
@@ -154,33 +159,127 @@ protected:
         bottom = static_cast<float>(renderInfo.projection.bottom);
     }
 
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl()
+    {
+        //check(IsInRenderingThread());
+        check(IsInitialized());
+        check(IsDisplayOpen());
+        check(mCachedDisplayRenderInfoCollection);
+
+        OSVR_ReturnCode rc;
+        OSVR_RenderInfoCount numRenderInfo;
+        OSVR_Pose3 ret = { 0 };
+        rc = osvrRenderManagerGetNumRenderInfoInCollection(mCachedDisplayRenderInfoCollection, &numRenderInfo);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+            return ret;
+        }
+
+        if (numRenderInfo != 2)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected exactly 2 render info from RenderManager, got %d"),
+                numRenderInfo);
+            return ret;
+        }
+
+        OSVR_RenderInfoD3D11 renderInfo[2] = { 0 };
+        for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++)
+        {
+            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedDisplayRenderInfoCollection, i, &renderInfo[i]);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected exactly 2 render info from RenderManager, got %d"),
+                    numRenderInfo);
+                return ret;
+            }
+        }
+
+        OSVR_Pose3 leftEye = renderInfo[0].pose;
+        OSVR_Pose3 rightEye = renderInfo[1].pose;
+        if (leftEye.rotation.data[0] != rightEye.rotation.data[0]
+            || leftEye.rotation.data[1] != rightEye.rotation.data[1]
+            || leftEye.rotation.data[2] != rightEye.rotation.data[2]
+            || leftEye.rotation.data[3] != rightEye.rotation.data[3])
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected orientation of left and right eyes to be the same. Using left eye as head pose, but may be incorrect."));
+        }
+
+        ret.rotation.data[0] = leftEye.rotation.data[0];
+        ret.rotation.data[1] = leftEye.rotation.data[1];
+        ret.rotation.data[2] = leftEye.rotation.data[2];
+        ret.rotation.data[3] = leftEye.rotation.data[3];
+        ret.translation.data[0] = (leftEye.translation.data[0] + rightEye.translation.data[0]) / 2.0f;
+        ret.translation.data[1] = (leftEye.translation.data[1] + rightEye.translation.data[1]) / 2.0f;
+        ret.translation.data[2] = (leftEye.translation.data[2] + rightEye.translation.data[2]) / 2.0f;
+        return ret;
+    }
+
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) override
     {
+        check(IsInRenderingThread());
+        check(IsInitialized());
+
         if (InitializeImpl())
         {
             // Should we create a RenderParams?
             OSVR_ReturnCode rc;
 
             rc = osvrRenderManagerGetDefaultRenderParams(&mRenderParams);
-            check(rc == OSVR_RETURN_SUCCESS);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetDefaultRenderParams call failed."));
+                return false;
+            }
 
             OSVR_RenderInfoCount numRenderInfo;
-            rc = osvrRenderManagerGetNumRenderInfo(mRenderManager, mRenderParams, &numRenderInfo);
-            check(rc == OSVR_RETURN_SUCCESS);
+            OSVR_RenderInfoCollection renderInfoCollection = { 0 };
+            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &renderInfoCollection);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetRenderInfoCollection call failed."));
+                return false;
+            }
+
+            rc = osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+                return false;
+            }
+
+            if (numRenderInfo != 2)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, 
+                    TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: expecting 2 render infos from osvrRenderManagerGetNumRenderInfoInCollection. Got %d."), 
+                    numRenderInfo);
+                return false;
+            }
 
             mRenderInfos.Empty();
             for (size_t i = 0; i < numRenderInfo; i++)
             {
                 OSVR_RenderInfoD3D11 renderInfo;
-                rc = osvrRenderManagerGetRenderInfoD3D11(mRenderManagerD3D11, i, mRenderParams, &renderInfo);
-                check(rc == OSVR_RETURN_SUCCESS);
+                rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(renderInfoCollection, i, &renderInfo);
+                if (rc != OSVR_RETURN_SUCCESS)
+                {
+                    UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed."));
+                    return false;
+                }
 
                 mRenderInfos.Add(renderInfo);
             }
 
             // check some assumptions. Should all be the same height.
-            check(mRenderInfos.Num() == 2);
-            check(mRenderInfos[0].viewport.height == mRenderInfos[1].viewport.height);
+            if (mRenderInfos[0].viewport.height != mRenderInfos[1].viewport.height)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, TEXT("FDirect3D11CustomPresent::CalculateRenderTargetSizeImpl: viewports from both OSVR_RenderInfoD3D11's should be the same height."));
+                return false;
+            }
 
             mRenderInfos[0].viewport.width = int(float(mRenderInfos[0].viewport.width) * screenScale);
             mRenderInfos[0].viewport.height = int(float(mRenderInfos[0].viewport.height) * screenScale);
@@ -198,6 +297,8 @@ protected:
 
     virtual bool InitializeImpl() override
     {
+        check(IsInRenderingThread());
+
         if (!IsInitialized())
         {
             auto graphicsLibrary = CreateGraphicsLibrary();
@@ -234,6 +335,9 @@ protected:
 
     virtual bool LazyOpenDisplayImpl() override
     {
+        check(IsInRenderingThread());
+        check(IsInitialized());
+
         // we can assume we're initialized and running on the rendering thread
         // and we haven't already opened the display here (done in parent class)
         OSVR_OpenResultsD3D11 results;
@@ -257,21 +361,45 @@ protected:
     virtual void FinishRendering() override
     {
         check(IsInitialized());
-        UpdateRenderBuffers();
+        check(IsInRenderingThread());
+
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
-        OSVR_ReturnCode rc;
+        OSVR_ReturnCode rc = OSVR_RETURN_SUCCESS;
         OSVR_RenderManagerPresentState presentState;
         rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerStartPresentRenderBuffers call failed."));
+        }
         check(mRenderBuffers.Num() == mRenderInfos.Num() && mRenderBuffers.Num() == mViewportDescriptions.Num());
         for (int32 i = 0; i < mRenderBuffers.Num(); i++)
         {
-            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], mRenderInfos[i], mViewportDescriptions[i]);
-            check(rc == OSVR_RETURN_SUCCESS);
+            OSVR_RenderInfoD3D11 renderInfo = { 0 };
+            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedDisplayRenderInfoCollection, i, &renderInfo);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed on i = %d."), i);
+                renderInfo = mRenderInfos[i];
+            }
+
+            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], renderInfo, mViewportDescriptions[i]);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerPresentRenderBufferD3D11 call failed on i = %d."), i);
+                break;
+            }
         }
+
         rc = osvrRenderManagerFinishPresentRenderBuffers(mRenderManager, presentState, mRenderParams, ShouldFlipY() ? OSVR_TRUE : OSVR_FALSE);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerFinishPresentRenderBuffers call failed."));
+        }
     }
 
     void SetRenderTargetTexture(ID3D11Texture2D* renderTargetTexture)
@@ -288,10 +416,15 @@ protected:
     virtual void UpdateRenderBuffers() override
     {
         HRESULT hr;
-
+        check(IsInRenderingThread());
         check(IsInitialized());
+        
         if (bRenderBuffersNeedToUpdate)
         {
+            if (!bDisplayOpen)
+            {
+                bDisplayOpen = LazyOpenDisplayImpl();
+            }
 
             //check(mRenderTexture);
             //SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));
@@ -332,8 +465,6 @@ protected:
             }
 
             // We need to register these new buffers.
-            // @todo RegisterRenderBuffers doesn't do anything other than set a flag and crash
-            // if you pass it a non-empty vector here. Passing it a dummy array for now.
 
             {
                 OSVR_RenderManagerRegisterBufferState state;
@@ -373,6 +504,8 @@ protected:
 
     virtual OSVR_GraphicsLibraryD3D11 CreateGraphicsLibrary()
     {
+        check(IsInRenderingThread());
+
         OSVR_GraphicsLibraryD3D11 ret;
         // Put the device and context into a structure to let RenderManager
         // know to use this one rather than creating its own.

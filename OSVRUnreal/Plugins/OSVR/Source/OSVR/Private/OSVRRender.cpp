@@ -149,9 +149,26 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         {
             mCustomPresent = nullptr;
         }
-        if (mCustomPresent && mCustomPresent->IsInitialized())
+
+        // this only happens once, the first time this is called. I don't know why.
+        if (IsInRenderingThread())
         {
+            mCustomPresent->LazyOpenDisplay();
             mCustomPresent->CalculateRenderTargetSize(InOutSizeX, InOutSizeY, screenScale);
+        }
+        else
+        {
+            auto leftEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::LEFT_EYE);
+            auto rightEye = HMDDescription.GetDisplaySize(OSVRHMDDescription::RIGHT_EYE);
+            auto width = leftEye.X + rightEye.X;
+            auto height = leftEye.Y;
+
+            GetRenderTargetSize_GameThread(width, height, width, height);
+
+            InOutSizeX = width;
+            InOutSizeY = height;
+            InOutSizeX = int(float(InOutSizeX) * screenScale);
+            InOutSizeY = int(float(InOutSizeY) * screenScale);
         }
     }
     else
@@ -214,7 +231,7 @@ bool FOSVRHMD::AllocateRenderTargetTexture(uint32 index, uint32 sizeX, uint32 si
 {
     check(index == 0);
     check(IsInRenderingThread());
-    if (mCustomPresent && mCustomPresent->IsInitialized())
+    if (mCustomPresent && (mCustomPresent->IsInitialized() || mCustomPresent->Initialize()))
     {
         return mCustomPresent->AllocateRenderTargetTexture(index, sizeX, sizeY, format, numMips, flags, targetableTextureFlags, outTargetableTexture, outShaderResourceTexture, numSamples);
     }
