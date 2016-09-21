@@ -125,17 +125,6 @@ public:
         }
         return bDisplayOpen;
     }
-    
-    virtual void UpdateCachedRenderInfoCollection()
-    {
-        FScopeLock lock(&mOSVRMutex);
-        OSVR_ReturnCode rc;
-        if (mCachedRenderInfoCollection) {
-            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
-        }
-        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedRenderInfoCollection);
-    }
 
     virtual void UpdateCachedDisplayRenderInfoCollection()
     {
@@ -169,8 +158,12 @@ public:
         // this method gets called with alternating eyes starting with the left. We get the render info when
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
-        if (eye == 0 || !mCachedRenderInfoCollection) {
-            UpdateCachedRenderInfoCollection();
+        if (eye == 0 || !mCachedProjectionRenderInfoCollection) {
+            if (mCachedProjectionRenderInfoCollection) {
+                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedProjectionRenderInfoCollection);
+                check(rc == OSVR_RETURN_SUCCESS);
+            }
+            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedProjectionRenderInfoCollection);
         }
 
         GetProjectionMatrixImpl(eye, left, right, bottom, top, nearClip, farClip);
@@ -224,9 +217,9 @@ protected:
     OSVR_RenderManager mRenderManager = nullptr;
 
     // This is used by GetProjectionMatrix
-    OSVR_RenderInfoCollection mCachedRenderInfoCollection = nullptr;
+    OSVR_RenderInfoCollection mCachedProjectionRenderInfoCollection = nullptr;
 
-    // This is used by 
+    // This is used as the main cached display render information
     OSVR_RenderInfoCollection mCachedDisplayRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
