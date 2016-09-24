@@ -249,8 +249,6 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
     //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
     //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
     //}
-
-    
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -328,10 +326,9 @@ void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orie
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
     ViewRotation.Normalize();
-
-    FQuat lastHmdOrientation, hmdOrientation;
+	FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+	UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
     DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
@@ -352,7 +349,7 @@ bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPos
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
 
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+	UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     CurrentOrientation = hmdOrientation;
     CurrentPosition = hmdPosition;
@@ -365,7 +362,7 @@ void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct F
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
 
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+	UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     DeltaControlRotation = POV.Rotation;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();

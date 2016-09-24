@@ -364,7 +364,9 @@ protected:
         check(IsInRenderingThread());
 
         // all of the render manager samples keep the flipY at the default false,
-        // for both OpenGL and DirectX. Is this even needed anymore?
+        // for both OpenGL and DirectX. Is this even needed anymore?  Yes, because
+		// it is used by the OpenGL/Direct3D code path, which have buffers that
+		// are upside down on the two halves of the interface.
         OSVR_ReturnCode rc = OSVR_RETURN_SUCCESS;
         OSVR_RenderManagerPresentState presentState;
         rc = osvrRenderManagerStartPresentRenderBuffers(&presentState);
@@ -448,7 +450,6 @@ protected:
             //hr = graphicsDevice->CreateRenderTargetView(
             //    RenderTargetTexture, &renderTargetViewDesc, &renderTargetView);
             //check(!FAILED(hr));
-
 
             mRenderBuffers.Empty();
 
