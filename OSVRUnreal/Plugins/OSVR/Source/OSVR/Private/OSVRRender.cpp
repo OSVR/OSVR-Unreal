@@ -115,6 +115,11 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
         }
     }
     
+	// Find out the current rendering info from RenderManager.  We should do this just once each
+	// time we are in the process of rendering an image and use the cached information for
+	// all other rendering steps up to and including the presentation of the buffers.
+	mCustomPresent->UpdateCachedDisplayRenderInfoCollection();
+
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
     UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);

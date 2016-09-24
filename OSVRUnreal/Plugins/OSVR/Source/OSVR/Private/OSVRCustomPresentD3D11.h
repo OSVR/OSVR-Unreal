@@ -164,7 +164,14 @@ protected:
         //check(IsInRenderingThread());
         check(IsInitialized());
         check(IsDisplayOpen());
-        check(mCachedDisplayRenderInfoCollection);
+
+		// Make sure that we have a cached info collection.  The primary producer of
+		// this information is the rendering thread, but we may be called before the
+		// first time that thread is called, so we grab a copy if needed.
+		if (!mCachedDisplayRenderInfoCollection)
+		{
+			UpdateCachedDisplayRenderInfoCollection();
+		}
 
         OSVR_ReturnCode rc;
         OSVR_RenderInfoCount numRenderInfo;
