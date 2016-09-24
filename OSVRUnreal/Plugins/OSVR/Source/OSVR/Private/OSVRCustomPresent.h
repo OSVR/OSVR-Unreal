@@ -132,13 +132,9 @@ public:
         UpdateCachedDisplayRenderInfoCollectionImpl();
     }
 
-    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollection(bool updateCache = true)
+    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollection()
     {
         FScopeLock lock(&mOSVRMutex);
-        if (updateCache)
-        {
-            UpdateCachedDisplayRenderInfoCollectionImpl();
-        }
         return GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl();
     }
 

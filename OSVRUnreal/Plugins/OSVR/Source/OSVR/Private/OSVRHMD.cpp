@@ -222,7 +222,7 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
 {
     //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
-    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedDisplayRenderInfoCollection(true);
+    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedDisplayRenderInfoCollection();
     
     // RenderManager gives us the eye-from-space pose, and we need the inverse of that
     FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
