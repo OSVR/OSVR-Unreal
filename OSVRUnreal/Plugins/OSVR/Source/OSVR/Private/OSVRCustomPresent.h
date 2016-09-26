@@ -32,11 +32,16 @@ public:
     {
         // If we are passed in a client context to use, we don't own it, so
         // we won't shut it down when we're done with it. Otherwise we will.
-        // @todo - we're not currently using the passed-in clientContext, so
-        // for now we always own it.
-        //bOwnClientContext = (clientContext == nullptr);
-        bOwnClientContext = true;
-        mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
+        if (clientContext)
+        {
+            mClientContext = clientContext;
+            bOwnClientContext = false;
+        }
+        else
+        {
+            bOwnClientContext = true;
+            mClientContext = osvrClientInit("com.osvr.unreal.plugin.FOSVRCustomPresent");
+        }
     }
 
     virtual ~FOSVRCustomPresent()
@@ -126,20 +131,15 @@ public:
         return bDisplayOpen;
     }
 
-    virtual void UpdateCachedDisplayRenderInfoCollection()
+    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollection(bool renderThread, bool updateCache)
     {
         FScopeLock lock(&mOSVRMutex);
-        UpdateCachedDisplayRenderInfoCollectionImpl();
-    }
-
-    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollection(bool updateCache = true)
-    {
-        FScopeLock lock(&mOSVRMutex);
+        OSVR_RenderInfoCollection& renderInfoCollection = renderThread ? mCachedRenderThreadRenderInfoCollection : mCachedGameThreadRenderInfoCollection;
         if (updateCache)
         {
-            UpdateCachedDisplayRenderInfoCollectionImpl();
+            UpdateCachedRenderInfoCollection(renderInfoCollection);
         }
-        return GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl();
+        return GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection);
     }
 
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
@@ -159,11 +159,7 @@ public:
         // the left eye (index 0) is requested (releasing the old one, if any),
         // and re-use the same collection when the right eye (index 0) is requested
         if (eye == 0 || !mCachedProjectionRenderInfoCollection) {
-            if (mCachedProjectionRenderInfoCollection) {
-                rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedProjectionRenderInfoCollection);
-                check(rc == OSVR_RETURN_SUCCESS);
-            }
-            rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedProjectionRenderInfoCollection);
+            UpdateCachedRenderInfoCollection(mCachedProjectionRenderInfoCollection);
         }
 
         GetProjectionMatrixImpl(eye, left, right, bottom, top, nearClip, farClip);
@@ -216,30 +212,86 @@ protected:
     OSVR_ClientContext mClientContext = nullptr;
     OSVR_RenderManager mRenderManager = nullptr;
 
-    // This is used by GetProjectionMatrix
+    // This is used by GetProjectionMatrix only
     OSVR_RenderInfoCollection mCachedProjectionRenderInfoCollection = nullptr;
 
-    // This is used as the main cached display render information
-    OSVR_RenderInfoCollection mCachedDisplayRenderInfoCollection = nullptr;
+    // This is used strictly on the render thread, and is what gets passed back
+    // RenderManager Present calls.
+    OSVR_RenderInfoCollection mCachedRenderThreadRenderInfoCollection = nullptr;
+
+    // This is used by the game thread, for game thread-only render info caches.
+    OSVR_RenderInfoCollection mCachedGameThreadRenderInfoCollection = nullptr;
 
     virtual bool CalculateRenderTargetSizeImpl(uint32& InOutSizeX, uint32& InOutSizeY, float screenScale) = 0;
     virtual void GetProjectionMatrixImpl(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip) = 0;
     virtual bool InitializeImpl() = 0;
     virtual bool LazyOpenDisplayImpl() = 0;
     virtual bool LazySetSrcTextureImpl(FTexture2DRHIParamRef srcTexture) = 0;
-    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl() = 0;
 
-    virtual void UpdateCachedDisplayRenderInfoCollectionImpl()
+    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection)
     {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+        check(renderInfoCollection);
+
         OSVR_ReturnCode rc;
-        if (mCachedDisplayRenderInfoCollection) {
-            rc = osvrRenderManagerReleaseRenderInfoCollection(mCachedDisplayRenderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
+        OSVR_RenderInfoCount numRenderInfo;
+        OSVR_Pose3 ret = { 0 };
+        rc = osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("OSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+            return ret;
         }
-        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &mCachedDisplayRenderInfoCollection);
-        check(rc == OSVR_RETURN_SUCCESS);
+
+        if (numRenderInfo != 2)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("OSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: expected exactly 2 render info from RenderManager, got %d"),
+                numRenderInfo);
+            return ret;
+        }
+
+        OSVR_Pose3 renderInfo[2];
+        for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++)
+        {
+            renderInfo[i] = GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection, i);
+        }
+
+        OSVR_Pose3 leftEye = renderInfo[0];
+        OSVR_Pose3 rightEye = renderInfo[1];
+        if (leftEye.rotation.data[0] != rightEye.rotation.data[0]
+            || leftEye.rotation.data[1] != rightEye.rotation.data[1]
+            || leftEye.rotation.data[2] != rightEye.rotation.data[2]
+            || leftEye.rotation.data[3] != rightEye.rotation.data[3])
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("OSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: expected orientation of left and right eyes to be the same. Using left eye as head pose, but may be incorrect."));
+        }
+
+        ret.rotation.data[0] = leftEye.rotation.data[0];
+        ret.rotation.data[1] = leftEye.rotation.data[1];
+        ret.rotation.data[2] = leftEye.rotation.data[2];
+        ret.rotation.data[3] = leftEye.rotation.data[3];
+        ret.translation.data[0] = (leftEye.translation.data[0] + rightEye.translation.data[0]) / 2.0f;
+        ret.translation.data[1] = (leftEye.translation.data[1] + rightEye.translation.data[1]) / 2.0f;
+        ret.translation.data[2] = (leftEye.translation.data[2] + rightEye.translation.data[2]) / 2.0f;
+        return ret;
     }
 
+    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) = 0;
+
+    virtual void UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
+    {
+        OSVR_ReturnCode rc;
+        if (renderInfoCollection) {
+            rc = osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
+            check(rc == OSVR_RETURN_SUCCESS);
+        }
+        rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &renderInfoCollection);
+        check(rc == OSVR_RETURN_SUCCESS);
+    }
 
     template<class TGraphicsDevice>
     TGraphicsDevice* GetGraphicsDevice()

@@ -253,7 +253,7 @@ protected:
     {
         OSVR_ReturnCode rc;
         OSVR_RenderInfoOpenGL renderInfo;
-        rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(mCachedRenderInfoCollection, eye, &renderInfo);
+        rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(mCachedProjectionRenderInfoCollection, eye, &renderInfo);
         check(rc == OSVR_RETURN_SUCCESS);
 
         // previously we divided these by renderInfo.projection.nearClip but we need
@@ -374,6 +374,28 @@ protected:
         mRenderTexture = srcTexture; // @todo do we need mRenderTexture?
         UpdateRenderBuffers();
         return true;
+    }
+
+    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) override
+    {
+        check(IsInitialized());
+        check(IsDisplayOpen());
+        check(renderInfoCollection);
+
+        OSVR_ReturnCode rc;
+        OSVR_Pose3 ret = { 0 };
+        OSVR_RenderInfoOpenGL renderInfo = { 0 };
+
+        rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(renderInfoCollection, index, &renderInfo);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: osvrRenderManagerGetRenderInfoFromCollectionOpenGL failed with index %d"),
+                index);
+            return ret;
+        }
+        ret = renderInfo.pose;
+        return ret;
     }
 
     virtual void RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, FTexture2DRHIParamRef backBuffer, FTexture2DRHIParamRef srcTexture) override
