@@ -88,7 +88,7 @@ void FOSVRHMD::StartCustomPresent()
             // @todo temporarily turn off OpenGL support for windows because we don't 
             // put the window in the right spot yet for extended mode.
 #if OSVR_UNREAL_OPENGL_ENABLED
-            mCustomPresent = new FOpenGLCustomPresent(nullptr/*osvrClientContext*/);
+            mCustomPresent = new FOpenGLCustomPresent(nullptr/*mOSVREntryPoint->GetClientContext()*/);
 #endif
         }
 #if PLATFORM_WINDOWS
@@ -97,7 +97,7 @@ void FOSVRHMD::StartCustomPresent()
 
             // currently, FCustomPresent creates its own client context, so no need to
             // synchronize with the one from FOSVREntryPoint.
-            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*osvrClientContext*/);
+            mCustomPresent = new FDirect3D11CustomPresent(nullptr/*mOSVREntryPoint->GetClientContext()*/);
         }
 #endif
     }
@@ -211,18 +211,15 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
     return false;
 }
 
-void FOSVRHMD::UpdateHeadPose()
-{
-    FQuat lastHmdOrientation, hmdOrientation;
-    FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
-}
-
-void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
+void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
 {
     //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
-    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedDisplayRenderInfoCollection(true);
+    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
+    
+    // RenderManager gives us the eye-from-space pose, and we need the inverse of that
+    FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
+    FVector unrealPosition = unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale));
     auto clientContext = mOSVREntryPoint->GetClientContext();
 
     //returnCode = osvrClientUpdate(clientContext);
@@ -231,14 +228,19 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
     //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
     //if (returnCode == OSVR_RETURN_SUCCESS)
     {
-        LastHmdOrientation = CurHmdOrientation;
-        LastHmdPosition = CurHmdPosition;
-        CurHmdPosition = BaseOrientation.Inverse().RotateVector(OSVR2FVector(pose.translation, WorldToMetersScale) - BasePosition);
-        CurHmdOrientation = BaseOrientation.Inverse() * OSVR2FQuat(pose.rotation);
-        lastHmdOrientation = LastHmdOrientation;
-        lastHmdPosition = LastHmdPosition;
-        hmdOrientation = CurHmdOrientation;
-        hmdPosition = CurHmdPosition;
+        auto& _lastHmdOrientation = renderThread ? LastHmdOrientationRT : LastHmdOrientation;
+        auto& _lastHmdPosition = renderThread ? LastHmdPositionRT : LastHmdPosition;
+        auto& _curHmdOrientation = renderThread ? CurHmdOrientationRT : CurHmdOrientation;
+        auto& _curHmdPosition = renderThread ? CurHmdPositionRT : CurHmdPosition;
+
+        _lastHmdOrientation = _curHmdOrientation;
+        _lastHmdPosition = _curHmdPosition;
+        _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
+        _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
+        lastHmdOrientation = _lastHmdOrientation;
+        lastHmdPosition = _lastHmdPosition;
+        hmdOrientation = _curHmdOrientation;
+        hmdPosition = _curHmdPosition;
     }
     //else
     //{
@@ -246,7 +248,7 @@ void FOSVRHMD::UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPositio
     //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
     //}
 
-    
+    mLastUpdateFrameNumber = GFrameNumber;
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -310,7 +312,7 @@ void FOSVRHMD::GetCurrentOrientationAndPosition(FQuat& CurrentOrientation, FVect
 
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     CurrentOrientation = hmdOrientation;
     CurrentPosition = hmdPosition;
@@ -323,11 +325,8 @@ void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orie
 
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
+    CheckUpdateFrameNumber();
     ViewRotation.Normalize();
-
-    FQuat lastHmdOrientation, hmdOrientation;
-    FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
     DeltaControlRotation = (DeltaControlRotation + DeltaRot).GetNormalized();
@@ -339,20 +338,15 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     DeltaControlRotation.Roll = 0;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-    ViewRotation = FRotator(DeltaControlOrientation * hmdOrientation);
+    ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
 }
 
 #if OSVR_UNREAL_4_11
 bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-    FQuat lastHmdOrientation, hmdOrientation;
-    FVector lastHmdPosition, hmdPosition;
-
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
-
-    CurrentOrientation = hmdOrientation;
-    CurrentPosition = hmdPosition;
-
+    CheckUpdateFrameNumber();
+    CurrentOrientation = CurHmdOrientation;
+    CurrentPosition = CurHmdPosition;
     return true;
 }
 #else
@@ -361,7 +355,7 @@ void FOSVRHMD::UpdatePlayerCameraRotation(APlayerCameraManager* Camera, struct F
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
 
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
 
     DeltaControlRotation = POV.Rotation;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();

@@ -161,8 +161,7 @@ public:
     bool IsInitialized() const;
 
 private:
-    void UpdateHeadPose(FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
-    void UpdateHeadPose();
+    void UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
     void StartCustomPresent();
     void StopCustomPresent();
     void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const;
@@ -172,20 +171,35 @@ private:
     IRendererModule* RendererModule = nullptr;
 
     /** Player's orientation tracking */
-    mutable FQuat CurHmdOrientation = FQuat::Identity;
-    mutable FVector CurHmdPosition = FVector::ZeroVector;
+    bool CheckUpdateFrameNumber()
+    {
+        check(IsInGameThread());
+        if (mLastUpdateFrameNumber != GFrameNumber)
+        {
+            UE_LOG(OSVRHMDLog, Warning,
+                TEXT("CheckUpdateFrameNumber: last update from a previous frame"));
+            return false;
+        }
+        return true;
+    }
 
-    /** Player's orientation tracking (on render thread) */
-    mutable FQuat CurHmdOrientationRT = FQuat::Identity;
-
+    mutable uint32 mLastUpdateFrameNumber = UINT_MAX;
     FRotator DeltaControlRotation = FRotator::ZeroRotator; // same as DeltaControlOrientation but as rotator
     FQuat DeltaControlOrientation = FQuat::Identity; // same as DeltaControlRotation but as quat
 
+    // head tracking on game thread
+    mutable FQuat CurHmdOrientation = FQuat::Identity;
+    mutable FVector CurHmdPosition = FVector::ZeroVector;
+    mutable FQuat LastHmdOrientation = FQuat::Identity;
+    mutable FVector LastHmdPosition = FVector::ZeroVector;
 
-    mutable FQuat LastHmdOrientation = FQuat::Identity; // contains last APPLIED ON GT HMD orientation
-    FVector LastHmdPosition = FVector::ZeroVector;		  // contains last APPLIED ON GT HMD position
+    // head tracking on render thread
+    mutable FQuat CurHmdOrientationRT = FQuat::Identity;
+    mutable FVector CurHmdPositionRT = FVector::ZeroVector;
+    mutable FQuat LastHmdOrientationRT = FQuat::Identity;
+    mutable FVector LastHmdPositionRT = FVector::ZeroVector;
 
-                                      /** HMD base values, specify forward orientation and zero pos offset */
+    /** HMD base values, specify forward orientation and zero pos offset */
     FQuat BaseOrientation = FQuat::Identity; // base orientation
     FVector BasePosition = FVector::ZeroVector;
 

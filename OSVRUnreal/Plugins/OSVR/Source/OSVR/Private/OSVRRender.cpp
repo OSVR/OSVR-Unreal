@@ -117,8 +117,7 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     
     FQuat lastHmdOrientation, hmdOrientation;
     FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
-    CurHmdOrientationRT = hmdOrientation;
+    UpdateHeadPose(true, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
     const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
     const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
 

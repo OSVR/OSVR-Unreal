@@ -159,63 +159,26 @@ protected:
         bottom = static_cast<float>(renderInfo.projection.bottom);
     }
 
-    virtual OSVR_Pose3 GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl()
+    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) override
     {
         //check(IsInRenderingThread());
         check(IsInitialized());
         check(IsDisplayOpen());
-        check(mCachedDisplayRenderInfoCollection);
+        check(renderInfoCollection);
 
         OSVR_ReturnCode rc;
-        OSVR_RenderInfoCount numRenderInfo;
         OSVR_Pose3 ret = { 0 };
-        rc = osvrRenderManagerGetNumRenderInfoInCollection(mCachedDisplayRenderInfoCollection, &numRenderInfo);
+        OSVR_RenderInfoD3D11 renderInfo = { 0 };
+
+        rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(renderInfoCollection, index, &renderInfo);
         if (rc != OSVR_RETURN_SUCCESS)
         {
             UE_LOG(FOSVRCustomPresentLog, Warning,
-                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: osvrRenderManagerGetRenderInfoFromCollectionD3D11 failed with index %d"),
+                index);
             return ret;
         }
-
-        if (numRenderInfo != 2)
-        {
-            UE_LOG(FOSVRCustomPresentLog, Warning,
-                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected exactly 2 render info from RenderManager, got %d"),
-                numRenderInfo);
-            return ret;
-        }
-
-        OSVR_RenderInfoD3D11 renderInfo[2] = { 0 };
-        for (OSVR_RenderInfoCount i = 0; i < numRenderInfo; i++)
-        {
-            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedDisplayRenderInfoCollection, i, &renderInfo[i]);
-            if (rc != OSVR_RETURN_SUCCESS)
-            {
-                UE_LOG(FOSVRCustomPresentLog, Warning,
-                    TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected exactly 2 render info from RenderManager, got %d"),
-                    numRenderInfo);
-                return ret;
-            }
-        }
-
-        OSVR_Pose3 leftEye = renderInfo[0].pose;
-        OSVR_Pose3 rightEye = renderInfo[1].pose;
-        if (leftEye.rotation.data[0] != rightEye.rotation.data[0]
-            || leftEye.rotation.data[1] != rightEye.rotation.data[1]
-            || leftEye.rotation.data[2] != rightEye.rotation.data[2]
-            || leftEye.rotation.data[3] != rightEye.rotation.data[3])
-        {
-            UE_LOG(FOSVRCustomPresentLog, Warning,
-                TEXT("FDirect3D11CustomPresent::GetHeadPoseFromCachedDisplayRenderInfoCollectionImpl: expected orientation of left and right eyes to be the same. Using left eye as head pose, but may be incorrect."));
-        }
-
-        ret.rotation.data[0] = leftEye.rotation.data[0];
-        ret.rotation.data[1] = leftEye.rotation.data[1];
-        ret.rotation.data[2] = leftEye.rotation.data[2];
-        ret.rotation.data[3] = leftEye.rotation.data[3];
-        ret.translation.data[0] = (leftEye.translation.data[0] + rightEye.translation.data[0]) / 2.0f;
-        ret.translation.data[1] = (leftEye.translation.data[1] + rightEye.translation.data[1]) / 2.0f;
-        ret.translation.data[2] = (leftEye.translation.data[2] + rightEye.translation.data[2]) / 2.0f;
+        ret = renderInfo.pose;
         return ret;
     }
 
@@ -363,6 +326,13 @@ protected:
         check(IsInitialized());
         check(IsInRenderingThread());
 
+        if (!mCachedRenderThreadRenderInfoCollection)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - mCachedRenderThreadRenderInfoCollection is null. Should be non-null at this point."));
+            return;
+        }
+
         // all of the render manager samples keep the flipY at the default false,
         // for both OpenGL and DirectX. Is this even needed anymore?
         OSVR_ReturnCode rc = OSVR_RETURN_SUCCESS;
@@ -377,7 +347,7 @@ protected:
         for (int32 i = 0; i < mRenderBuffers.Num(); i++)
         {
             OSVR_RenderInfoD3D11 renderInfo = { 0 };
-            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedDisplayRenderInfoCollection, i, &renderInfo);
+            rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedRenderThreadRenderInfoCollection, i, &renderInfo);
             if (rc != OSVR_RETURN_SUCCESS)
             {
                 UE_LOG(FOSVRCustomPresentLog, Warning,
