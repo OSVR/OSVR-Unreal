@@ -102,8 +102,15 @@ public:
         if (IsInitialized())
         {
             auto d3d11RHI = static_cast<FD3D11DynamicRHI*>(GDynamicRHI);
-            auto graphicsDevice = GetGraphicsDevice<ID3D11Device>();
+            if (mRenderInfos.Num() != 2)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("FDirect3D11CustomPresent::AllocateRenderTargetTexture: expected 2 render info, got %d."), mRenderInfos.Num());
+                return false;
+            }
 
+            //auto graphicsDevice = GetGraphicsDevice<ID3D11Device>();
+            auto graphicsDevice = mRenderInfos[0].library.device;
             TArray<TRefCountPtr<ID3D11RenderTargetView>> renderTargetViews;
             EPixelFormat epFormat = EPixelFormat(format);
             // override flags
@@ -140,6 +147,25 @@ public:
                 check(!FAILED(hr));
 
                 D3DTexture->AddRef();
+
+                // Grab and lock the mutex, so that we will be able to render
+                // to it whether or not RenderManager locks it on our behalf.
+                // it will not be auto-locked when we're in the non-ATW case.
+                IDXGIKeyedMutex* myMutex = nullptr;
+                hr = D3DTexture->QueryInterface(
+                    __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex);
+                if (FAILED(hr) || myMutex == nullptr) {
+                    UE_LOG(FOSVRCustomPresentLog, Warning,
+                        TEXT("FDirect3D11CustomPresent::AllocateRenderTargetTexture: Could not get mutex pointer."));
+                    return false;
+                }
+
+                hr = myMutex->AcquireSync(0, INFINITE);
+                if (FAILED(hr)) {
+                    UE_LOG(FOSVRCustomPresentLog, Warning,
+                        TEXT("FDirect3D11CustomPresent::AllocateRenderTargetTexture: Could not acquire mutex."));
+                    return false;
+                }
 
                 D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
                 memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
@@ -199,10 +225,61 @@ protected:
         check(IsInitialized());
         check(IsDisplayOpen());
 
+        // When ATW is enabled, the render info api can sometimes return a 0 length
+        // render-info collection. Cache the previous frame's value and use that
+        // if this happens.
+        static float sCachedLeft[2] = { -1.0f, -1.0f };
+        static float sCachedRight[2] = { -1.0f, -1.0f };
+        static float sCachedBottom[2] = { -1.0f, -1.0f };
+        static float sCachedTop[2] = { -1.0f, -1.0f };
+        static bool sProjectionCached[2] = { false, false };
+
         OSVR_ReturnCode rc;
+        OSVR_RenderInfoCount numRenderInfo = 0;
+        rc = osvrRenderManagerGetNumRenderInfoInCollection(mCachedProjectionRenderInfoCollection, &numRenderInfo);
+        if (rc == OSVR_RETURN_FAILURE)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetProjectionMatrixImpl: osvrRenderManagerGetNumRenderInfoInCollection call failed."));
+            if (sProjectionCached[eye])
+            {
+                left = sCachedLeft[eye];
+                right = sCachedRight[eye];
+                bottom = sCachedBottom[eye];
+                top = sCachedTop[eye];
+            }
+            return;
+        }
+
+        if (numRenderInfo < 0 || eye >= numRenderInfo)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetProjectionMatrixImpl: Unexpected number of render info: %d"), numRenderInfo);
+            if (sProjectionCached[eye])
+            {
+                left = sCachedLeft[eye];
+                right = sCachedRight[eye];
+                bottom = sCachedBottom[eye];
+                top = sCachedTop[eye];
+            }
+            return;
+        }
+
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedProjectionRenderInfoCollection, eye, &renderInfo);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc == OSVR_RETURN_FAILURE)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetProjectionMatrixImpl: osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed."));
+            if (sProjectionCached[eye])
+            {
+                left = sCachedLeft[eye];
+                right = sCachedRight[eye];
+                bottom = sCachedBottom[eye];
+                top = sCachedTop[eye];
+            }
+            return;
+        }
 
         // previously we divided these by renderInfo.projection.nearClip but we need
         // to pass these unmodified through to the OSVR_Projection_to_D3D call (and OpenGL
@@ -211,6 +288,11 @@ protected:
         right = static_cast<float>(renderInfo.projection.right);
         top = static_cast<float>(renderInfo.projection.top);
         bottom = static_cast<float>(renderInfo.projection.bottom);
+        sCachedLeft[eye] = left;
+        sCachedRight[eye] = right;
+        sCachedTop[eye] = top;
+        sCachedBottom[eye] = bottom;
+        sProjectionCached[eye] = true;
     }
 
     virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) override
@@ -399,7 +481,7 @@ protected:
             return;
         }
 
-        if (numRenderInfo == mRenderInfos.Num() && numRenderInfo == mViewportDescriptions.Num())
+        if (numRenderInfo != mRenderInfos.Num() || numRenderInfo != mViewportDescriptions.Num())
         {
             UE_LOG(FOSVRCustomPresentLog, Warning,
                 TEXT("FDirect3D11CustomPresent::FinishRendering() - unexpected numRenderInfo = %d, expecting 2."), numRenderInfo);
@@ -469,8 +551,8 @@ protected:
                 //SetRenderTargetTexture(reinterpret_cast<ID3D11Texture2D*>(mRenderTexture->GetNativeResource()));
                 check(RenderTarget->Textures[i]);
 
-                D3D11_TEXTURE2D_DESC renderTextureDesc;
-                RenderTarget->Textures[i]->GetDesc(&renderTextureDesc);
+                //D3D11_TEXTURE2D_DESC renderTextureDesc;
+                //RenderTarget->Textures[i]->GetDesc(&renderTextureDesc);
 
                 //D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
                 //memset(&renderTargetViewDesc, 0, sizeof(renderTargetViewDesc));
