@@ -12,8 +12,9 @@ public class OSVRInput : ModuleRules
             new string[] {
 				"OSVR/Private",
                 openglDrvPrivatePath,
-                openglPath
+                openglPath,
 				// ... add other private include paths required here ...
+                "/media/u/build/OSVR/install/include/"
 			}
             );
 
