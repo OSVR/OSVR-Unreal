@@ -22,7 +22,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(OSVREntryPointLog, Log, All);
 
-OSVR_API class OSVREntryPoint : public FTickableGameObject
+class OSVR_API OSVREntryPoint : public FTickableGameObject
 {
 public:
 

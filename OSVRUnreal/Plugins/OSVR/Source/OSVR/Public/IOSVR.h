@@ -29,7 +29,7 @@ class FOSVRHMD;
 * The public interface to this module.  In most cases, this interface is only public to sibling modules
 * within this plugin.
 */
-OSVR_API class IOSVR : public IHeadMountedDisplayModule
+class OSVR_API IOSVR : public IHeadMountedDisplayModule
 {
 public:
     /** Returns the key into the HMDPluginPriority section of the config file for this module */

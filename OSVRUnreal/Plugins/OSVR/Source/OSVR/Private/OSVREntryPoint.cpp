@@ -103,3 +103,8 @@ OSVRInterfaceCollection* OSVREntryPoint::GetInterfaceCollection()
     return InterfaceCollection.Get();
 }
 #endif
+
+// hack to add a dummy implementation of this missing function for Linux until OSVR gets patched
+#if LINUX
+void osvrClientAttemptServerAutoStart() {}
+#endif

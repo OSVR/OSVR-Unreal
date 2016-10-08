@@ -64,5 +64,40 @@ public class OSVRClientKit : ModuleRules
             //System.Console.WriteLine("xmlPath: {0}", xmlPath);
             AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", xmlPath));
         }
+        else if(Target.Platform == UnrealTargetPlatform.Linux)
+        {
+            string PlatformAbbrev = "Linux";
+
+            PublicLibraryPaths.Add(String.Format("{0}/bin/{1}", ModuleDirectory, PlatformAbbrev));
+            PublicAdditionalLibraries.Add("osvrClientKit");
+            PublicAdditionalLibraries.Add("osvrRenderManager");
+
+            var osvrDlls = new string[] {
+                "libosvrClientKit.so",
+                "libosvrClient.so",
+                "libosvrCommon.so",
+                "libosvrUtil.so",
+                "libosvrRenderManager.so",
+                "libjsoncpp.so",
+                "libGLEW.so",
+                "libSDL2-2.0.so"
+              };
+
+            PublicDelayLoadDLLs.AddRange(osvrDlls);
+
+            string baseBinaryDirectory = ModuleDirectory + "/bin";
+            if (!System.IO.Directory.Exists(baseBinaryDirectory))
+            {
+                baseBinaryDirectory = "$(EngineDir)/Binaries/ThirdParty/OSVRClientKit/bin";
+            }
+
+            string DllFormat = "{0}/{1}/{2}";
+            foreach (var dll in osvrDlls)
+            {
+                var src = String.Format(DllFormat, baseBinaryDirectory, PlatformAbbrev, dll);
+                RuntimeDependencies.Add(new RuntimeDependency(src));
+            }
+            
+        }
     }
 }

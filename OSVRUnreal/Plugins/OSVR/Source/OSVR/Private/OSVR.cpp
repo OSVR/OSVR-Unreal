@@ -67,8 +67,10 @@ void FOSVR::LoadOSVRClientKitModule()
     FScopeLock lock(&mModuleMutex);
     if (!bModulesLoaded)
     {
-#if PLATFORM_WINDOWS
         TArray<FString> osvrDlls;
+        TArray<FString> pathsToTry;
+
+#if PLATFORM_WINDOWS        
         osvrDlls.Add(FString("osvrClientKit.dll"));
         osvrDlls.Add(FString("osvrClient.dll"));
         osvrDlls.Add(FString("osvrCommon.dll"));
@@ -78,21 +80,32 @@ void FOSVR::LoadOSVRClientKitModule()
         osvrDlls.Add(FString("glew32.dll"));
         osvrDlls.Add(FString("SDL2.dll"));
 
-#if PLATFORM_64BITS
-        TArray<FString> pathsToTry;
+#if PLATFORM_64BITS        
         pathsToTry.Add(FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win64/");
         pathsToTry.Add(FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win64/");
         pathsToTry.Add(FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win64/");
         pathsToTry.Add(FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win64/");
 
 #else
-        TArray<FString> pathsToTry;
         pathsToTry.Add(FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Win32/");
         pathsToTry.Add(FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Win32/");
         pathsToTry.Add(FPaths::EngineDir() / "Binaries/ThirdParty/OSVRClientKit/bin/Win32/");
         pathsToTry.Add(FPaths::EngineDir() / "Source/ThirdParty/OSVRClientKit/bin/Win32/");
 #endif
 
+#elif PLATFORM_LINUX
+        osvrDlls.Add(FString("libosvrClientKit.so"));
+        osvrDlls.Add(FString("libosvrClient.so"));
+        osvrDlls.Add(FString("libosvrCommon.so"));
+        osvrDlls.Add(FString("libosvrUtil.so"));
+        osvrDlls.Add(FString("libosvrRenderManager.so"));
+        osvrDlls.Add(FString("libjsoncpp.so"));
+        osvrDlls.Add(FString("libGLEW.so"));
+        osvrDlls.Add(FString("libSDL2-2.0.so"));
+
+        pathsToTry.Add(FPaths::GamePluginsDir() / "OSVR/Source/OSVRClientKit/bin/Linux/");
+        pathsToTry.Add(FPaths::EngineDir() / "Plugins/Runtime/OSVR/Source/OSVRClientKit/bin/Linux/");
+#endif
         FString osvrClientKitLibPath;
         for (auto& it : pathsToTry)
         {
@@ -117,10 +130,12 @@ void FOSVR::LoadOSVRClientKitModule()
             if (!libHandle)
             {
                 UE_LOG(OSVRLog, Warning, TEXT("FAILED to load %s"), *path);
+            } else {
+                UE_LOG(OSVRLog, Warning, TEXT("Loaded %s"), *path);
             }
         }
         FPlatformProcess::PopDllDirectory(*osvrClientKitLibPath);
-#endif
+
         bModulesLoaded = true;
     }
 }
