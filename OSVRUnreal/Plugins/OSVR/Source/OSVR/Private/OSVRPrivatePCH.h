@@ -37,7 +37,10 @@
 // in the background and no way to switch apps).
 #define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 0
 
+// If not explicitly enabled (e.g. for Linux), keep OpenGL support off 
+#ifndef OSVR_UNREAL_OPENGL_ENABLED
 #define OSVR_UNREAL_OPENGL_ENABLED 0
+#endif
 
 //// Set to 1 to enable OpenGL RenderManager support on Windows, which is currently
 //// in beta form. There are known issues:

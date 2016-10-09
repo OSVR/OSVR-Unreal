@@ -94,7 +94,6 @@ void FOSVRHMD::StartCustomPresent()
 #if PLATFORM_WINDOWS
         else
         {
-
             // currently, FCustomPresent creates its own client context, so no need to
             // synchronize with the one from FOSVREntryPoint.
             mCustomPresent = new FDirect3D11CustomPresent(nullptr/*mOSVREntryPoint->GetClientContext()*/);
@@ -215,6 +214,13 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
 {
     //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+
+    if(!mCustomPresent)
+    {
+        UE_LOG(OSVRHMDLog, Warning, TEXT("Skipping head pose update because mCustomPresent is not initialized yet!"));
+        return;
+    }
+    
     OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
     
     // RenderManager gives us the eye-from-space pose, and we need the inverse of that

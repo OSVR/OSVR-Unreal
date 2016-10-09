@@ -147,6 +147,8 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
         if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
         {
             mCustomPresent = nullptr;
+            UE_LOG(OSVRHMDLog, Error, TEXT("Failed to initialise CustomPresent!"));
+            return;
         }
 
         // this only happens once, the first time this is called. I don't know why.

@@ -51,12 +51,12 @@ class OSVRButton
 public:
     OSVRButton() {}
     OSVRButton(OSVRButtonType _type, FName _key, const FString& _ifacePath) :
-        type(_type), key(_key), ifacePath(_ifacePath)
+        key(_key), ifacePath(_ifacePath), type(_type)
     {
     }
 
     OSVRButton(OSVRButtonType _type, OSVRThresholdType _thresholdType, float _threshold, FName _key, const FString& _ifacePath) :
-        type(_type), thresholdType(_thresholdType), threshold(_threshold), key(_key), ifacePath(_ifacePath)
+        threshold(_threshold), key(_key), ifacePath(_ifacePath), type(_type), thresholdType(_thresholdType)
     {
     }
 
