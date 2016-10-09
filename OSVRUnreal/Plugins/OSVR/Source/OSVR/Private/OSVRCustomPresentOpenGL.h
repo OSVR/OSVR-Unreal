@@ -20,7 +20,7 @@
 #include "IOSVR.h"
 #include "OSVRCustomPresent.h"
 #include <osvr/RenderKit/RenderManagerC.h>
-#include <osvr/util/PlatformConfig.h>
+#include <osvr/Util/PlatformConfig.h>
 
 #if OSVR_ANDROID
 // @todo this may not work - if not, what headers is unreal expecting?
@@ -38,7 +38,7 @@
 #include "OpenGLDrvPrivate.h"
 #include "OpenGLResources.h"
 
-typedef struct FUnrealBackBufferContainer
+struct FUnrealBackBufferContainer
 {
     GLint displayFrameBuffer;
     int width;
@@ -105,7 +105,7 @@ private:
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->handleEvents());
     }
 
-    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLint* displayFrameBufferOut)
+    static OSVR_CBool getDisplayFrameBufferImpl(void* data, size_t display, GLuint* displayFrameBufferOut)
     {
         return ConvertBool(((FUnrealOSVRRenderManagerOpenGLToolkit*)data)->getDisplayFrameBuffer(display, displayFrameBufferOut));
     }
@@ -185,7 +185,7 @@ public:
         return true;
     }
 
-    bool getDisplayFrameBuffer(size_t display, GLint* displayFrameBufferOut)
+    bool getDisplayFrameBuffer(size_t display, GLuint* displayFrameBufferOut)
     {
         (*displayFrameBufferOut) = mBackBufferContainer->displayFrameBuffer;
         return true;
@@ -286,7 +286,7 @@ protected:
             mRenderInfos.Empty();
             for (size_t i = 0; i < numRenderInfo; i++)
             {
-                OSVR_RenderInfoOpenGL renderInfo = { 0 };
+                OSVR_RenderInfoOpenGL renderInfo;
                 rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(renderInfoCollection, i, &renderInfo);
                 check(rc == OSVR_RETURN_SUCCESS);
 
@@ -383,8 +383,8 @@ protected:
         check(renderInfoCollection);
 
         OSVR_ReturnCode rc;
-        OSVR_Pose3 ret = { 0 };
-        OSVR_RenderInfoOpenGL renderInfo = { 0 };
+        OSVR_Pose3 ret;
+        OSVR_RenderInfoOpenGL renderInfo;
 
         rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(renderInfoCollection, index, &renderInfo);
         if (rc != OSVR_RETURN_SUCCESS)
