@@ -37,17 +37,17 @@
 #endif
 
 #if PLATFORM_WINDOWS
-    #include "AllowWindowsPlatformTypes.h"
-    #include <osvr/Util/ReturnCodesC.h>
-    #include <osvr/RenderKit/RenderManagerD3D11C.h>
-    #if OSVR_UNREAL_OPENGL_ENABLED
-        #include <osvr/RenderKit/RenderManagerOpenGLC.h>
-    #endif
-    #include "HideWindowsPlatformTypes.h"
+#include "AllowWindowsPlatformTypes.h"
+#include <osvr/Util/ReturnCodesC.h>
+#include <osvr/RenderKit/RenderManagerD3D11C.h>
+#if OSVR_UNREAL_OPENGL_ENABLED
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+#endif
+#include "HideWindowsPlatformTypes.h"
 #else
-    #if OSVR_UNREAL_OPENGL_ENABLED
-        #include <osvr/RenderKit/RenderManagerOpenGLC.h>
-    #endif
+#if OSVR_UNREAL_OPENGL_ENABLED
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+#endif
 #endif
 
 #include <osvr/Util/MatrixConventionsC.h>
@@ -135,12 +135,12 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 }
 
 /**
- * This is more of a temporary workaround to an issue with getting the render target
- * size from the RenderManager. On the game thread, we can't get the render target sizes
- * unless we have already initialized the render manager, which we can only do on the render
- * thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
- * them from any thread with access to the client context.
- */
+* This is more of a temporary workaround to an issue with getting the render target
+* size from the RenderManager. On the game thread, we can't get the render target sizes
+* unless we have already initialized the render manager, which we can only do on the render
+* thread. In the future, we'll move those RenderManager APIs to OSVR-Core so we can call
+* them from any thread with access to the client context.
+*/
 void FOSVRHMD::GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const
 {
     auto clientContext = mOSVREntryPoint->GetClientContext();
@@ -215,38 +215,49 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
 {
     //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
-    OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
-    
-    // RenderManager gives us the eye-from-space pose, and we need the inverse of that
-    FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
-    FVector unrealPosition = unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale));
-    auto clientContext = mOSVREntryPoint->GetClientContext();
 
-    //returnCode = osvrClientUpdate(clientContext);
-    //check(returnCode == OSVR_RETURN_SUCCESS);
+    auto& _lastHmdOrientation = renderThread ? LastHmdOrientationRT : LastHmdOrientation;
+    auto& _lastHmdPosition = renderThread ? LastHmdPositionRT : LastHmdPosition;
+    auto& _curHmdOrientation = renderThread ? CurHmdOrientationRT : CurHmdOrientation;
+    auto& _curHmdPosition = renderThread ? CurHmdPositionRT : CurHmdPosition;
 
-    //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-    //if (returnCode == OSVR_RETURN_SUCCESS)
+    if (mCustomPresent)
     {
-        auto& _lastHmdOrientation = renderThread ? LastHmdOrientationRT : LastHmdOrientation;
-        auto& _lastHmdPosition = renderThread ? LastHmdPositionRT : LastHmdPosition;
-        auto& _curHmdOrientation = renderThread ? CurHmdOrientationRT : CurHmdOrientation;
-        auto& _curHmdPosition = renderThread ? CurHmdPositionRT : CurHmdPosition;
+        OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
 
-        _lastHmdOrientation = _curHmdOrientation;
-        _lastHmdPosition = _curHmdPosition;
-        _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
-        _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
-        lastHmdOrientation = _lastHmdOrientation;
-        lastHmdPosition = _lastHmdPosition;
-        hmdOrientation = _curHmdOrientation;
-        hmdPosition = _curHmdPosition;
+        // RenderManager gives us the eye-from-space pose, and we need the inverse of that
+        FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
+        FVector unrealPosition = unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale));
+        auto clientContext = mOSVREntryPoint->GetClientContext();
+
+        //returnCode = osvrClientUpdate(clientContext);
+        //check(returnCode == OSVR_RETURN_SUCCESS);
+
+        //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
+        //if (returnCode == OSVR_RETURN_SUCCESS)
+        {
+            _lastHmdOrientation = _curHmdOrientation;
+            _lastHmdPosition = _curHmdPosition;
+            _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
+            _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
+
+        }
+        //else
+        //{
+        //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
+        //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
+        //}
     }
-    //else
-    //{
-    //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
-    //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
-    //}
+    else
+    {
+        _lastHmdOrientation = _curHmdOrientation = FQuat::Identity;
+        _lastHmdPosition = _curHmdPosition = FVector(0.0f, 0.0f, 0.0f);
+    }
+
+    lastHmdOrientation = _lastHmdOrientation;
+    lastHmdPosition = _lastHmdPosition;
+    hmdOrientation = _curHmdOrientation;
+    hmdPosition = _curHmdPosition;
 
     mLastUpdateFrameNumber = GFrameNumber;
 }
@@ -523,8 +534,8 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             {
                 sceneViewport = nullptr;
             }
+        }
     }
-}
 #endif
 
     if (!sceneViewport)
@@ -736,16 +747,16 @@ void FOSVRHMD::InitCanvasFromView(FSceneView* InView, UCanvas* Canvas)
 
 /*void FOSVRHMD::PushViewportCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FViewport* InViewport) const
 {
-    FMatrix m;
-    m.SetIdentity();
-    InCanvas->PushAbsoluteTransform(m);
+FMatrix m;
+m.SetIdentity();
+InCanvas->PushAbsoluteTransform(m);
 }
 
 void FOSVRHMD::PushViewCanvas(EStereoscopicPass StereoPass, FCanvas* InCanvas, UCanvas* InCanvasObject, FSceneView* InView) const
 {
-    FMatrix m;
-    m.SetIdentity();
-    InCanvas->PushAbsoluteTransform(m);
+FMatrix m;
+m.SetIdentity();
+InCanvas->PushAbsoluteTransform(m);
 }*/
 
 //---------------------------------------------------
@@ -774,7 +785,7 @@ bool FOSVRHMD::IsHeadTrackingAllowed() const
     {
         UEditorEngine* EdEngine = Cast<UEditorEngine>(GEngine);
         bool ret = /*Session->IsActive() && */(!EdEngine || (GEnableVREditorHacks || EdEngine->bUseVRPreviewForPlayWorld) || GetDefault<ULevelEditorPlaySettings>()->ViewportGetsHMDControl) && GEngine->IsStereoscopic3D();
-        return ret;                   
+        return ret;
     }
 #endif
     return GEngine && GEngine->IsStereoscopic3D();
