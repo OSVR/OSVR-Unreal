@@ -835,9 +835,9 @@ FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPo
         }
         else
         {
-            auto begin = FDateTime::Now().GetSecond();
-            auto end = begin + 3;
-            while (!bDisplayConfigOK && FDateTime::Now().GetSecond() < end)
+            auto begin = FDateTime::Now().GetTicks();
+            auto end = begin + 3 * ETimespan::TicksPerSecond;
+            while (!bDisplayConfigOK && FDateTime::Now().GetTicks() < end)
             {
                 bDisplayConfigOK = osvrClientCheckDisplayStartup(DisplayConfig) == OSVR_RETURN_SUCCESS;
                 if (!bDisplayConfigOK)
