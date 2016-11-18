@@ -32,6 +32,16 @@ FORCEINLINE FQuat OSVR2FQuat(const OSVR_Quaternion& Quat)
 	return q;
 }
 
+FORCEINLINE OSVR_Quaternion FQuat2OSVR(const FQuat& Quat)
+{
+    OSVR_Quaternion ret;
+    osvrQuatSetX(&ret, Quat.Y);
+    osvrQuatSetY(&ret, Quat.Z);
+    osvrQuatSetZ(&ret, -Quat.X);
+    osvrQuatSetW(&ret, -Quat.W);
+    return ret;
+}
+
 // Assumes row-major, left-handed matrix
 FORCEINLINE FMatrix OSVR2FMatrix(const float in[16])
 {
