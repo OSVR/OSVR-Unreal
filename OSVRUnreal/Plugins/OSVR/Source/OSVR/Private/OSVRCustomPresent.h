@@ -261,14 +261,6 @@ protected:
 
         OSVR_Pose3 leftEye = renderInfo[0];
         OSVR_Pose3 rightEye = renderInfo[1];
-        if (leftEye.rotation.data[0] != rightEye.rotation.data[0]
-            || leftEye.rotation.data[1] != rightEye.rotation.data[1]
-            || leftEye.rotation.data[2] != rightEye.rotation.data[2]
-            || leftEye.rotation.data[3] != rightEye.rotation.data[3])
-        {
-            UE_LOG(FOSVRCustomPresentLog, Warning,
-                TEXT("OSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: expected orientation of left and right eyes to be the same. Using left eye as head pose, but may be incorrect."));
-        }
 
         ret.rotation.data[0] = leftEye.rotation.data[0];
         ret.rotation.data[1] = leftEye.rotation.data[1];
