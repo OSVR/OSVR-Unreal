@@ -209,6 +209,7 @@ private:
     bool bHmdPosTracking = false;
     bool bHaveVisionTracking = false;
 
+    bool bNewStereoEnabled = false;
     bool bStereoEnabled = false;
     bool bHmdEnabled = false;
     bool bHmdConnected = false;
