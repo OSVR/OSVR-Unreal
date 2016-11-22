@@ -258,8 +258,6 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
     lastHmdPosition = _lastHmdPosition;
     hmdOrientation = _curHmdOrientation;
     hmdPosition = _curHmdPosition;
-
-    mLastUpdateFrameNumber = GFrameNumber;
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -340,7 +338,10 @@ void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orie
 
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
-    CheckUpdateFrameNumber();
+    FQuat lastHmdOrientation, curHmdOrientation;
+    FVector lastHmdPosition, curHmdPosition;
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, curHmdOrientation, curHmdPosition);
+
     ViewRotation.Normalize();
 
     const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
@@ -353,15 +354,15 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     DeltaControlRotation.Roll = 0;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-    ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
+    ViewRotation = FRotator(DeltaControlOrientation * curHmdOrientation);
 }
 
 #if OSVR_UNREAL_4_11
 bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-    CheckUpdateFrameNumber();
-    CurrentOrientation = CurHmdOrientation;
-    CurrentPosition = CurHmdPosition;
+    FQuat lastHmdOrientation;
+    FVector lastHmdPosition;
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, CurrentOrientation, CurrentPosition);
     return true;
 }
 #else
