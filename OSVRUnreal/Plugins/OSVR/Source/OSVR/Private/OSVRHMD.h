@@ -171,19 +171,6 @@ private:
     IRendererModule* RendererModule = nullptr;
 
     /** Player's orientation tracking */
-    bool CheckUpdateFrameNumber()
-    {
-        check(IsInGameThread());
-        if (mLastUpdateFrameNumber != GFrameNumber)
-        {
-            UE_LOG(OSVRHMDLog, Warning,
-                TEXT("CheckUpdateFrameNumber: last update from a previous frame"));
-            return false;
-        }
-        return true;
-    }
-
-    mutable uint32 mLastUpdateFrameNumber = UINT_MAX;
     FRotator DeltaControlRotation = FRotator::ZeroRotator; // same as DeltaControlOrientation but as rotator
     FQuat DeltaControlOrientation = FQuat::Identity; // same as DeltaControlRotation but as quat
 
@@ -209,6 +196,7 @@ private:
     bool bHmdPosTracking = false;
     bool bHaveVisionTracking = false;
 
+    bool bNewStereoEnabled = false;
     bool bStereoEnabled = false;
     bool bHmdEnabled = false;
     bool bHmdConnected = false;

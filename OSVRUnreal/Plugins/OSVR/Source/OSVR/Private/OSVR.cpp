@@ -37,6 +37,20 @@ public:
     virtual void ShutdownModule() override;
 
     /** IHeadMountedDisplayModule implementation */
+#if OSVR_UNREAL_4_14
+    /** Returns the key into the HMDPluginPriority section of the config file for this module */
+    FString GetModuleKeyName() const override
+    {
+        return FString(TEXT("OSVR"));
+    }
+#else
+    /** Returns the key into the HMDPluginPriority section of the config file for this module */
+    virtual FString GetModulePriorityKeyName() const override
+    {
+        return FString(TEXT("OSVR"));
+    }
+#endif
+
     virtual TSharedPtr<class IHeadMountedDisplay, ESPMode::ThreadSafe> CreateHeadMountedDisplay() override;
 #if OSVR_UNREAL_4_12
     virtual bool IsHMDConnected() override;

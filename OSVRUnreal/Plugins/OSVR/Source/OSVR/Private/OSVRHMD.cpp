@@ -258,8 +258,6 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
     lastHmdPosition = _lastHmdPosition;
     hmdOrientation = _curHmdOrientation;
     hmdPosition = _curHmdPosition;
-
-    mLastUpdateFrameNumber = GFrameNumber;
 }
 
 bool FOSVRHMD::DoesSupportPositionalTracking() const
@@ -297,6 +295,10 @@ bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext)
     {
         sFinishCurrentFrame->Set(0);
         bHmdOverridesApplied = true;
+    }
+    if (bStereoEnabled != bNewStereoEnabled)
+    {
+        bStereoEnabled = EnableStereo(bNewStereoEnabled);
     }
     return true;
 }
@@ -336,7 +338,10 @@ void FOSVRHMD::RebaseObjectOrientationAndPosition(FVector& Position, FQuat& Orie
 
 void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
 {
-    CheckUpdateFrameNumber();
+    FQuat lastHmdOrientation, curHmdOrientation;
+    FVector lastHmdPosition, curHmdPosition;
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, curHmdOrientation, curHmdPosition);
+
     ViewRotation.Normalize();
 
     const FRotator DeltaRot = ViewRotation - PC->GetControlRotation();
@@ -349,15 +354,15 @@ void FOSVRHMD::ApplyHmdRotation(APlayerController* PC, FRotator& ViewRotation)
     DeltaControlRotation.Roll = 0;
     DeltaControlOrientation = DeltaControlRotation.Quaternion();
 
-    ViewRotation = FRotator(DeltaControlOrientation * CurHmdOrientation);
+    ViewRotation = FRotator(DeltaControlOrientation * curHmdOrientation);
 }
 
 #if OSVR_UNREAL_4_11
 bool FOSVRHMD::UpdatePlayerCamera(FQuat& CurrentOrientation, FVector& CurrentPosition)
 {
-    CheckUpdateFrameNumber();
-    CurrentOrientation = CurHmdOrientation;
-    CurrentPosition = CurHmdPosition;
+    FQuat lastHmdOrientation;
+    FVector lastHmdPosition;
+    UpdateHeadPose(false, lastHmdOrientation, lastHmdPosition, CurrentOrientation, CurrentPosition);
     return true;
 }
 #else
@@ -479,12 +484,12 @@ bool FOSVRHMD::IsStereoEnabled() const
 
 bool FOSVRHMD::EnableStereo(bool bStereo)
 {
-    bool bNewSteroEnabled = IsHMDConnected() ? bStereo : false;
-    if (bNewSteroEnabled == bStereoEnabled)
+    bNewStereoEnabled = IsHMDConnected() ? bStereo : false;
+    if (bNewStereoEnabled == bStereoEnabled)
     {
         return bStereoEnabled;
     }
-    bStereoEnabled = bNewSteroEnabled;
+    bStereoEnabled = bNewStereoEnabled;
 
     if (bStereoEnabled)
     {
@@ -540,12 +545,13 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
 
     if (!sceneViewport)
     {
-        UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR scene viewport does not exist"));
+        //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport does not exist. Will try again later."));
+        bStereoEnabled = false;
         return false;
     }
     else
     {
-        //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR scene viewport exists"));
+        //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport exists. Enabling stereo."));
 #if !WITH_EDITOR
         auto window = sceneViewport->FindWindow();
 #endif
