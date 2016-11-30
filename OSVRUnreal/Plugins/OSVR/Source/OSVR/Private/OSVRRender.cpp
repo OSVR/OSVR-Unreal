@@ -143,15 +143,19 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
     {
         return;
     }
-    
+
     float screenScale = GetScreenScale();
+    
+    if (mCustomPresent 
+        && !mCustomPresent->IsInitialized() 
+        && IsInRenderingThread() 
+        && !mCustomPresent->Initialize())
+    {
+        mCustomPresent = nullptr;
+    }
+
     if (mCustomPresent)
     {
-        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
-        {
-            mCustomPresent = nullptr;
-        }
-
         // this only happens once, the first time this is called. I don't know why.
         if (IsInRenderingThread())
         {
