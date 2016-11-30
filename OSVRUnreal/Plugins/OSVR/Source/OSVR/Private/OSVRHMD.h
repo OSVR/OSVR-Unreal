@@ -48,6 +48,7 @@ public:
     virtual bool IsHMDEnabled() const override;
     virtual void EnableHMD(bool bEnable = true) override;
     virtual EHMDDeviceType::Type GetHMDDeviceType() const override;
+    virtual FName GetDeviceName() const override;
     virtual bool GetHMDMonitorInfo(MonitorInfo&) override;
 
     virtual void GetFieldOfView(float& OutHFOVInDegrees, float& OutVFOVInDegrees) const override;

@@ -129,6 +129,12 @@ void FOSVRHMD::EnableHMD(bool bEnable)
     EnableStereo(bHmdEnabled);
 }
 
+FName FOSVRHMD::GetDeviceName() const
+{
+    static FName DefaultName(TEXT("OSVR"));
+    return DefaultName;
+}
+
 EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
 {
     return EHMDDeviceType::DT_ES2GenericStereoMesh;
