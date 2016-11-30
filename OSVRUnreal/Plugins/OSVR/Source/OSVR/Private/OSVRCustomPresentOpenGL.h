@@ -349,6 +349,9 @@ protected:
             // LazyOpenDisplay needs to be called on the rendering thread to open the display
             bInitialized = true;
         }
+
+        // mRenderManager must be non-nullptr if we're returning true.
+        check(mRenderManager);
         return true;
     }
 
@@ -408,6 +411,13 @@ protected:
     {
         check(IsInitialized());
 
+        if (!mRenderManager)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FOpenGLCustomPresent::FinishRendering() - mRenderManager is null. Should be non-null at this point."));
+            return;
+        }
+
         // @todo: this needs to be more robust.
         // Can we find this by inspection of the view somehow?
         // After the first call, the framebuffer ends up set to
@@ -447,6 +457,8 @@ protected:
         OSVR_ReturnCode rc;
 
         check(IsInitialized());
+        check(mRenderManager);
+
         if (bRenderBuffersNeedToUpdate)
         {
             //check(RenderTargetTexture);
