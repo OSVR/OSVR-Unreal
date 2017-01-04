@@ -140,6 +140,16 @@ EHMDDeviceType::Type FOSVRHMD::GetHMDDeviceType() const
     return EHMDDeviceType::DT_ES2GenericStereoMesh;
 }
 
+void FOSVRHMD::SetTrackingOrigin(EHMDTrackingOrigin::Type InOrigin)
+{
+    TrackingOrigin = InOrigin;
+}
+
+EHMDTrackingOrigin::Type FOSVRHMD::GetTrackingOrigin()
+{
+    return TrackingOrigin;
+}
+
 /**
 * This is more of a temporary workaround to an issue with getting the render target
 * size from the RenderManager. On the game thread, we can't get the render target sizes
@@ -227,13 +237,14 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
     auto& _curHmdOrientation = renderThread ? CurHmdOrientationRT : CurHmdOrientation;
     auto& _curHmdPosition = renderThread ? CurHmdPositionRT : CurHmdPosition;
 
+    FVector trackingOriginOffset = GetTrackingOriginOffset();
     if (mCustomPresent)
     {
         OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
 
         // RenderManager gives us the eye-from-space pose, and we need the inverse of that
         FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
-        FVector unrealPosition = unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale));
+        FVector unrealPosition = unrealRotation * ((-OSVR2FVector(pose.translation, WorldToMetersScale)) + trackingOriginOffset);
         auto clientContext = mOSVREntryPoint->GetClientContext();
 
         //returnCode = osvrClientUpdate(clientContext);
@@ -246,7 +257,6 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
             _lastHmdPosition = _curHmdPosition;
             _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
             _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
-
         }
         //else
         //{
@@ -625,6 +635,69 @@ float FOSVRHMD::GetScreenScale() const
     return screenScale;
 }
 
+FVector FOSVRHMD::GetTrackingOriginOffset()
+{
+    if (TrackingOrigin == EHMDTrackingOrigin::Eye)
+    {
+        if (!GetHMDSupportsPositionalTracking())
+        {
+            return FVector(0.0, 0.0, 0.0);
+        }
+        else
+        {
+            return FVector(0.0f, 0.0f, -StandingHeightInMeters * this->GetWorldToMetersScale());
+        }
+    }
+    else if (TrackingOrigin == EHMDTrackingOrigin::Floor)
+    {
+        if (!GetHMDSupportsPositionalTracking())
+        {
+            return FVector(0.0f, 0.0f, StandingHeightInMeters * this->GetWorldToMetersScale());
+        }
+        else
+        {
+            return FVector(0.0f, 0.0f, 0.0f);
+        }
+    }
+
+    // Not sure what the tracking origin type is, return no offset
+    return FVector(0.0, 0.0, 0.0);
+}
+
+bool FOSVRHMD::GetHMDSupportsPositionalTracking()
+{
+    // OSVR-Core can be flaky sometimes with osvrGet*State functions failing occasionally
+    // so we only check until the first report, then we just return true after that without
+    // checking.
+    if (bHmdHadPositionalState)
+    {
+        return true;
+    }
+
+    // we couldn't get the /me/head interface for some reason. assume no positional tracking.
+    if (!mHmdInterface)
+    {
+        return false;
+    }
+
+    OSVR_TimeValue timestamp;
+    OSVR_PositionState state;
+    OSVR_ReturnCode rc = osvrGetPositionState(mHmdInterface, &timestamp, &state);
+    bHmdHadPositionalState = bHmdHadPositionalState || (rc == OSVR_RETURN_SUCCESS);
+
+    // Once we get the first state, we know the interface supports positional tracking,
+    // so we can free the interface and just return true next time
+    if (bHmdHadPositionalState)
+    {
+        osvrClientFreeInterface(mOSVREntryPoint->GetClientContext(), mHmdInterface);
+        mHmdInterface = nullptr;
+    }
+
+    // otherwise, the interface may have just not seen its first report yet. Keep checking
+    // until we do.
+    return bHmdHadPositionalState;
+}
+
 void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, uint32& SizeX, uint32& SizeY) const
 {
     float screenScale = GetScreenScale();
@@ -839,8 +912,15 @@ FOSVRHMD::FOSVRHMD(TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> entryPo
     if (bClientContextOK)
     {
         bool bFailure = false;
+        OSVR_ReturnCode rc;
+        rc = osvrClientGetInterface(entryPoint->GetClientContext(), "/me/head", &mHmdInterface);
+        if (rc == OSVR_RETURN_FAILURE)
+        {
+            UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::OSVRHMD(): Could not get the HMD interface."))
+                mHmdInterface = nullptr;
+        }
 
-        auto rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
+        rc = osvrClientGetDisplay(osvrClientContext, &DisplayConfig);
         if (rc == OSVR_RETURN_FAILURE)
         {
             UE_LOG(OSVRHMDLog, Warning, TEXT("Could not create DisplayConfig. Treating this as if the HMD is not connected."));

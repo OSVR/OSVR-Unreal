@@ -25,7 +25,7 @@
 #include "ShowFlags.h"
 
 #include <osvr/ClientKit/DisplayC.h>
-
+#include <osvr/ClientKit/InterfaceC.h>
 #include "OSVRCustomPresent.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(OSVRHMDLog, Log, All);
@@ -82,6 +82,9 @@ public:
 #if !OSVR_UNREAL_4_12
     virtual void OnScreenModeChange(EWindowMode::Type WindowMode) override;
 #endif
+
+    void SetTrackingOrigin(EHMDTrackingOrigin::Type InOrigin) override;
+    EHMDTrackingOrigin::Type GetTrackingOrigin() override;
 
     virtual bool IsPositionalTrackingEnabled() const override;
     virtual bool EnablePositionalTracking(bool bEnable) override;
@@ -167,6 +170,8 @@ private:
     void StopCustomPresent();
     void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const;
     float GetScreenScale() const;
+    FVector GetTrackingOriginOffset();
+    bool GetHMDSupportsPositionalTracking();
 
     TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;
     IRendererModule* RendererModule = nullptr;
@@ -193,6 +198,7 @@ private:
 
     /** World units (UU) to Meters scale.  Read from the level, and used to transform positional tracking data */
     float WorldToMetersScale = 100.0f; // @todo: isn't this meters to world units scale?
+    float StandingHeightInMeters = 1.64592f; // @todo: can we get this information from OSVR-Core somehow?
 
     bool bHmdPosTracking = false;
     bool bHaveVisionTracking = false;
@@ -204,7 +210,11 @@ private:
     bool bHmdOverridesApplied = false;
     bool bWaitedForClientStatus = false;
     bool bPlaying = false;
+    bool bHmdHadPositionalState = false;
 
+    EHMDTrackingOrigin::Type TrackingOrigin = EHMDTrackingOrigin::Eye;
+
+    OSVR_ClientInterface mHmdInterface;
     OSVRHMDDescription HMDDescription;
     OSVR_DisplayConfig DisplayConfig = nullptr;
     TRefCountPtr<FOSVRCustomPresent> mCustomPresent;
