@@ -35,7 +35,7 @@
 // Set to 1 to force the game into windowed mode early on. Helps when debugging
 // with only one monitor (otherwise you sometimes end up frozen with the debugger
 // in the background and no way to switch apps).
-#define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 0
+#define OSVR_UNREAL_DEBUG_FORCED_WINDOWMODE 1
 
 #define OSVR_UNREAL_OPENGL_ENABLED 0
 

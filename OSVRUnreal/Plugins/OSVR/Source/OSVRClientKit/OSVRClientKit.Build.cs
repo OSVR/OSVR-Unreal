@@ -25,13 +25,14 @@ public class OSVRClientKit : ModuleRules
             PublicLibraryPaths.Add(String.Format("{0}/lib/{1}", ModuleDirectory, PlatformAbbrev));
             PublicAdditionalLibraries.Add("osvrClientKit.lib");
             PublicAdditionalLibraries.Add("osvrRenderManager.lib");
-
+            PublicAdditionalLibraries.Add("osvrDisplayServerClient.lib");
             var osvrDlls = new string[] {
                 "osvrClientKit.dll",
                 "osvrClient.dll",
                 "osvrCommon.dll",
                 "osvrUtil.dll",
                 "osvrRenderManager.dll",
+                "osvrDisplayServerClient.dll",
                 "d3dcompiler_47.dll",
                 "glew32.dll",
                 "SDL2.dll"
