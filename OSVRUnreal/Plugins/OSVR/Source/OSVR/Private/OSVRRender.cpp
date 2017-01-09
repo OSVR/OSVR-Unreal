@@ -112,19 +112,20 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     if (mCustomPresent)
     {
         // @todo make Initialize lazy and remove this if block
-        if(!mCustomPresent->IsInitialized())
+        if (!mCustomPresent->IsInitialized())
         {
             mCustomPresent->Initialize();
         }
-    }
-    
-    FQuat lastHmdOrientation, hmdOrientation;
-    FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(true, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
-    const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
-    const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
 
-    ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
+
+        FQuat lastHmdOrientation, hmdOrientation;
+        FVector lastHmdPosition, hmdPosition;
+        UpdateHeadPose(true, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+        const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
+        const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
+
+        ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
+    }
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
