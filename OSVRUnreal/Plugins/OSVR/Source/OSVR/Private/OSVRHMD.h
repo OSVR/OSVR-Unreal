@@ -164,13 +164,14 @@ public:
     /** @return	True if the HMD was initialized OK */
     bool IsInitialized() const;
 
+    OSVR_API FVector GetTrackingOriginOffset();
+
 private:
     void UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition);
     void StartCustomPresent();
     void StopCustomPresent();
     void GetRenderTargetSize_GameThread(float windowWidth, float windowHeight, float &width, float &height) const;
     float GetScreenScale() const;
-    FVector GetTrackingOriginOffset();
     bool GetHMDSupportsPositionalTracking();
 
     TSharedPtr<class OSVREntryPoint, ESPMode::ThreadSafe> mOSVREntryPoint;
@@ -212,7 +213,7 @@ private:
     bool bPlaying = false;
     bool bHmdHadPositionalState = false;
 
-    EHMDTrackingOrigin::Type TrackingOrigin = EHMDTrackingOrigin::Eye;
+    EHMDTrackingOrigin::Type TrackingOrigin = EHMDTrackingOrigin::Floor;
 
     OSVR_ClientInterface mHmdInterface;
     OSVRHMDDescription HMDDescription;
