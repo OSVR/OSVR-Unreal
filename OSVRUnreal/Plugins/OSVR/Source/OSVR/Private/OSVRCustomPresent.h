@@ -26,7 +26,6 @@ DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
-    FTexture2DRHIRef mRenderTexture;
   
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
@@ -71,6 +70,10 @@ public:
     // virtual methods from FRHICustomPresent
 
     virtual void OnBackBufferResize() override
+    {
+    }
+
+    virtual void StartRendering()
     {
     }
 
