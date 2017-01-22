@@ -293,6 +293,8 @@ protected:
 
             bInitialized = true;
         }
+        // mRenderManager must be non-nullptr if we're returning true.
+        check(mRenderManager);
         return true;
     }
 
@@ -325,6 +327,13 @@ protected:
     {
         check(IsInitialized());
         check(IsInRenderingThread());
+
+        if (!mRenderManager)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::FinishRendering() - mRenderManager is null. Should be non-null at this point."));
+            return;
+        }
 
         if (!mCachedRenderThreadRenderInfoCollection)
         {
@@ -388,7 +397,8 @@ protected:
         HRESULT hr;
         check(IsInRenderingThread());
         check(IsInitialized());
-        
+        check(mRenderManager);
+
         if (bRenderBuffersNeedToUpdate)
         {
             if (!bDisplayOpen)

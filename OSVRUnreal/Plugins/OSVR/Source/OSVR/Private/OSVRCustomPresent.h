@@ -135,12 +135,21 @@ public:
     virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollection(bool renderThread, bool updateCache)
     {
         FScopeLock lock(&mOSVRMutex);
+        OSVR_Pose3 ret;
+        osvrPose3SetIdentity(&ret);
+
         OSVR_RenderInfoCollection& renderInfoCollection = renderThread ? mCachedRenderThreadRenderInfoCollection : mCachedGameThreadRenderInfoCollection;
         if (updateCache)
         {
-            UpdateCachedRenderInfoCollection(renderInfoCollection);
+            if (!UpdateCachedRenderInfoCollection(renderInfoCollection))
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning, 
+                    TEXT("FOSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollection could not update cached render info, returning identity pose."));
+                return ret;
+            }
         }
-        return GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection);
+        ret = GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection);
+        return ret;
     }
 
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
@@ -280,15 +289,34 @@ protected:
 
     virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) = 0;
 
-    virtual void UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
+    virtual bool UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
     {
         OSVR_ReturnCode rc;
+        if (!mRenderManager)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("OSVRCustomPresent::UpdateCachedRenderInfoCollection: mRenderManager is not yet initialized."));
+            return false;
+        }
+
         if (renderInfoCollection) {
             rc = osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
-            check(rc == OSVR_RETURN_SUCCESS);
+            if (rc != OSVR_RETURN_SUCCESS)
+            {
+                UE_LOG(FOSVRCustomPresentLog, Warning,
+                    TEXT("OSVRCustomPresent::UpdateCachedRenderInfoCollection: osvrRenderManagerReleaseRenderInfoCollection call failed."));
+                return false;
+            }
         }
         rc = osvrRenderManagerGetRenderInfoCollection(mRenderManager, mRenderParams, &renderInfoCollection);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("OSVRCustomPresent::UpdateCachedRenderInfoCollection: osvrRenderManagerGetRenderInfoCollection call failed."));
+            return false;
+        }
+
+        return true;
     }
 
     template<class TGraphicsDevice>
