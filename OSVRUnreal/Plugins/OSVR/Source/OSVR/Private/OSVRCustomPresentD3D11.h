@@ -95,17 +95,15 @@ public:
 
     void RenderStart()
     {
-        for (int32 i = 0; i < textures.Num(); i++)
-        {
-            textures[i].keyedMutex->AcquireSync(0, INFINITE);
+        if (currentIndex < textures.Num()) {
+            textures[currentIndex].keyedMutex->AcquireSync(0, 500);
         }
     }
 
     void RenderStop()
     {
-        for (int32 i = textures.Num() - 1; i >= 0; i--)
-        {
-            textures[i].keyedMutex->ReleaseSync(1);
+        if (currentIndex < textures.Num()) {
+            textures[currentIndex].keyedMutex->ReleaseSync(0);
         }
     }
 
@@ -168,7 +166,6 @@ public:
         {
             TRefCountPtr<ID3D11Texture2D> pD3DTexture;
 
-            //HRESULT hr;
             D3D11_TEXTURE2D_DESC textureDesc;
             memset(&textureDesc, 0, sizeof(textureDesc));
             textureDesc.Width = width;
@@ -189,7 +186,6 @@ public:
             //ID3D11Texture2D *D3DTexture = nullptr;
             VERIFYD3D11RESULT_EX(graphicsDevice->CreateTexture2D(
                 &textureDesc, NULL, pD3DTexture.GetInitReference()), D3D11RHI->GetDevice());
-            //check(!FAILED(hr));
 
             // Grab and lock the mutex, so that we will be able to render
             // to it whether or not RenderManager locks it on our behalf.
@@ -197,17 +193,6 @@ public:
             IDXGIKeyedMutex* myMutex = nullptr;
             VERIFYD3D11RESULT_EX(pD3DTexture->QueryInterface(
                 __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex), D3D11RHI->GetDevice());
-            //if (FAILED(hr) || myMutex == nullptr) {
-            //    UE_LOG(FOSVRCustomPresentLog, Warning,
-            //        TEXT("FD3D11Texture2DSet::D3D11CreateTexture2DSet() - could not get texture keyed mutex pointer."));
-            //    return nullptr;
-            //}
-            //VERIFYD3D11RESULT_EX(myMutex->AcquireSync(0, INFINITE), D3D11RHI->GetDevice());
-            //if (FAILED(hr)) {
-            //    UE_LOG(FOSVRCustomPresentLog, Warning,
-            //        TEXT("FD3D11Texture2DSet::D3D11CreateTexture2DSet() - could not acquire keyed mutex."));
-            //    return nullptr;
-            //}
 
             TArray<TRefCountPtr<ID3D11RenderTargetView> > renderTargetViews;
             if (flags & TexCreate_RenderTargetable)
@@ -283,7 +268,7 @@ protected:
     int currentIndex = 0;
 };
 
-class FDirect3D11CustomPresent : public FOSVRCustomPresent//<ID3D11Device>
+class FDirect3D11CustomPresent : public FOSVRCustomPresent
 {
 public:
     FDirect3D11CustomPresent(OSVR_ClientContext clientContext) :
@@ -348,7 +333,6 @@ protected:
 
     virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollectionImpl(OSVR_RenderInfoCollection renderInfoCollection, OSVR_RenderInfoCount index) override
     {
-        //check(IsInRenderingThread());
         check(IsInitialized());
         check(IsDisplayOpen());
         check(renderInfoCollection);

@@ -81,6 +81,7 @@ public:
     {
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
+
         InitializeImpl();
         if (!bDisplayOpen)
         {
@@ -88,7 +89,10 @@ public:
             check(bDisplayOpen);
         }
         
-        // @todo This is giving us a black screen.
+        OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         FinishRendering();
         return true;
     }
@@ -286,6 +290,9 @@ protected:
     virtual void UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
     {
         OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         if (renderInfoCollection) {
             rc = osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
             check(rc == OSVR_RETURN_SUCCESS);
