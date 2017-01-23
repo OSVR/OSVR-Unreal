@@ -27,7 +27,7 @@ class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
     FTexture2DRHIRef mRenderTexture;
-  
+
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
     {
@@ -78,14 +78,18 @@ public:
     {
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
+
         InitializeImpl();
         if (!bDisplayOpen)
         {
             bDisplayOpen = LazyOpenDisplayImpl();
             check(bDisplayOpen);
         }
-        
-        // @todo This is giving us a black screen.
+
+        OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         FinishRendering();
         return true;
     }
@@ -127,7 +131,7 @@ public:
         FScopeLock lock(&mOSVRMutex);
         if(IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
         {
-            bDisplayOpen = LazyOpenDisplayImpl();    
+            bDisplayOpen = LazyOpenDisplayImpl();
         }
         return bDisplayOpen;
     }
@@ -283,6 +287,9 @@ protected:
     virtual void UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
     {
         OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         if (renderInfoCollection) {
             rc = osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
             check(rc == OSVR_RETURN_SUCCESS);
