@@ -130,10 +130,32 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
 {
-    check(IsInRenderingThread());
-    const FQuat deltaOriention = View.BaseHmdOrientation.Inverse() * CurHmdOrientationRT;
-    View.ViewRotation = FRotator(View.ViewRotation.Quaternion() * deltaOriention);
-    View.UpdateViewMatrix();
+    EStereoscopicPass renderPass = View.StereoPass;
+    if (mCustomPresent && 
+        mCustomPresent->IsInitialized() && 
+        renderPass != EStereoscopicPass::eSSP_FULL)
+    {
+        check(IsInRenderingThread());
+        FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+        FVector trackingOriginOffset = GetTrackingOriginOffset();
+
+        OSVR_RenderInfoCount eye = renderPass == EStereoscopicPass::eSSP_LEFT_EYE ? 0 : 1;
+        OSVR_Pose3 eyePose = mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(eye, true, false);
+        
+        FQuat unrealRotation = OSVR2FQuat(eyePose.rotation).Inverse();
+        FQuat curEyeOrientation = BaseOrientation.Inverse() * unrealRotation;
+
+        //FVector unrealPosition = (unrealRotation * (-OSVR2FVector(eyePose.translation, WorldToMetersScale))) + trackingOriginOffset;
+        //FVector curEyePosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
+
+        FQuat newRotation = View.BaseHmdOrientation.Inverse() * curEyeOrientation;
+        View.ViewRotation = FRotator(View.ViewRotation.Quaternion() * newRotation);
+
+        //FVector newPosition = View.BaseHmdLocation + curEyePosition;
+        //View.ViewLocation = View.ViewLocation + newPosition;
+
+        View.UpdateViewMatrix();
+    }
 }
 
 void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOutSizeX, uint32& InOutSizeY)

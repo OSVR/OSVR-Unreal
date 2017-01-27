@@ -755,6 +755,31 @@ void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType,
         const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
         ViewLocation += vHMDPosition;
     }
+    //if (StereoPassType != eSSP_FULL &&
+    //    mCustomPresent &&
+    //    mCustomPresent->IsInitialized())
+    //{
+    //    OSVR_RenderInfoCount eye = StereoPassType == eSSP_LEFT_EYE ? 0 : 1;
+    //    OSVR_Pose3 eyePose = mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(eye, false, false);
+    //    //FQuat eyeRotation = OSVR2FQuat(eyePose.rotation);
+    //    FVector eyePosition = OSVR2FVector(eyePose.translation, WorldToMeters);
+
+    //    OSVR_Pose3 headPose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(false, false);
+    //    //FQuat headRotation = OSVR2FQuat(headPose.rotation);
+    //    FVector headPosition = OSVR2FVector(headPose.translation, WorldToMeters);
+
+    //    FVector relativeEyePosition = headPosition - eyePosition;
+    //    //FQuat relativeEyeRotation = eyeRotation - headRotation;
+
+    //    float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
+    //    const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? -EyeOffset : EyeOffset;
+    //    //ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
+    //    ViewLocation += ViewRotation.Quaternion().RotateVector(relativeEyePosition);
+
+    //    //const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
+    //    const FVector vHMDPosition = DeltaControlOrientation.RotateVector(headPosition);
+    //    ViewLocation += vHMDPosition;
+    //}
 }
 
 void FOSVRHMD::ResetOrientationAndPosition(float yaw)

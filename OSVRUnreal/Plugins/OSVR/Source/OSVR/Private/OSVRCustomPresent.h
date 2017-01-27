@@ -136,6 +136,17 @@ public:
         return bDisplayOpen;
     }
 
+    virtual OSVR_Pose3 GetEyePoseFromCachedRenderInfoCollection(OSVR_RenderInfoCount eye, bool renderThread, bool updateCache)
+    {
+        FScopeLock lock(&mOSVRMutex);
+        OSVR_RenderInfoCollection& renderInfoCollection = renderThread ? mCachedRenderThreadRenderInfoCollection : mCachedGameThreadRenderInfoCollection;
+        if (updateCache)
+        {
+            UpdateCachedRenderInfoCollection(renderInfoCollection);
+        }
+        return GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection, eye);
+    }
+
     virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollection(bool renderThread, bool updateCache)
     {
         FScopeLock lock(&mOSVRMutex);
