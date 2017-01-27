@@ -54,15 +54,7 @@ bool OSVRHMDDescription::OSVRViewerFitsUnrealModel(OSVR_DisplayConfig displayCon
     }
 
     OSVR_ReturnCode returnCode;
-    
-    // must be only one display input
-    OSVR_DisplayInputCount numDisplayInputs;
-    returnCode = osvrClientGetNumDisplayInputs(displayConfig, &numDisplayInputs);
-    if (returnCode == OSVR_RETURN_FAILURE || numDisplayInputs != 1)
-    {
-        UE_LOG(OSVRHMDDescriptionLog, Warning, TEXT("osvrClientGetNumDisplayInputs call failed or number of display inputs not equal to 1"));
-        return false;
-    }
+
 
     // must be only one viewer
     OSVR_ViewerCount numViewers;

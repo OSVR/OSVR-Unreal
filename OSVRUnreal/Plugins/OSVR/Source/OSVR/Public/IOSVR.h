@@ -21,6 +21,8 @@
 
 #define OSVR_UNREAL_4_11 1
 #define OSVR_UNREAL_4_12 1
+#define OSVR_UNREAL_4_13 1
+#define OSVR_UNREAL_4_14 1
 
 class OSVREntryPoint;
 class FOSVRHMD;
@@ -32,11 +34,6 @@ class FOSVRHMD;
 OSVR_API class IOSVR : public IHeadMountedDisplayModule
 {
 public:
-    /** Returns the key into the HMDPluginPriority section of the config file for this module */
-    virtual FString GetModulePriorityKeyName() const
-    {
-        return FString(TEXT("OSVR"));
-    }
 
     /**
     * Singleton-like access to this module's interface.  This is just for convenience!

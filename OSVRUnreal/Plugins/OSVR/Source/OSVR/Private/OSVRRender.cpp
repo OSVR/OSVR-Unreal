@@ -68,7 +68,10 @@ void FOSVRHMD::RenderTexture_RenderThread(FRHICommandListImmediate& rhiCmdList, 
     SetGlobalBoundShaderState(rhiCmdList, featureLevel, boundShaderState, RendererModule->GetFilterVertexDeclaration().VertexDeclarationRHI, *vertexShader, *pixelShader);
 
     pixelShader->SetParameters(rhiCmdList, TStaticSamplerState<SF_Bilinear>::GetRHI(), srcTexture);
+
+#if !OSVR_UNREAL_4_14
     rhiCmdList.Clear(true, FLinearColor::Black, true, 0, true, 0, FIntRect());
+#endif
 
     // @todo: do we need to ask mCustomPresent whether we should draw the preview or not?
     RendererModule->DrawRectangle(
@@ -109,19 +112,20 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
     if (mCustomPresent)
     {
         // @todo make Initialize lazy and remove this if block
-        if(!mCustomPresent->IsInitialized())
+        if (!mCustomPresent->IsInitialized())
         {
             mCustomPresent->Initialize();
         }
-    }
-    
-    FQuat lastHmdOrientation, hmdOrientation;
-    FVector lastHmdPosition, hmdPosition;
-    UpdateHeadPose(true, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
-    const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
-    const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
 
-    ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
+
+        FQuat lastHmdOrientation, hmdOrientation;
+        FVector lastHmdPosition, hmdPosition;
+        UpdateHeadPose(true, lastHmdOrientation, lastHmdPosition, hmdOrientation, hmdPosition);
+        const FTransform oldRelativeTransform(lastHmdOrientation, lastHmdPosition);
+        const FTransform newRelativeTransform(hmdOrientation, hmdPosition);
+
+        ApplyLateUpdate(ViewFamily.Scene, oldRelativeTransform, newRelativeTransform);
+    }
 }
 
 void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneView& View)
@@ -140,15 +144,19 @@ void FOSVRHMD::CalculateRenderTargetSize(const FViewport& Viewport, uint32& InOu
     {
         return;
     }
-    
+
     float screenScale = GetScreenScale();
+    
+    if (mCustomPresent 
+        && !mCustomPresent->IsInitialized() 
+        && IsInRenderingThread() 
+        && !mCustomPresent->Initialize())
+    {
+        mCustomPresent = nullptr;
+    }
+
     if (mCustomPresent)
     {
-        if (!mCustomPresent->IsInitialized() && IsInRenderingThread() && !mCustomPresent->Initialize())
-        {
-            mCustomPresent = nullptr;
-        }
-
         // this only happens once, the first time this is called. I don't know why.
         if (IsInRenderingThread())
         {

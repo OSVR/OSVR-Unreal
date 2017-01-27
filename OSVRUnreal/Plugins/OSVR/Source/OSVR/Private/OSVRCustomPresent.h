@@ -17,6 +17,7 @@
 #pragma once
 
 #include "IOSVR.h"
+#include "OSVRTypes.h"
 #include <osvr/RenderKit/RenderManagerC.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
@@ -26,7 +27,7 @@ class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
     FTexture2DRHIRef mRenderTexture;
-  
+
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
     {
@@ -77,14 +78,18 @@ public:
     {
         check(IsInRenderingThread());
         FScopeLock lock(&mOSVRMutex);
+
         InitializeImpl();
         if (!bDisplayOpen)
         {
             bDisplayOpen = LazyOpenDisplayImpl();
             check(bDisplayOpen);
         }
-        
-        // @todo This is giving us a black screen.
+
+        OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         FinishRendering();
         return true;
     }
@@ -126,7 +131,7 @@ public:
         FScopeLock lock(&mOSVRMutex);
         if(IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
         {
-            bDisplayOpen = LazyOpenDisplayImpl();    
+            bDisplayOpen = LazyOpenDisplayImpl();
         }
         return bDisplayOpen;
     }
@@ -261,21 +266,16 @@ protected:
 
         OSVR_Pose3 leftEye = renderInfo[0];
         OSVR_Pose3 rightEye = renderInfo[1];
-        // @todo: RenderManager doesn't have a way to get the head pose,
-        // and the orientation of the eyes isn't equal.
-        //if (leftEye.rotation.data[0] != rightEye.rotation.data[0]
-        //    || leftEye.rotation.data[1] != rightEye.rotation.data[1]
-        //    || leftEye.rotation.data[2] != rightEye.rotation.data[2]
-        //    || leftEye.rotation.data[3] != rightEye.rotation.data[3])
-        //{
-        //    UE_LOG(FOSVRCustomPresentLog, Warning,
-        //        TEXT("OSVRCustomPresent::GetHeadPoseFromCachedRenderInfoCollectionImpl: expected orientation of left and right eyes to be the same. Using left eye as head pose, but may be incorrect."));
-        //}
 
-        ret.rotation.data[0] = leftEye.rotation.data[0];
-        ret.rotation.data[1] = leftEye.rotation.data[1];
-        ret.rotation.data[2] = leftEye.rotation.data[2];
-        ret.rotation.data[3] = leftEye.rotation.data[3];
+        FQuat leftOrientation = OSVR2FQuat(leftEye.rotation);
+        FQuat rightOrientation = OSVR2FQuat(rightEye.rotation);
+        FQuat middleOrientation = FQuat::Slerp(leftOrientation, rightOrientation, 1.0f);
+        OSVR_Quaternion middleOrientationOSVR = FQuat2OSVR(middleOrientation);
+
+        ret.rotation.data[0] = middleOrientationOSVR.data[0];
+        ret.rotation.data[1] = middleOrientationOSVR.data[1];
+        ret.rotation.data[2] = middleOrientationOSVR.data[2];
+        ret.rotation.data[3] = middleOrientationOSVR.data[3];
         ret.translation.data[0] = (leftEye.translation.data[0] + rightEye.translation.data[0]) / 2.0f;
         ret.translation.data[1] = (leftEye.translation.data[1] + rightEye.translation.data[1]) / 2.0f;
         ret.translation.data[2] = (leftEye.translation.data[2] + rightEye.translation.data[2]) / 2.0f;
@@ -287,6 +287,9 @@ protected:
     virtual void UpdateCachedRenderInfoCollection(OSVR_RenderInfoCollection &renderInfoCollection)
     {
         OSVR_ReturnCode rc;
+        rc = osvrClientUpdate(mClientContext);
+        check(rc == OSVR_RETURN_SUCCESS);
+
         if (renderInfoCollection) {
             rc = osvrRenderManagerReleaseRenderInfoCollection(renderInfoCollection);
             check(rc == OSVR_RETURN_SUCCESS);

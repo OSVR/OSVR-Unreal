@@ -313,7 +313,8 @@ bool FOSVRInputDevice::GetControllerOrientationAndPosition(const int32 Controlle
             {
                 // @todo: how do we get the world to meters scale without the HMD?
                 float worldToMetersScale = mOSVRHMD.IsValid() ? mOSVRHMD->GetWorldToMetersScale() : 100.0f;
-                OutPosition = OSVR2FVector(state.translation, worldToMetersScale);
+                FVector trackingOriginOffset = mOSVRHMD.IsValid() ? mOSVRHMD->GetTrackingOriginOffset() : FVector(0, 0, 0);
+                OutPosition = OSVR2FVector(state.translation, worldToMetersScale) + trackingOriginOffset;
                 OutOrientation = OSVR2FQuat(state.rotation).Rotator();
                 bRet = true;
             }
