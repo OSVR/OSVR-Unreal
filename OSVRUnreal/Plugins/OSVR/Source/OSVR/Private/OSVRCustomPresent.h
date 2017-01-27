@@ -134,7 +134,7 @@ public:
         FScopeLock lock(&mOSVRMutex);
         if(IsInRenderingThread() && IsInitialized() && !bDisplayOpen)
         {
-            bDisplayOpen = LazyOpenDisplayImpl();    
+            bDisplayOpen = LazyOpenDisplayImpl();
         }
         return bDisplayOpen;
     }

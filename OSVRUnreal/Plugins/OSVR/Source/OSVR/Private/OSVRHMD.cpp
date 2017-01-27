@@ -306,6 +306,10 @@ void FOSVRHMD::EnableLowPersistenceMode(bool bEnable)
 bool FOSVRHMD::OnStartGameFrame(FWorldContext& WorldContext)
 {
     check(IsInGameThread());
+    FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
+    OSVR_ReturnCode rc = osvrClientUpdate(mOSVREntryPoint->GetClientContext());
+    check(rc == OSVR_RETURN_SUCCESS);
+
     static auto sFinishCurrentFrame = IConsoleManager::Get().FindConsoleVariable(TEXT("r.FinishCurrentFrame"));
     if (!bHmdOverridesApplied)
     {
