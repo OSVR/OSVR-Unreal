@@ -113,6 +113,13 @@ public:
     }
 
     void GetRenderTargetTexture(
+        ID3D11Texture2D** colorBufferOut,
+        ID3D11RenderTargetView** colorBufferViewOut)
+    {
+        GetRenderTargetTexture(currentIndex, colorBufferOut, colorBufferViewOut);
+    }
+
+    void GetRenderTargetTexture(
         int32 index, 
         ID3D11Texture2D** colorBufferOut,
         ID3D11RenderTargetView** colorBufferViewOut)
@@ -534,8 +541,14 @@ protected:
                     TEXT("FDirect3D11CustomPresent::FinishRendering() - osvrRenderManagerGetRenderInfoFromCollectionD3D11 call failed on i = %d."), i);
                 renderInfo = mRenderInfos[i];
             }
+            ID3D11Texture2D* texture;
+            ID3D11RenderTargetView* rtv;
+            mRenderTargetTextureSet->GetRenderTargetTexture(&texture, &rtv);
+            OSVR_RenderBufferD3D11 buffer = { 0 };
+            buffer.colorBuffer = texture;
+            buffer.colorBufferView = rtv;
 
-            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, mRenderBuffers[i], renderInfo, mViewportDescriptions[i]);
+            rc = osvrRenderManagerPresentRenderBufferD3D11(presentState, buffer, renderInfo, mViewportDescriptions[i]);
             if (rc != OSVR_RETURN_SUCCESS)
             {
                 UE_LOG(FOSVRCustomPresentLog, Warning,
