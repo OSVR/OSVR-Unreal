@@ -117,6 +117,7 @@ void FOSVRHMD::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmd
             mCustomPresent->Initialize();
         }
 
+        mCustomPresent->StartRendering();
 
         FQuat lastHmdOrientation, hmdOrientation;
         FVector lastHmdPosition, hmdPosition;

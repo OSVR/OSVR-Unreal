@@ -371,7 +371,6 @@ protected:
     {
         auto textureOpenGL = static_cast<FOpenGLTexture2D*>(&(*srcTexture));
         RenderTargetTexture = textureOpenGL->Resource;
-        mRenderTexture = srcTexture; // @todo do we need mRenderTexture?
         UpdateRenderBuffers();
         return true;
     }

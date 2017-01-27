@@ -26,8 +26,7 @@ DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:
-    FTexture2DRHIRef mRenderTexture;
-
+  
     FOSVRCustomPresent(OSVR_ClientContext clientContext) :
         FRHICustomPresent(nullptr)
     {
@@ -74,6 +73,10 @@ public:
     {
     }
 
+    virtual void StartRendering()
+    {
+    }
+
     virtual bool Present(int32 &inOutSyncInterval) override
     {
         check(IsInRenderingThread());
@@ -85,7 +88,7 @@ public:
             bDisplayOpen = LazyOpenDisplayImpl();
             check(bDisplayOpen);
         }
-
+        
         OSVR_ReturnCode rc;
         rc = osvrClientUpdate(mClientContext);
         check(rc == OSVR_RETURN_SUCCESS);
