@@ -240,29 +240,16 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
     FVector trackingOriginOffset = GetTrackingOriginOffset();
     if (mCustomPresent && mCustomPresent->IsInitialized())
     {
-        OSVR_Pose3 pose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true);
+        FQuat unrealRotation;
+        FVector unrealPosition;
+        mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(renderThread, true, WorldToMetersScale, unrealPosition, unrealRotation);
 
-        // RenderManager gives us the eye-from-space pose, and we need the inverse of that
-        FQuat unrealRotation = OSVR2FQuat(pose.rotation).Inverse();
-        FVector unrealPosition = (unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale))) + trackingOriginOffset;
-        auto clientContext = mOSVREntryPoint->GetClientContext();
-
-        //returnCode = osvrClientUpdate(clientContext);
-        //check(returnCode == OSVR_RETURN_SUCCESS);
-
-        //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-        //if (returnCode == OSVR_RETURN_SUCCESS)
         {
             _lastHmdOrientation = _curHmdOrientation;
             _lastHmdPosition = _curHmdPosition;
             _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
             _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
         }
-        //else
-        //{
-        //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
-        //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
-        //}
     }
     else
     {
@@ -746,40 +733,40 @@ void FOSVRHMD::AdjustViewRect(EStereoscopicPass StereoPass, int32& X, int32& Y, 
 
 void FOSVRHMD::CalculateStereoViewOffset(const EStereoscopicPass StereoPassType, const FRotator& ViewRotation, const float WorldToMeters, FVector& ViewLocation)
 {
-    if (StereoPassType != eSSP_FULL)
-    {
-        float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
-        const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? -EyeOffset : EyeOffset;
-        ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
-
-        const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
-        ViewLocation += vHMDPosition;
-    }
-    //if (StereoPassType != eSSP_FULL &&
-    //    mCustomPresent &&
-    //    mCustomPresent->IsInitialized())
+    //if (StereoPassType != eSSP_FULL)
     //{
-    //    OSVR_RenderInfoCount eye = StereoPassType == eSSP_LEFT_EYE ? 0 : 1;
-    //    OSVR_Pose3 eyePose = mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(eye, false, false);
-    //    //FQuat eyeRotation = OSVR2FQuat(eyePose.rotation);
-    //    FVector eyePosition = OSVR2FVector(eyePose.translation, WorldToMeters);
-
-    //    OSVR_Pose3 headPose = mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(false, false);
-    //    //FQuat headRotation = OSVR2FQuat(headPose.rotation);
-    //    FVector headPosition = OSVR2FVector(headPose.translation, WorldToMeters);
-
-    //    FVector relativeEyePosition = headPosition - eyePosition;
-    //    //FQuat relativeEyeRotation = eyeRotation - headRotation;
-
     //    float EyeOffset = (GetInterpupillaryDistance() * WorldToMeters) / 2.0f;
     //    const float PassOffset = (StereoPassType == eSSP_LEFT_EYE) ? -EyeOffset : EyeOffset;
-    //    //ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
-    //    ViewLocation += ViewRotation.Quaternion().RotateVector(relativeEyePosition);
+    //    ViewLocation += ViewRotation.Quaternion().RotateVector(FVector(0, PassOffset, 0));
 
-    //    //const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
-    //    const FVector vHMDPosition = DeltaControlOrientation.RotateVector(headPosition);
+    //    const FVector vHMDPosition = DeltaControlOrientation.RotateVector(CurHmdPosition);
     //    ViewLocation += vHMDPosition;
     //}
+    if (StereoPassType != eSSP_FULL &&
+        mCustomPresent &&
+        mCustomPresent->IsInitialized())
+    {
+        OSVR_RenderInfoCount eye = StereoPassType == eSSP_LEFT_EYE ? 0 : 1;
+        FQuat eyeRotation;
+        FVector eyePosition;
+
+        mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(eye, false, true, WorldToMetersScale, eyePosition, eyeRotation);
+
+        FQuat headRotation;
+        FVector headPosition;
+        mCustomPresent->GetHeadPoseFromCachedRenderInfoCollection(
+            false, false, WorldToMetersScale, headPosition, headRotation);
+
+        const FVector hmdToEyeOffset = eyePosition - headPosition;
+        const FQuat viewOrientation = ViewRotation.Quaternion();
+        const FQuat deltaControlEyeOrientation = viewOrientation * eyeRotation.Inverse();
+        const FVector vEyePosition = deltaControlEyeOrientation.RotateVector(hmdToEyeOffset);
+        ViewLocation += vEyePosition;
+
+        const FQuat deltaControlHmdOrientation = viewOrientation * headRotation.Inverse();
+        const FVector vHMDPosition = deltaControlHmdOrientation.RotateVector(headPosition);
+        ViewLocation += vHMDPosition;
+    }
 }
 
 void FOSVRHMD::ResetOrientationAndPosition(float yaw)

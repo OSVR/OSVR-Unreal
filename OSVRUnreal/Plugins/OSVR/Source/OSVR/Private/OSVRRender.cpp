@@ -138,22 +138,29 @@ void FOSVRHMD::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList, 
     {
         check(IsInRenderingThread());
         FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
-        FVector trackingOriginOffset = GetTrackingOriginOffset();
+        
+        const FQuat viewOrientation = View.ViewRotation.Quaternion();
 
         OSVR_RenderInfoCount eye = renderPass == EStereoscopicPass::eSSP_LEFT_EYE ? 0 : 1;
-        OSVR_Pose3 eyePose = mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(eye, true, false);
+        FQuat unrealRotation;
+        FVector unrealPosition;
+        mCustomPresent->GetEyePoseFromCachedRenderInfoCollection(
+            eye, true, false, WorldToMetersScale, unrealPosition, unrealRotation);
         
-        FQuat unrealRotation = OSVR2FQuat(eyePose.rotation).Inverse();
         FQuat curEyeOrientation = BaseOrientation.Inverse() * unrealRotation;
+        curEyeOrientation.Normalize();
 
-        //FVector unrealPosition = (unrealRotation * (-OSVR2FVector(eyePose.translation, WorldToMetersScale))) + trackingOriginOffset;
-        //FVector curEyePosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
+        const FQuat deltaControlOrientation = viewOrientation * curEyeOrientation.Inverse();
+        const FQuat deltaOrientation = View.BaseHmdOrientation.Inverse() * curEyeOrientation;
+        View.ViewRotation = FRotator(viewOrientation * deltaOrientation);
 
-        FQuat newRotation = View.BaseHmdOrientation.Inverse() * curEyeOrientation;
-        View.ViewRotation = FRotator(View.ViewRotation.Quaternion() * newRotation);
+        FVector trackingOriginOffset = GetTrackingOriginOffset();
+        FVector curEyePosition = BaseOrientation.Inverse().RotateVector(unrealPosition + trackingOriginOffset - BasePosition);
+        View.BaseHmdLocation = CurHmdPositionRT;
 
-        //FVector newPosition = View.BaseHmdLocation + curEyePosition;
-        //View.ViewLocation = View.ViewLocation + newPosition;
+        const FVector deltaPosition = curEyePosition - View.BaseHmdLocation;
+        const FVector vEyePosition = deltaControlOrientation.RotateVector(deltaPosition);
+        View.ViewLocation += vEyePosition;
 
         View.UpdateViewMatrix();
     }

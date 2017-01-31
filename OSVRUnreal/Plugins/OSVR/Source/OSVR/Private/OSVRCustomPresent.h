@@ -139,7 +139,7 @@ public:
         return bDisplayOpen;
     }
 
-    virtual OSVR_Pose3 GetEyePoseFromCachedRenderInfoCollection(OSVR_RenderInfoCount eye, bool renderThread, bool updateCache)
+    virtual void GetEyePoseFromCachedRenderInfoCollection(OSVR_RenderInfoCount eye, bool renderThread, bool updateCache, double worldToMetersScale, FVector& positionOut, FQuat& orientationOut)
     {
         FScopeLock lock(&mOSVRMutex);
         OSVR_RenderInfoCollection& renderInfoCollection = renderThread ? mCachedRenderThreadRenderInfoCollection : mCachedGameThreadRenderInfoCollection;
@@ -147,10 +147,12 @@ public:
         {
             UpdateCachedRenderInfoCollection(renderInfoCollection);
         }
-        return GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection, eye);
+        OSVR_Pose3 pose = GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection, eye);
+        orientationOut = OSVR2FQuat(pose.rotation).Inverse().GetNormalized();
+        positionOut = orientationOut * -OSVR2FVector(pose.translation, worldToMetersScale);
     }
 
-    virtual OSVR_Pose3 GetHeadPoseFromCachedRenderInfoCollection(bool renderThread, bool updateCache)
+    virtual void GetHeadPoseFromCachedRenderInfoCollection(bool renderThread, bool updateCache, double worldToMetersScale, FVector& positionOut, FQuat& orientationOut)
     {
         FScopeLock lock(&mOSVRMutex);
         OSVR_RenderInfoCollection& renderInfoCollection = renderThread ? mCachedRenderThreadRenderInfoCollection : mCachedGameThreadRenderInfoCollection;
@@ -158,7 +160,9 @@ public:
         {
             UpdateCachedRenderInfoCollection(renderInfoCollection);
         }
-        return GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection);
+        OSVR_Pose3 pose = GetHeadPoseFromCachedRenderInfoCollectionImpl(renderInfoCollection);
+        orientationOut = OSVR2FQuat(pose.rotation).Inverse().GetNormalized();
+        positionOut = orientationOut * -OSVR2FVector(pose.translation, worldToMetersScale);
     }
 
     virtual void GetProjectionMatrix(OSVR_RenderInfoCount eye, float &left, float &right, float &bottom, float &top, float nearClip, float farClip)
