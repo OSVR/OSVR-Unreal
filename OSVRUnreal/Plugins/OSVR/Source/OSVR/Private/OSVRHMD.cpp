@@ -15,12 +15,20 @@
 //
 
 
-#include "OSVRPrivatePCH.h"
 #include "OSVRHMD.h"
+#include "OSVRPrivate.h"
 #include "OSVRTypes.h"
 #include "SharedPointer.h"
 #include "SceneViewport.h"
 #include "OSVREntryPoint.h"
+#include "Dom/JsonObject.h"
+#include "Serialization/JsonSerializer.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/GameEngine.h"
+#include "UnrealEngine.h"
+
+#include "Scalability.h"
+
 
 #if OSVR_UNREAL_OPENGL_ENABLED
 #include "OSVRCustomPresentOpenGL.h"
@@ -229,7 +237,6 @@ bool FOSVRHMD::GetHMDMonitorInfo(MonitorInfo& MonitorDesc)
 
 void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVector& lastHmdPosition, FQuat& hmdOrientation, FVector& hmdPosition)
 {
-    //OSVR_ReturnCode returnCode;
     FScopeLock lock(mOSVREntryPoint->GetClientContextMutex());
 
     auto& _lastHmdOrientation = renderThread ? LastHmdOrientationRT : LastHmdOrientation;
@@ -247,22 +254,12 @@ void FOSVRHMD::UpdateHeadPose(bool renderThread, FQuat& lastHmdOrientation, FVec
         FVector unrealPosition = (unrealRotation * (-OSVR2FVector(pose.translation, WorldToMetersScale))) + trackingOriginOffset;
         auto clientContext = mOSVREntryPoint->GetClientContext();
 
-        //returnCode = osvrClientUpdate(clientContext);
-        //check(returnCode == OSVR_RETURN_SUCCESS);
-
-        //returnCode = osvrClientGetViewerPose(DisplayConfig, 0, &pose);
-        //if (returnCode == OSVR_RETURN_SUCCESS)
         {
             _lastHmdOrientation = _curHmdOrientation;
             _lastHmdPosition = _curHmdPosition;
             _curHmdPosition = BaseOrientation.Inverse().RotateVector(unrealPosition - BasePosition);
             _curHmdOrientation = BaseOrientation.Inverse() * unrealRotation;
         }
-        //else
-        //{
-        //    lastHmdOrientation = hmdOrientation = FQuat::Identity;
-        //    lastHmdPosition = hmdPosition = FVector(0.0f, 0.0f, 0.0f);
-        //}
     }
     else
     {

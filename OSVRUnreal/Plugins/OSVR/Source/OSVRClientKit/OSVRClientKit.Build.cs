@@ -6,7 +6,7 @@ using UnrealBuildTool;
 public class OSVRClientKit : ModuleRules
 {
 
-    public OSVRClientKit(TargetInfo Target)
+    public OSVRClientKit(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
         PublicIncludePaths.Add(ModuleDirectory + "/include");
@@ -59,7 +59,7 @@ public class OSVRClientKit : ModuleRules
             PublicLibraryPaths.Add(String.Format("{0}/bin/Android/{1}", ModuleDirectory, PlatformAbbrev));
             PublicAdditionalLibraries.Add("osvrClientKit");
 
-            var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
+            //var basePath = Utils.MakePathRelativeTo(ModuleDirectory, BuildConfiguration.RelativeEnginePath);
             var xmlPath = Path.Combine(ModuleDirectory, "OSVR_APL.xml");
             //System.Console.WriteLine("xmlPath: {0}", xmlPath);
             AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", xmlPath));

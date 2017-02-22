@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#include "OSVRPrivatePCH.h"
+#include "OSVREntryPoint.h"
+#include "OSVRPrivate.h"
 
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 #include "OSVRInterfaceCollection.h"
 #endif
 
-#include "OSVREntryPoint.h"
 #include <osvr/ClientKit/ServerAutoStartC.h>
 
 #include "Runtime/Core/Public/Misc/DateTime.h"

@@ -3,19 +3,13 @@ using System.IO;
 
 public class OSVR : ModuleRules
 {
-    public OSVR(TargetInfo Target)
+    public OSVR(ReadOnlyTargetRules Target) : base(Target)
     {
         PrivateIncludePathModuleNames.Add("TargetPlatform");
-
-        var EngineDir = Path.GetFullPath(BuildConfiguration.RelativeEnginePath);
-        var openglDrvPrivatePath = Path.Combine(EngineDir, @"Source\Runtime\OpenGLDrv\Private");
-        var openglPath = Path.Combine(EngineDir, @"Source\ThirdParty\OpenGL");
 
         PrivateIncludePaths.AddRange(
             new string[] {
 				"OSVR/Private",
-                openglDrvPrivatePath,
-                openglPath
 				// ... add other private include paths required here ...
 			}
             );
@@ -35,8 +29,7 @@ public class OSVR : ModuleRules
 				"Renderer",
 				"ShaderCore",
 				"HeadMountedDisplay",
-				"Json",
-                "OpenGLDrv"
+				"Json"
 				// ... add private dependencies that you statically link with here ...
 			}
             );
@@ -45,14 +38,12 @@ public class OSVR : ModuleRules
             PrivateDependencyModuleNames.Add("UnrealEd");
         }
 
-        AddEngineThirdPartyPrivateStaticDependencies(Target, "OpenGL");
-
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        if(Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
         {
             PrivateDependencyModuleNames.AddRange(new string[] { "D3D11RHI" });
 
             // Required for some private headers needed for the rendering support.
-            
+            var EngineDir = Path.GetFullPath(BuildConfiguration.RelativeEnginePath);
             PrivateIncludePaths.AddRange(
                 new string[] {
                             Path.Combine(EngineDir, @"Source\Runtime\Windows\D3D11RHI\Private"),

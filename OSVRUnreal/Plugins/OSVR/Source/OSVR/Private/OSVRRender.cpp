@@ -14,7 +14,8 @@
 // limitations under the License.
 //
 
-#include "OSVRPrivatePCH.h"
+#include "CoreMinimal.h"
+#include "OSVRPrivate.h"
 #include "OSVRHMD.h"
 
 // Must put path from Engine/Source to these includes since we are an out-of-tree module.

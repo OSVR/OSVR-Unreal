@@ -9,7 +9,7 @@
 	"EngineVersion" : "4.10.1",
 	"Description" : "Open Source Virtual Reality (OSVR) plugin.",
 	"Category" : "Virtual Reality",
-	"EnabledByDefault" : true,
+	"EnabledByDefault" : false,
 
 	"Modules" :
 	[
@@ -17,13 +17,13 @@
       "Name": "OSVR",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win32", "Win64" ]
+      "WhitelistPlatforms": [ "Win64" ]
     },
     {
       "Name": "OSVRInput",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win32", "Win64" ]
+      "WhitelistPlatforms": [ "Win64" ]
     }
 	]
 }

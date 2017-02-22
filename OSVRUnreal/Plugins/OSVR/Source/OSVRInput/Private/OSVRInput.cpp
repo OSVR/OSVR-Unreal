@@ -14,11 +14,13 @@
 // limitations under the License.
 //
 
-#include "OSVRInputPrivatePCH.h"
+#include "CoreMinimal.h"
+#include "OSVRInputPrivate.h"
 #include "IOSVR.h"
 #include "IOSVRInput.h"
 #include "OSVREntryPoint.h"
 #include "OSVRInputDevice.h"
+#include "Misc/ScopeLock.h"
 
 #include "InputCoreTypes.h"
 #include "GameFramework/InputSettings.h"

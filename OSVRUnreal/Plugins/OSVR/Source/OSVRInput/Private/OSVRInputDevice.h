@@ -16,19 +16,26 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "InputCoreTypes.h"
+#include "OSVRInputPrivate.h"
 #include "IForceFeedbackSystem.h"
 #include "IInputDevice.h"
 #include "IMotionController.h"
 #include "IOSVR.h"
 #include "OSVRTypes.h"
 
-#include <osvr/ClientKit/InterfaceC.h>
+THIRD_PARTY_INCLUDES_START
+	#include <osvr/ClientKit/InterfaceC.h>
+THIRD_PARTY_INCLUDES_END
 
-#include <string>
-#include <vector>
-#include <queue>
-#include <map>
-#include <functional>
+THIRD_PARTY_INCLUDES_START
+	#include <string>
+	#include <vector>
+	#include <queue>
+	#include <map>
+	#include <functional>
+THIRD_PARTY_INCLUDES_END
 
 DECLARE_LOG_CATEGORY_EXTERN(LogOSVRInputDevice, Log, All);
 

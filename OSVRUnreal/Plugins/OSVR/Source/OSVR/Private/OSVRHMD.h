@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "OSVRPrivate.h"
 #include "IOSVR.h"
 #include "OSVRHMDDescription.h"
 #include "HeadMountedDisplay.h"
@@ -23,6 +24,7 @@
 #include "SceneViewExtension.h"
 #include "SceneView.h"
 #include "ShowFlags.h"
+#include "RendererInterface.h"
 
 #include <osvr/ClientKit/DisplayC.h>
 #include <osvr/ClientKit/InterfaceC.h>

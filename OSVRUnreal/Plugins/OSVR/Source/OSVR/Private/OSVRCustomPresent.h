@@ -16,13 +16,14 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "OSVRPrivate.h"
 #include "IOSVR.h"
 #include "OSVRTypes.h"
 #include <osvr/RenderKit/RenderManagerC.h>
 
 DECLARE_LOG_CATEGORY_EXTERN(FOSVRCustomPresentLog, Log, All);
 
-//template<class TGraphicsDevice>
 class FOSVRCustomPresent : public FRHICustomPresent
 {
 public:

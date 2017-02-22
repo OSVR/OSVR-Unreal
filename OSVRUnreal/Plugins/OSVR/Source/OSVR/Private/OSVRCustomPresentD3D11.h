@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Misc/ScopeLock.h"
+
 #if PLATFORM_WINDOWS
 
 #include "IOSVR.h"
@@ -190,13 +193,9 @@ public:
             textureDesc.CPUAccessFlags = 0;
             textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
 
-            //ID3D11Texture2D *D3DTexture = nullptr;
             VERIFYD3D11RESULT_EX(graphicsDevice->CreateTexture2D(
                 &textureDesc, NULL, pD3DTexture.GetInitReference()), D3D11RHI->GetDevice());
 
-            // Grab and lock the mutex, so that we will be able to render
-            // to it whether or not RenderManager locks it on our behalf.
-            // it will not be auto-locked when we're in the non-ATW case.
             IDXGIKeyedMutex* myMutex = nullptr;
             VERIFYD3D11RESULT_EX(pD3DTexture->QueryInterface(
                 __uuidof(IDXGIKeyedMutex), (LPVOID*)&myMutex), D3D11RHI->GetDevice());
@@ -327,7 +326,13 @@ protected:
         OSVR_ReturnCode rc;
         OSVR_RenderInfoD3D11 renderInfo;
         rc = osvrRenderManagerGetRenderInfoFromCollectionD3D11(mCachedProjectionRenderInfoCollection, eye, &renderInfo);
-        check(rc == OSVR_RETURN_SUCCESS);
+        if (rc != OSVR_RETURN_SUCCESS)
+        {
+            UE_LOG(FOSVRCustomPresentLog, Warning,
+                TEXT("FDirect3D11CustomPresent::GetProjectionMatrixImpl: osvrRenderManagerGetRenderInfoFromCollectionD3D11 failed with index %d"),
+                eye);
+            return;
+        }
 
         // previously we divided these by renderInfo.projection.nearClip but we need
         // to pass these unmodified through to the OSVR_Projection_to_D3D call (and OpenGL
