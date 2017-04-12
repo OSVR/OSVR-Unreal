@@ -203,7 +203,10 @@ bool FOSVRHMD::NeedReAllocateViewportRenderTarget(const FViewport &viewport)
 
         uint32 newSizeX = inSizeX, newSizeY = inSizeY;
         CalculateRenderTargetSize(viewport, newSizeX, newSizeY);
-        if (newSizeX != renderTargetSize.X || newSizeY != renderTargetSize.Y)
+        // Floating point math error can result in calculated render target sizes
+        // off by one pixel here
+        if (FMath::Abs(static_cast<int>(newSizeX) - static_cast<int>(renderTargetSize.X)) > 1
+            && FMath::Abs(static_cast<int>(newSizeY) - static_cast<int>(renderTargetSize.Y)) > 1)
         {
             return true;
         }
