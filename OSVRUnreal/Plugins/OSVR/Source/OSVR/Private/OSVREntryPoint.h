@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "OSVRPrivatePCH.h"
+
 #if OSVR_DEPRECATED_BLUEPRINT_API_ENABLED
 #include "OSVRInterfaceCollection.h"
 #endif

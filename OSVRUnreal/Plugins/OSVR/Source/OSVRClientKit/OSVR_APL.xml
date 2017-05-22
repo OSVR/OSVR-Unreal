@@ -21,32 +21,65 @@
   </androidManifestUpdates>
   <resourceCopies>
     <isArch arch="armeabi-v7a">
+      <log text="Copying native libraries from $S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/* to $S(BuildDir)/libs/armeabi-v7a/*" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libgnustl_shared.so"
           dst="$S(BuildDir)/libs/armeabi-v7a/libgnustl_shared.so" />
-      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libusb1.0.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libusb1.0.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcrystax.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libcrystax.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libjsoncpp.so"
           dst="$S(BuildDir)/libs/armeabi-v7a/libjsoncpp.so" />
-      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcrystax.so"
-                dst="$S(BuildDir)/libs/armeabi-v7a/libcrystax.so" />
-      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClientKit.so"
-                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClientKit.so" />
-      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClient.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClient.so" />
-      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrCommon.so"
-          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrCommon.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libusb1.0.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libusb1.0.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrRenderManager.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrRenderManager.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrAnalysisPluginKit.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrAnalysisPluginKit.so" />
       <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrUtil.so"
           dst="$S(BuildDir)/libs/armeabi-v7a/libosvrUtil.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrCommon.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrCommon.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClient.so"
+          dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClient.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrClientKit.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrClientKit.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libfunctionality.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libfunctionality.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrConnection.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrConnection.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrPluginHost.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrPluginHost.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrPluginKit.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrPluginKit.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrVRPNServer.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrVRPNServer.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libosvrServer.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libosvrServer.so" />
+      <copyFile src="$S(EngineDir)/Source/ThirdParty/OSVRClientKit/bin/Android/armeabi-v7a/libcom_osvr_android_sensorTracker.so"
+                dst="$S(BuildDir)/libs/armeabi-v7a/libcom_osvr_android_sensorTracker.so" />
+    
     </isArch>
   </resourceCopies>
   <soLoadLibrary>
     <if condition="bOSVRSupported">
       <true>
+        <log text="Adding loadLibrary" />
         <loadLibrary name="gnustl_shared" failmsg="libgnustl_shared.so failed to load!" />
-        <loadLibrary name="osvrCommon" failmsg="libosvrCommon.so failed to load!" />
+        <loadLibrary name="crystax" failmsg="libcrystax.so failed to load!" />
+        <loadLibrary name="jsoncpp" failmsg="libjsoncpp.so failed to load!" />
+        <loadLibrary name="usb1.0" failmsg="libusb1.0.so failed to load!" />
         <loadLibrary name="osvrUtil" failmsg="libosvrUtil.so failed to load!" />
+        <loadLibrary name="osvrCommon" failmsg="libosvrCommon.so failed to load!" />
         <loadLibrary name="osvrClient" failmsg="libosvrClient.so failed to load!" />
         <loadLibrary name="osvrClientKit" failmsg="libosvrClientKit.so failed to load!" />        
+        <loadLibrary name="functionality" failmsg="libfunctionality.so failed to load!" />
+        <loadLibrary name="osvrConnection" failmsg="libosvrConnection.so failed to load!" />
+        <loadLibrary name="osvrPluginHost" failmsg="libosvrPluginHost.so failed to load!" />
+        <loadLibrary name="osvrPluginKit" failmsg="libosvrPluginKit.so failed to load!" />
+        <loadLibrary name="osvrAnalysisPluginKit" failmsg="libosvrAnalysisPluginKit.so failed to load!" />
+        <loadLibrary name="osvrVRPNServer" failmsg="libosvrVRPNServer.so failed to load!" />
+        <loadLibrary name="osvrServer" failmsg="libosvrServer.so failed to load!" />
+        <loadLibrary name="com_osvr_android_sensorTracker" failmsg="libcom_osvr_android_sensorTracker.so failed to load!" />
+        <loadLibrary name="osvrRenderManager" failmsg="libosvrRenderManager.so failed to load!" />
       </true>
     </if>
   </soLoadLibrary>

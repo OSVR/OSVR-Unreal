@@ -244,7 +244,7 @@ protected:
 
         OSVR_ReturnCode rc;
         OSVR_RenderInfoCount numRenderInfo;
-        OSVR_Pose3 ret = { 0 };
+        OSVR_Pose3 ret;
         rc = osvrRenderManagerGetNumRenderInfoInCollection(renderInfoCollection, &numRenderInfo);
         if (rc != OSVR_RETURN_SUCCESS)
         {

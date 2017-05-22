@@ -17,7 +17,7 @@
 #include "OSVRPrivatePCH.h"
 #include "OSVRHMDDescription.h"
 #include <osvr/RenderKit/RenderManagerC.h>
-
+#include <osvr/RenderKit/RenderKitGraphicsTransforms.h>
 #include "Json.h"
 
 DEFINE_LOG_CATEGORY(OSVRHMDDescriptionLog);
@@ -256,7 +256,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(float left, float right, float b
     //FPlane row4(0.0f, 0.0f, zNear, 0.0f);
     
     // OSVR Render Manager OSVR_Projection_to_D3D with adjustment for unreal (from steamVR plugin)
-    OSVR_ProjectionMatrix projection;
+    osvr::renderkit::OSVR_ProjectionMatrix projection;
     projection.left = static_cast<double>(left);
     projection.right = static_cast<double>(right);
     projection.top = static_cast<double>(top);
@@ -267,7 +267,7 @@ FMatrix OSVRHMDDescription::GetProjectionMatrix(float left, float right, float b
     // be checked for conversion issues.
     projection.farClip = static_cast<double>(farClip);
     float p[16];
-    OSVR_Projection_to_Unreal(p, projection);
+    osvr::renderkit::OSVR_Projection_to_Unreal(p, projection);
 
     FPlane row1(p[0], p[1], p[2], p[3]);
     FPlane row2(p[4], p[5], p[6], p[7]);

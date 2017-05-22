@@ -16,7 +16,6 @@
 
 #pragma once
 
-
 #include "IOSVR.h"
 #include "OSVRCustomPresent.h"
 #include <osvr/RenderKit/RenderManagerC.h>
@@ -24,7 +23,11 @@
 
 #if OSVR_ANDROID
 // @todo this may not work - if not, what headers is unreal expecting?
-#define OSVR_RM_USE_OPENGLES20 1
+//#define OSVR_RM_USE_OPENGLES20 1
+#define OSVR_RM_SKIP_GL_INCLUDE 1
+#define OSVR_RM_SKIP_GLEXT_INCLUDE 1
+#include <GLES2/gl2.h>
+#include <GLES3/gl3ext.h>
 #else
 // you can't include <GL/gl.h> and <GL/glcorearb.h> in the same source file,
 // and unreal is going to include <GL/glcorearb.h>
@@ -33,17 +36,18 @@
 #include <GL/glcorearb.h>
 #endif
 
-#include <osvr/RenderKit/RenderManagerOpenGLC.h>
-
 #include "OpenGLDrvPrivate.h"
 #include "OpenGLResources.h"
+
+#include <osvr/RenderKit/RenderManagerOpenGLC.h>
+
 
 typedef struct FUnrealBackBufferContainer
 {
     GLint displayFrameBuffer;
     int width;
     int height;
-};
+} FUnrealBackBufferContainer;
 
 
 //==========================================================================
@@ -286,7 +290,7 @@ protected:
             mRenderInfos.Empty();
             for (size_t i = 0; i < numRenderInfo; i++)
             {
-                OSVR_RenderInfoOpenGL renderInfo = { 0 };
+                OSVR_RenderInfoOpenGL renderInfo = { {} };
                 rc = osvrRenderManagerGetRenderInfoFromCollectionOpenGL(renderInfoCollection, i, &renderInfo);
                 check(rc == OSVR_RETURN_SUCCESS);
 

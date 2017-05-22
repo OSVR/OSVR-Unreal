@@ -554,7 +554,7 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
     FSceneViewport* sceneViewport;
     if (!GIsEditor)
     {
-        //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR getting UGameEngine::SceneViewport viewport"));
+        UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR getting UGameEngine::SceneViewport viewport"));
         UGameEngine* gameEngine = Cast<UGameEngine>(GEngine);
         sceneViewport = gameEngine->SceneViewport.Get();
     }
@@ -577,13 +577,13 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
 
     if (!sceneViewport)
     {
-        //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport does not exist. Will try again later."));
+        UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport does not exist. Will try again later."));
         bStereoEnabled = false;
         return false;
     }
     else
     {
-        //UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport exists. Enabling stereo."));
+        UE_LOG(OSVRHMDLog, Warning, TEXT("FOSVRHMD::EnableStereo() - OSVR scene viewport exists. Enabling stereo."));
 #if !WITH_EDITOR
         auto window = sceneViewport->FindWindow();
 #endif
@@ -613,7 +613,7 @@ bool FOSVRHMD::EnableStereo(bool bStereo)
             // calculate the render target sizes ourselves).
 
             //}
-            //UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR Actually set viewport size"));
+            UE_LOG(OSVRHMDLog, Warning, TEXT("OSVR Actually set viewport size"));
             sceneViewport->SetViewportSize(width, height);
 #if !WITH_EDITOR
             if (window.IsValid())

@@ -17,13 +17,13 @@
       "Name": "OSVR",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win32", "Win64" ]
+      "WhitelistPlatforms": [ "Win32", "Win64", "Android" ]
     },
     {
       "Name": "OSVRInput",
       "Type": "Runtime",
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win32", "Win64" ]
+      "WhitelistPlatforms": [ "Win32", "Win64", "Android" ]
     }
 	]
 }
