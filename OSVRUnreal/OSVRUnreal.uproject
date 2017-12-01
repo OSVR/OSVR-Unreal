@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "4.14",
+	"EngineAssociation": "4.18",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -34,7 +34,15 @@
 		{
 			"Name": "LeapMotionController",
 			"Enabled": false
-		}
+		},
+    {
+      "Name": "OculusVR",
+      "Enabled": false
+    },
+    {
+      "Name": "OSVR",
+      "Enabled":  false
+    }
 	],
 	"TargetPlatforms": [
 		"WindowsNoEditor"

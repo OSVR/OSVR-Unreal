@@ -1,0 +1,29 @@
+{
+	"FileVersion" : 3,
+
+	"FriendlyName" : "OSVR Plugin (Local Project)",
+	"Version" : 1,
+	"VersionName" : "0.1",
+	"CreatedBy" : "Razer, Inc. and OSVR Community",
+	"CreatedByURL" : "http://osvr.github.io",
+	"EngineVersion" : "4.18.0",
+	"Description" : "Open Source Virtual Reality (OSVR) plugin.",
+	"Category" : "Virtual Reality",
+	"EnabledByDefault" : true,
+
+	"Modules" :
+	[
+    {
+      "Name": "OSVR",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win32", "Win64" ]
+    },
+    {
+      "Name": "OSVRInput",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "WhitelistPlatforms": [ "Win32", "Win64" ]
+    }
+	]
+}
